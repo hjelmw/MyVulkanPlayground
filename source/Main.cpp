@@ -18,7 +18,10 @@ int main(int argc, char** argv)
         std::cerr << "[Vulkan]: " << e.what() << "\n" << std::endl;
         std::cerr << "[SDL]: " << SDL_GetError() << "\n" << std::endl;
         std::cerr << "--------------------------------------------------" << std::endl;
-        std::cerr << "\n" << std::endl;
+        std::cerr << "\nFailure. Press any key to exit..." << std::endl;
+
+
+        std::getchar();
 
         return EXIT_FAILURE;
     }

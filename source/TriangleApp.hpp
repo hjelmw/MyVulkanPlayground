@@ -36,9 +36,15 @@ private:
 	void CreateSwapChain();
 	void CreateImageViews();
 	void CreateRenderPass();
+	void CreateDescriptorSetLayout();
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
 	void CreateCommandPool();
+	void CreateVertexBuffer();
+	void CreateIndexBuffer();
+	void CreateUniformBuffers();
+	void CreateDescriptorPool();
+	void CreateDescriptorSets();
 	void CreateCommandBuffers();
 	void CreateSyncObjects();
 
@@ -46,52 +52,71 @@ private:
 	void RecreateSwapChain();
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
+	void UpdateUniformBuffer(uint32_t currentImage);
+	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	bool CheckValidationLayerSupport();
 	std::vector<const char*> GetRequiredInstanceExtensions();
 
-	uint32_t				   m_FrameIndex = 0;
+	uint32_t				     m_FrameIndex = 0;
 
 	// Device
-	VkInstance			       m_VulkanInstance       = VK_NULL_HANDLE;
-	VkPhysicalDevice	       m_PhysicalDevice       = VK_NULL_HANDLE;
-	VkDevice			       m_VulkanDevice	        = VK_NULL_HANDLE;
-	VkSurfaceKHR		       m_VulkanSurface        = VK_NULL_HANDLE;
+	VkInstance			         m_VulkanInstance       = VK_NULL_HANDLE;
+	VkPhysicalDevice	         m_PhysicalDevice       = VK_NULL_HANDLE;
+	VkDevice			         m_VulkanDevice	        = VK_NULL_HANDLE;
+	VkSurfaceKHR		         m_VulkanSurface        = VK_NULL_HANDLE;
 
 	// Queues
-	VkQueue				       m_GraphicsQueue        = VK_NULL_HANDLE;
-	VkQueue				       m_PresentQueue	        = VK_NULL_HANDLE;
+	VkQueue				         m_GraphicsQueue        = VK_NULL_HANDLE;
+	VkQueue				         m_PresentQueue	        = VK_NULL_HANDLE;
 
 	// Swapchain
-	VkSwapchainKHR             m_Swapchain            = VK_NULL_HANDLE;
-	VkFormat                   m_SwapchainImageFormat = VK_FORMAT_UNDEFINED;
-	VkExtent2D                 m_SwapchainExtent      = { 0, 0 };
+	VkSwapchainKHR               m_Swapchain            = VK_NULL_HANDLE;
+	VkFormat                     m_SwapchainImageFormat = VK_FORMAT_UNDEFINED;
+	VkExtent2D                   m_SwapchainExtent      = { 0, 0 };
 
 	// Swap chain images
-	std::vector<VkImage>       m_SwapchainImages      = { VK_NULL_HANDLE };
-	std::vector<VkImageView>   m_SwapchainImageViews  = { VK_NULL_HANDLE };
+	std::vector<VkImage>         m_SwapchainImages      = { VK_NULL_HANDLE };
+	std::vector<VkImageView>     m_SwapchainImageViews  = { VK_NULL_HANDLE };
 
 	// Render pass
-	VkRenderPass			   m_RenderPass           = VK_NULL_HANDLE;
+	VkRenderPass			     m_RenderPass           = VK_NULL_HANDLE;
+
+	// Descriptor Set Layout
+	VkDescriptorSetLayout        m_DescriptorSetLayout  = VK_NULL_HANDLE;
+
+	// Descriptor Pool & Sets
+	VkDescriptorPool             m_DescriptorPool       = VK_NULL_HANDLE;
+	std::vector<VkDescriptorSet> m_DescriptorSets       = { VK_NULL_HANDLE };
 
 	// Pipeline Layout
-	VkPipelineLayout           m_PipelineLayout       = VK_NULL_HANDLE;
+	VkPipelineLayout             m_PipelineLayout       = VK_NULL_HANDLE;
 
 	// Pipeline
-	VkPipeline				   m_GraphicsPipeline     = VK_NULL_HANDLE;
+	VkPipeline				     m_GraphicsPipeline     = VK_NULL_HANDLE;
+
+	// Vertex & Index buffers
+	VkDeviceMemory               m_VertexBufferMemory   = VK_NULL_HANDLE;
+	VkBuffer                     m_VertexBuffer         = VK_NULL_HANDLE;
+	VkDeviceMemory               m_IndexBufferMemory    = VK_NULL_HANDLE;
+	VkBuffer                     m_IndexBuffer          = VK_NULL_HANDLE;
+
+	// Uniform buffers
+	std::vector<VkBuffer>        m_UniformBuffers	    = { VK_NULL_HANDLE };
+	std::vector<VkDeviceMemory>  m_UniformBufferMemory  = { VK_NULL_HANDLE };
 
 	// Framebuffer
-	std::vector<VkFramebuffer> m_Framebuffers         = { VK_NULL_HANDLE };
+	std::vector<VkFramebuffer>   m_Framebuffers         = { VK_NULL_HANDLE };
 
 	// CommandBuffer
-	VkCommandPool                m_CommandPool    = VK_NULL_HANDLE;
-	std::vector<VkCommandBuffer> m_CommandBuffers = { VK_NULL_HANDLE };
+	VkCommandPool                m_CommandPool          = VK_NULL_HANDLE;
+	std::vector<VkCommandBuffer> m_CommandBuffers       = { VK_NULL_HANDLE };
 
 	// Synchronization
-	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
-	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
-	std::vector<VkFence>     m_InFlightFences;
+	std::vector<VkSemaphore>     m_ImageAvailableSemaphores;
+	std::vector<VkSemaphore>     m_RenderFinishedSemaphores;
+	std::vector<VkFence>         m_InFlightFences;
 
 	// Misc
 	VkDebugUtilsMessengerEXT m_DebugMessenger       = VK_NULL_HANDLE;
@@ -347,6 +372,22 @@ private:
 		if (func != nullptr) 
 		{
 			func(instance, debugMessenger, pAllocator);
+		}
+	}
+
+	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) 
+	{
+
+		VkPhysicalDeviceMemoryProperties memoryProperties;
+		vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memoryProperties);
+
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+		{
+			// Is memory type supported
+			if (typeFilter & (1 << i) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			{
+				return i;
+			}
 		}
 	}
 

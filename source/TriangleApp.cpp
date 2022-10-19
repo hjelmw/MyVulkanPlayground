@@ -1,8 +1,14 @@
 #include "TriangleApp.hpp"
 
 #include <iostream>
-#include <glm.hpp>
 #include <vulkan/vulkan.h>
+
+#define GLM_FORCE_RADIANS
+//#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
 #include <vector>
 #include <set>
 #include <array>
@@ -21,7 +27,7 @@ const std::vector<const char*> m_DeviceExtensions =
 };
 
 #if defined(_DEBUG)
-const bool g_EnableValidationLayers = true;
+const bool g_EnableValidationLayers = false;
 #else
 const bool g_EnableValidationLayers = false;
 #endif
@@ -62,11 +68,24 @@ struct Vertex
 	};
 };
 
-const std::vector<Vertex> vertices =
+const std::vector<Vertex> m_Vertices =
 {
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> m_Indices = 
+{
+	0, 1, 2, 2, 3, 0
+};
+
+struct UniformBufferObject 
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
 };
 
 void TriangleApp::Run()
@@ -560,6 +579,27 @@ void TriangleApp::CreateRenderPass()
 	}
 }
 
+void TriangleApp::CreateDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding uboLayoutBinding{};
+	uboLayoutBinding.binding            = 0;
+	uboLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayoutBinding.descriptorCount    = 1;
+	uboLayoutBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
+	uboLayoutBinding.pImmutableSamplers = nullptr;
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = &uboLayoutBinding;
+
+	if (vkCreateDescriptorSetLayout(m_VulkanDevice, &layoutInfo, nullptr, &m_DescriptorSetLayout) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create descriptor set layout!");
+	}
+
+
+}
 
 void TriangleApp::CreateGraphicsPipeline()
 {
@@ -583,17 +623,14 @@ void TriangleApp::CreateGraphicsPipeline()
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 
-	auto bindingDescription = Vertex::GetBindingDescription();
+	auto bindingDescription    = Vertex::GetBindingDescription();
 	auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
+	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertexInputInfo.vertexBindingDescriptionCount = 1; // single binding descriptor for now
 	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()); // with 2 attributes
 	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -614,6 +651,8 @@ void TriangleApp::CreateGraphicsPipeline()
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
 	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -648,7 +687,8 @@ void TriangleApp::CreateGraphicsPipeline()
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &m_DescriptorSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
 	if (vkCreatePipelineLayout(m_VulkanDevice, &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
@@ -731,6 +771,211 @@ void TriangleApp::CreateCommandPool()
 	}
 }
 
+void TriangleApp::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+	VkBufferCreateInfo bufferInfo{};
+
+	bufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.usage       = usage;
+	bufferInfo.size        = size;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateBuffer(m_VulkanDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create vertex buffer!");
+	}
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(m_VulkanDevice, buffer, &memoryRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize  = memoryRequirements.size;
+	allocInfo.memoryTypeIndex = FindMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	if (vkAllocateMemory(m_VulkanDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate vertex buffer memory!");
+	}
+
+	vkBindBufferMemory(m_VulkanDevice, buffer, bufferMemory, 0);
+}
+
+void TriangleApp::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = m_CommandPool;
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(m_VulkanDevice, &allocInfo, &commandBuffer);
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+	VkBufferCopy copyRegion{};
+	copyRegion.srcOffset = 0; // Optional
+	copyRegion.dstOffset = 0; // Optional
+	copyRegion.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	// Copy buffer immediately 
+	vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+
+	// Wait until done (use a fence?)
+	vkQueueWaitIdle(m_GraphicsQueue);
+
+	vkFreeCommandBuffers(m_VulkanDevice, m_CommandPool, 1, &commandBuffer);
+}
+
+void TriangleApp::CreateVertexBuffer()
+{
+	VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
+
+	/* CPU side Staging buffer */
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	CreateBuffer(
+		bufferSize, 
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+		stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(m_VulkanDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, m_Vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(m_VulkanDevice, stagingBufferMemory);
+
+	/* GPU Side */
+	CreateBuffer(
+		bufferSize,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_VertexBuffer, m_VertexBufferMemory
+	);
+
+	/* Copy staging buffer to device*/
+	CopyBuffer(stagingBuffer, m_VertexBuffer, bufferSize);
+
+	vkDestroyBuffer(m_VulkanDevice, stagingBuffer, nullptr);
+	vkFreeMemory(m_VulkanDevice, stagingBufferMemory, nullptr);
+}
+
+void TriangleApp::CreateIndexBuffer()
+{
+	VkDeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
+
+	/* CPU side Staging buffer */
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	CreateBuffer(
+		bufferSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer, stagingBufferMemory
+	);
+
+	void* data;
+	vkMapMemory(m_VulkanDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, m_Indices.data(), (size_t)bufferSize);
+	vkUnmapMemory(m_VulkanDevice, stagingBufferMemory);
+
+	/* GPU Side Index buffer */
+	CreateBuffer(
+		bufferSize,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		m_IndexBuffer, m_IndexBufferMemory
+	);
+
+	/* Copy staging buffer to device*/
+	CopyBuffer(stagingBuffer, m_IndexBuffer, bufferSize);
+
+	vkDestroyBuffer(m_VulkanDevice, stagingBuffer, nullptr);
+	vkFreeMemory(m_VulkanDevice, stagingBufferMemory, nullptr);
+}
+
+
+void TriangleApp::CreateUniformBuffers()
+{
+	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+	
+	m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_UniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_UniformBuffers[i], m_UniformBufferMemory[i]);
+	}
+}
+
+void TriangleApp::CreateDescriptorPool()
+{
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes    = &poolSize;
+	poolInfo.maxSets       = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+	if (vkCreateDescriptorPool(m_VulkanDevice, &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create descriptor pool!");
+	}
+}
+
+void TriangleApp::CreateDescriptorSets()
+{
+	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout);
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool     = m_DescriptorPool;
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	allocInfo.pSetLayouts        = layouts.data();
+
+	m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+	if (vkAllocateDescriptorSets(m_VulkanDevice, &allocInfo, m_DescriptorSets.data()) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to allocate descriptor sets!");
+	}
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+	{
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_UniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range  = sizeof(UniformBufferObject);
+
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet           = m_DescriptorSets[i];
+		descriptorWrite.dstBinding       = 0;
+		descriptorWrite.dstArrayElement  = 0;
+		descriptorWrite.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount  = 1;
+		descriptorWrite.pBufferInfo      = &bufferInfo;
+		descriptorWrite.pImageInfo       = nullptr; // Optional
+		descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+		vkUpdateDescriptorSets(m_VulkanDevice, 1, &descriptorWrite, 0, nullptr);
+	}
+}
+
 void TriangleApp::CreateCommandBuffers()
 {
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -779,6 +1024,13 @@ void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 
+	VkBuffer vertexBuffers[] = { m_VertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
+
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -793,7 +1045,9 @@ void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 	scissor.extent = m_SwapchainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_FrameIndex], 0, nullptr);
+
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -801,6 +1055,25 @@ void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 	{
 		throw std::runtime_error("failed to record command buffer!");
 	}
+}
+
+void TriangleApp::UpdateUniformBuffer(uint32_t currentImage)
+{
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	UniformBufferObject ubo{};
+	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view  = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj  = glm::perspective(glm::radians(45.0f), m_SwapchainExtent.width / (float)m_SwapchainExtent.height, 0.1f, 10.0f);
+
+	ubo.proj[1][1] *= -1;
+
+	void* data;
+	vkMapMemory(m_VulkanDevice, m_UniformBufferMemory[currentImage], 0, sizeof(ubo), 0, &data);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(m_VulkanDevice, m_UniformBufferMemory[currentImage]);
 }
 
 void TriangleApp::CreateSyncObjects()
@@ -836,11 +1109,13 @@ void TriangleApp::DrawFrame()
 	VkResult result = vkAcquireNextImageKHR(m_VulkanDevice, m_Swapchain, UINT64_MAX, m_ImageAvailableSemaphores[m_FrameIndex], VK_NULL_HANDLE, &imageIndex);
 
 	// Need to recreate swapchain and discard this frame
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) 
+	{
 		RecreateSwapChain();
 		return;
 	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
+	{
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
@@ -848,6 +1123,8 @@ void TriangleApp::DrawFrame()
 	vkResetFences(m_VulkanDevice, 1, &m_InFlightFences[m_FrameIndex]);
 
 	vkResetCommandBuffer(m_CommandBuffers[m_FrameIndex], 0);
+
+	UpdateUniformBuffer(m_FrameIndex);
 
 	RecordCommandBuffer(m_CommandBuffers[m_FrameIndex], imageIndex);
 
@@ -907,9 +1184,15 @@ void TriangleApp::InitVulkan()
 	CreateSwapChain();
 	CreateImageViews();
 	CreateRenderPass();
+	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateFrameBuffers();
 	CreateCommandPool();
+	CreateVertexBuffer();
+	CreateIndexBuffer();
+	CreateUniformBuffers();
+	CreateDescriptorPool();
+	CreateDescriptorSets();
 	CreateCommandBuffers();
 	CreateSyncObjects();
 #if defined(_DEBUG)
@@ -941,6 +1224,21 @@ void TriangleApp::MainLoop()
 void TriangleApp::CleanupApp()
 {
 	CleanupSwapchain();
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		vkDestroyBuffer(m_VulkanDevice, m_UniformBuffers[i], nullptr);
+		vkFreeMemory(m_VulkanDevice, m_UniformBufferMemory[i], nullptr);
+	}
+
+	vkDestroyDescriptorPool(m_VulkanDevice, m_DescriptorPool, nullptr);
+	vkDestroyDescriptorSetLayout(m_VulkanDevice, m_DescriptorSetLayout, nullptr);
+
+	vkDestroyBuffer(m_VulkanDevice, m_VertexBuffer, nullptr);
+	vkFreeMemory(m_VulkanDevice, m_VertexBufferMemory, nullptr);
+	
+	vkDestroyBuffer(m_VulkanDevice, m_IndexBuffer, nullptr);
+	vkFreeMemory(m_VulkanDevice, m_IndexBufferMemory, nullptr);
 
 	vkDestroyPipeline(m_VulkanDevice, m_GraphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(m_VulkanDevice, m_PipelineLayout, nullptr);
