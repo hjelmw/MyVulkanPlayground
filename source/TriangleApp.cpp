@@ -8,7 +8,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <chrono>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stbi_image.h>
+
 #include <vector>
 #include <set>
 #include <array>
@@ -27,7 +29,7 @@ const std::vector<const char*> m_DeviceExtensions =
 };
 
 #if defined(_DEBUG)
-const bool g_EnableValidationLayers = false;
+const bool g_EnableValidationLayers = true;
 #else
 const bool g_EnableValidationLayers = false;
 #endif
@@ -48,17 +50,19 @@ struct Vertex
 
 		return bindingDescription;
 	};
-
+	
 	// Vertex attributes
 	static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions() {
 
 		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
 
+		// inPosition
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT; //vec2
 		attributeDescriptions[0].offset = offsetof(Vertex, position);
 
+		// inColor
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT; //vec3
@@ -603,8 +607,8 @@ void TriangleApp::CreateDescriptorSetLayout()
 
 void TriangleApp::CreateGraphicsPipeline()
 {
-	VkShaderModule vertexShaderModule     = CreateShaderModule("shaders/vert.spv");
-	VkShaderModule fragmentShaderModule   = CreateShaderModule("shaders/frag.spv");
+	VkShaderModule vertexShaderModule     = CreateShaderModule("shaders/shader.vert.spv");
+	VkShaderModule fragmentShaderModule   = CreateShaderModule("shaders/shader.frag.spv");
 
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -840,6 +844,84 @@ void TriangleApp::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSiz
 	vkFreeCommandBuffers(m_VulkanDevice, m_CommandPool, 1, &commandBuffer);
 }
 
+void TriangleApp::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) 
+{
+	VkImageCreateInfo imageInfo{};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.extent.width = width;
+	imageInfo.extent.height = height;
+	imageInfo.extent.depth = 1;
+	imageInfo.mipLevels = 1;
+	imageInfo.arrayLayers = 1;
+	imageInfo.format = format;
+	imageInfo.tiling = tiling;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.usage = usage;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateImage(m_VulkanDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create image!");
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetImageMemoryRequirements(m_VulkanDevice, image, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+	if (vkAllocateMemory(m_VulkanDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to allocate image memory!");
+	}
+
+	vkBindImageMemory(m_VulkanDevice, image, imageMemory, 0);
+}
+
+void TriangleApp::CreateTextureImages()
+{
+	int texWidth, texHeight, texChannels;
+
+	stbi_uc* pixels = stbi_load("assets/statue.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+	VkDeviceSize imageSize = texWidth * texHeight * STBI_rgb_alpha;
+
+	if (!pixels) 
+	{
+		throw std::runtime_error("failed to load texture image!");
+	}
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+
+	CreateBuffer(
+		imageSize, 
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+		stagingBuffer, 
+		stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(m_VulkanDevice, stagingBufferMemory, 0, imageSize, 0, &data);
+	memcpy(data, pixels, static_cast<size_t>(imageSize));
+	vkUnmapMemory(m_VulkanDevice, stagingBufferMemory);
+
+	stbi_image_free(pixels);
+	
+	CreateImage(
+		texWidth, 
+		texHeight, 
+		VK_FORMAT_R8G8B8A8_SRGB, 
+		VK_IMAGE_TILING_OPTIMAL, 
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+		m_TextureImage, 
+		m_TextureImageMemory);
+}
+
 void TriangleApp::CreateVertexBuffer()
 {
 	VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
@@ -996,6 +1078,17 @@ void TriangleApp::CreateCommandBuffers()
 #endif
 }
 
+VkCommandBuffer TriangleApp::BeginSingleTimeCommands()
+{
+	return VK_NULL_HANDLE;
+}
+
+void TriangleApp::EndSingleTimeCommands(VkCommandBuffer commandBuffer)
+{
+
+}
+
+
 void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	VkCommandBufferBeginInfo beginInfo{};
@@ -1059,9 +1152,9 @@ void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 
 void TriangleApp::UpdateUniformBuffer(uint32_t currentImage)
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+	static uint32_t startTime = SDL_GetTicks();
+	uint32_t currentTime      = SDL_GetTicks();
+	float time = ((float) currentTime - startTime) / 1000.0f;
 
 	UniformBufferObject ubo{};
 	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));

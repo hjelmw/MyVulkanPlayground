@@ -40,6 +40,7 @@ private:
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
 	void CreateCommandPool();
+	void CreateTextureImages();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 	void CreateUniformBuffers();
@@ -51,8 +52,12 @@ private:
 	void CleanupSwapchain();
 	void RecreateSwapChain();
 
+	VkCommandBuffer BeginSingleTimeCommands();
+	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void UpdateUniformBuffer(uint32_t currentImage);
+	void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -101,6 +106,10 @@ private:
 	VkBuffer                     m_VertexBuffer         = VK_NULL_HANDLE;
 	VkDeviceMemory               m_IndexBufferMemory    = VK_NULL_HANDLE;
 	VkBuffer                     m_IndexBuffer          = VK_NULL_HANDLE;
+
+	// Texture image
+	VkImage                      m_TextureImage         = VK_NULL_HANDLE;
+	VkDeviceMemory               m_TextureImageMemory   = VK_NULL_HANDLE;
 
 	// Uniform buffers
 	std::vector<VkBuffer>        m_UniformBuffers	    = { VK_NULL_HANDLE };
@@ -375,7 +384,7 @@ private:
 		}
 	}
 
-	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) 
+	int FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) 
 	{
 
 		VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -389,6 +398,8 @@ private:
 				return i;
 			}
 		}
+
+		return -1;
 	}
 
 	// Validation layer callback
@@ -399,7 +410,6 @@ private:
 		void* pUserData) 
 	{
 		throw std::runtime_error(pCallbackData->pMessage);
-		return VK_FALSE;
 	}
 
 };

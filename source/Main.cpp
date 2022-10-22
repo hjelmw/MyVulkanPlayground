@@ -20,7 +20,6 @@ int main(int argc, char** argv)
         std::cerr << "--------------------------------------------------" << std::endl;
         std::cerr << "\nFailure. Press any key to exit..." << std::endl;
 
-
         std::getchar();
 
         return EXIT_FAILURE;
