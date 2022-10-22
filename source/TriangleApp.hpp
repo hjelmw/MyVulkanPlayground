@@ -34,13 +34,15 @@ private:
 	void SelectPhysicalDevice();
 	void CreateLogicalDevice();
 	void CreateSwapChain();
-	void CreateImageViews();
+	void CreateSwapChainImageViews();
 	void CreateRenderPass();
 	void CreateDescriptorSetLayout();
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
 	void CreateCommandPool();
-	void CreateTextureImages();
+	void CreateTextureImage();
+	void CreateTextureImageView();
+	void CreateTextureSampler();
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
 	void CreateUniformBuffers();
@@ -54,12 +56,15 @@ private:
 
 	VkCommandBuffer BeginSingleTimeCommands();
 	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void UpdateUniformBuffer(uint32_t currentImage);
 	void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	VkImageView CreateImageView(VkImage image, VkFormat format);
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 	bool CheckValidationLayerSupport();
 	std::vector<const char*> GetRequiredInstanceExtensions();
@@ -110,6 +115,12 @@ private:
 	// Texture image
 	VkImage                      m_TextureImage         = VK_NULL_HANDLE;
 	VkDeviceMemory               m_TextureImageMemory   = VK_NULL_HANDLE;
+
+	// Texture sampler
+	VkSampler                    m_TextureSampler       = VK_NULL_HANDLE;
+
+	// Texture image view
+	VkImageView	                 m_TextureImageView     = VK_NULL_HANDLE;
 
 	// Uniform buffers
 	std::vector<VkBuffer>        m_UniformBuffers	    = { VK_NULL_HANDLE };
@@ -296,10 +307,13 @@ private:
 		if (extensionsSupported)
 		{
 			SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
-			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty() ;
 		}
 
-		return indices.IsComplete() && extensionsSupported && swapChainAdequate;
+		VkPhysicalDeviceFeatures supportedFeatures;
+		vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+		return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 	};
 
 	static std::vector<char> ReadFile(const std::string &filename)
