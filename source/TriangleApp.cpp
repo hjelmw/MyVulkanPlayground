@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.h>
 
 #define GLM_FORCE_RADIANS
-//#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -14,6 +14,7 @@
 #include <vector>
 #include <set>
 #include <array>
+#include <chrono>
 
 static const uint32_t WIDTH                = 800;
 static const uint32_t HEIGHT               = 600;
@@ -36,7 +37,7 @@ const bool g_EnableValidationLayers = false;
 
 struct Vertex
 {
-	glm::vec2 position;
+	glm::vec3 position;
 	glm::vec3 color;
 	glm::vec2 texCoord;
 
@@ -60,7 +61,7 @@ struct Vertex
 		// inPosition
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT; //vec2
+		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT; //vec2
 		attributeDescriptions[0].offset = offsetof(Vertex, position);
 
 		// inColor
@@ -81,15 +82,21 @@ struct Vertex
 
 const std::vector<Vertex> m_Vertices =
 {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+	{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+	{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 };
 
 const std::vector<uint16_t> m_Indices = 
 {
-	0, 1, 2, 2, 3, 0
+	0, 1, 2, 2, 3, 0,
+	4, 5, 6, 6, 7, 4 
 };
 
 struct UniformBufferObject 
@@ -109,16 +116,13 @@ void TriangleApp::Run()
 
 void TriangleApp::InitWindow()
 {
-	SDL_Init(SDL_INIT_EVERYTHING);
-	m_Window = SDL_CreateWindow(
-		"Software Rasterizer",
-		SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED,
-		WIDTH,
-		HEIGHT,
-		SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN
-	);
-	SDL_SetWindowResizable(m_Window, SDL_TRUE);
+
+	glfwInit();
+
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
+	m_Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 
 	if (m_Window == NULL)
 	{
@@ -128,28 +132,14 @@ void TriangleApp::InitWindow()
 
 std::vector<const char*> TriangleApp::GetRequiredInstanceExtensions()
 {
-	uint32_t requiredSDLExtensionCount;
+	uint32_t requiredGLFWExtensionCount;
+	const char** requiredGLFWExtensions = glfwGetRequiredInstanceExtensions(&requiredGLFWExtensionCount);
 
-	if (!SDL_Vulkan_GetInstanceExtensions(m_Window, &requiredSDLExtensionCount, nullptr))
+	std::vector<const char*> requiredExtensions(requiredGLFWExtensions, requiredGLFWExtensions + requiredGLFWExtensionCount);
+	if (g_EnableValidationLayers) 
 	{
-		throw std::runtime_error("failed to get SDL instance extension count!");
+		requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
-
-	std::vector<const char*> requiredSDLExtensions(requiredSDLExtensionCount);
-	if (!SDL_Vulkan_GetInstanceExtensions(m_Window, &requiredSDLExtensionCount, requiredSDLExtensions.data()))
-	{
-		throw std::runtime_error("failed to get SDL instance extensions!");
-	}
-
-	std::vector<const char*> requiredOtherExtensions;
-
-	if (g_EnableValidationLayers) {
-		requiredOtherExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	}
-
-	std::vector<const char*> requiredExtensions;
-	requiredExtensions.insert(requiredExtensions.end(), requiredOtherExtensions.begin(), requiredOtherExtensions.end());
-	requiredExtensions.insert(requiredExtensions.end(), requiredSDLExtensions.begin(), requiredSDLExtensions.end());
 
 	return requiredExtensions;
 }
@@ -288,10 +278,7 @@ bool TriangleApp::CheckValidationLayerSupport()
 
 void TriangleApp::CreateVulkanSurface()
 {
-	if (SDL_Vulkan_CreateSurface(m_Window, m_VulkanInstance, &m_VulkanSurface) != SDL_TRUE)
-	{
-		throw std::runtime_error("Failed to create SDL vulkan surface");
-	}
+	glfwCreateWindowSurface(m_VulkanInstance, m_Window, nullptr, &m_VulkanSurface);
 }
 
 void TriangleApp::SelectPhysicalDevice()
@@ -942,7 +929,6 @@ void TriangleApp::CreateTextureImage()
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
 		m_TextureImage, 
 		m_TextureImageMemory);
-
 	
 	TransitionImageLayout(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	CopyBufferToImage(stagingBuffer, m_TextureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
@@ -1282,7 +1268,6 @@ void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -1311,9 +1296,10 @@ void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 
 void TriangleApp::UpdateUniformBuffer(uint32_t currentImage)
 {
-	static uint32_t startTime = SDL_GetTicks();
-	uint32_t currentTime      = SDL_GetTicks();
-	float time = ( static_cast<float> (currentTime - startTime) ) / 1000.0f;
+	static auto startTime = std::chrono::high_resolution_clock::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
 
 	UniformBufferObject ubo{};
 	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -1457,15 +1443,11 @@ void TriangleApp::InitVulkan()
 
 void TriangleApp::MainLoop()
 {
-	SDL_Event sdl_event;
-	bool      shouldQuit   = false;
 
-	while (!shouldQuit)
+
+	while (!glfwWindowShouldClose(m_Window))
 	{
-		while (SDL_PollEvent(&sdl_event))
-		{
-			shouldQuit = sdl_event.type == SDL_QUIT || sdl_event.type == SDL_WINDOWEVENT && sdl_event.window.event == SDL_WINDOWEVENT_CLOSE;
-		}
+		glfwPollEvents();
 		DrawFrame();
 	}
 
@@ -1481,8 +1463,6 @@ void TriangleApp::CleanupApp()
 	CleanupSwapchain();
 
 	vkDestroySampler(m_VulkanDevice, m_TextureSampler, nullptr);
-	vkDestroyImageView(m_VulkanDevice, m_TextureImageView, nullptr);
-
 	vkDestroyImageView(m_VulkanDevice, m_TextureImageView, nullptr);
 
 	vkDestroyImage(m_VulkanDevice, m_TextureImage, nullptr);
@@ -1527,6 +1507,6 @@ void TriangleApp::CleanupApp()
 	vkDestroySurfaceKHR(m_VulkanInstance, m_VulkanSurface, nullptr);
 	vkDestroyInstance(m_VulkanInstance, nullptr);
 
-	SDL_DestroyWindow(m_Window);
-	SDL_Quit();
+
+	glfwDestroyWindow(m_Window);
 }

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <SDL.h>
-#include <SDL_vulkan.h>
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 #include <vulkan/vulkan_core.h>
 #include <optional>
 #include <cstdlib>
@@ -139,10 +140,9 @@ private:
 	std::vector<VkFence>         m_InFlightFences;
 
 	// Misc
-	VkDebugUtilsMessengerEXT m_DebugMessenger       = VK_NULL_HANDLE;
-	SDL_Window*				 m_Window               = nullptr;
-	SDL_Event				 m_Event;
-	bool					 m_ShouldQuit				= false;
+	VkDebugUtilsMessengerEXT     m_DebugMessenger       = VK_NULL_HANDLE;
+	GLFWwindow*				     m_Window               = nullptr;
+	bool					     m_ShouldQuit           = false;
 
 	struct VulkanQueueFamilyIndices
 	{
@@ -222,7 +222,7 @@ private:
 		else 
 		{
 			int width, height;
-			SDL_GetWindowSize(m_Window, &width, &height);
+			glfwGetWindowSize(m_Window, &width, &height);
 
 			VkExtent2D actualExtent = 
 			{

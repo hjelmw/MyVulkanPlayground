@@ -16,7 +16,7 @@ int main(int argc, char** argv)
         std::cerr << "--------------------------------------------------" << std::endl;
         std::cerr << "An error was thrown while running the application\n" << std::endl;
         std::cerr << "[Vulkan]: " << e.what() << "\n" << std::endl;
-        std::cerr << "[SDL]: " << SDL_GetError() << "\n" << std::endl;
+        std::cerr << "[SDL]: " << glfwGetError(nullptr) << "\n" << std::endl;
         std::cerr << "--------------------------------------------------" << std::endl;
         std::cerr << "\nFailure. Press any key to exit..." << std::endl;
 
