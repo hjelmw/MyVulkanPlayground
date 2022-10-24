@@ -41,6 +41,7 @@ private:
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
 	void CreateCommandPool();
+	void CreateDepthResources();
 	void CreateTextureImage();
 	void CreateTextureImageView();
 	void CreateTextureSampler();
@@ -62,7 +63,7 @@ private:
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void UpdateUniformBuffer(uint32_t currentImage);
 	void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-	VkImageView CreateImageView(VkImage image, VkFormat format);
+	VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
@@ -113,15 +114,18 @@ private:
 	VkDeviceMemory               m_IndexBufferMemory    = VK_NULL_HANDLE;
 	VkBuffer                     m_IndexBuffer          = VK_NULL_HANDLE;
 
-	// Texture image
+	// Texture image & view
 	VkImage                      m_TextureImage         = VK_NULL_HANDLE;
 	VkDeviceMemory               m_TextureImageMemory   = VK_NULL_HANDLE;
+	VkImageView	                 m_TextureImageView = VK_NULL_HANDLE;
 
 	// Texture sampler
 	VkSampler                    m_TextureSampler       = VK_NULL_HANDLE;
 
-	// Texture image view
-	VkImageView	                 m_TextureImageView     = VK_NULL_HANDLE;
+	// Depth resources
+	VkImage                      m_DepthImage           = VK_NULL_HANDLE;
+	VkDeviceMemory               m_DepthImageMemory     = VK_NULL_HANDLE;
+	VkImageView                  m_DepthImageView       = VK_NULL_HANDLE;
 
 	// Uniform buffers
 	std::vector<VkBuffer>        m_UniformBuffers	    = { VK_NULL_HANDLE };
@@ -235,6 +239,39 @@ private:
 
 			return actualExtent;
 		}
+	}
+
+	bool HasStencilComponent(VkFormat format) 
+	{
+		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+	}
+
+	VkFormat FindDepthFormat() 
+	{
+		return FindSupportedFormat(
+			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	}
+
+	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+	{
+		for (VkFormat format : candidates) 
+		{
+			VkFormatProperties props;
+			vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &props);
+
+			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) 
+			{
+				return format;
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) 
+			{
+				return format;
+			}
+		}
+
+		throw std::runtime_error("failed to find supported format!");
 	}
 
 	VulkanQueueFamilyIndices FindVulkanQueueFamilies(VkPhysicalDevice device)
