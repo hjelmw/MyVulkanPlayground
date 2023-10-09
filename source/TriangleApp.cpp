@@ -285,9 +285,10 @@ void TriangleApp::SelectPhysicalDevice()
 		if (IsDeviceSuitable(device, m_DeviceExtensions))
 		{
 #if defined(_DEBUG)
-			std::cout << "\nAll extensions supported! Selecting physical device with ID: " << i << "..." << std::endl;
+			std::cout << "\nAll extensions supported on physical device with ID: " << i << "..." << std::endl;
 #endif
 			m_PhysicalDevice = device;
+			m_MSAASamples = GetMaxUsableSampleCount();
 			break;
 		}
 
@@ -426,6 +427,11 @@ void TriangleApp::CreateSwapChain()
 
 void TriangleApp::CleanupSwapchain()
 {
+	// MSAAA Color
+	vkDestroyImageView(m_VulkanDevice, m_ColorImageView, nullptr);
+	vkDestroyImage(m_VulkanDevice, m_ColorImage, nullptr);
+	vkFreeMemory(m_VulkanDevice, m_ColorImageMemory, nullptr);
+
 	// Depth
 	vkDestroyImageView(m_VulkanDevice, m_DepthImageView, nullptr);
 	vkDestroyImage(m_VulkanDevice, m_DepthImage, nullptr);
@@ -456,6 +462,7 @@ void TriangleApp::RecreateSwapChain()
 	// Recreate resources that depended on the swap chain
 	CreateSwapChain();
 	CreateSwapChainImageViews();
+	CreateMultisampledColorResources();
 	CreateDepthResources();
 	CreateFrameBuffers();
 
@@ -470,31 +477,42 @@ void TriangleApp::CreateSwapChainImageViews()
 
 	for (size_t i = 0; i < m_SwapchainImageViews.size(); i++)
 	{
-		m_SwapchainImageViews[i] = CreateImageView(m_SwapchainImages[i], m_SwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		m_SwapchainImageViews[i] = CreateImageView(m_SwapchainImages[i], m_SwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 	}
 }
+
 void TriangleApp::CreateRenderPass()
 {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format         = m_SwapchainImageFormat;
-	colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.samples        = m_MSAASamples;
 	colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription depthAttachment{};
 	depthAttachment.format         = FindDepthFormat();
-	depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+	depthAttachment.samples        = m_MSAASamples;
 	depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
 	depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	
+
+	VkAttachmentDescription colorAttachmentResolve{};
+	colorAttachmentResolve.format = m_SwapchainImageFormat;
+	colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
 	VkAttachmentReference colorAttachmentRef{};
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -503,13 +521,24 @@ void TriangleApp::CreateRenderPass()
 	depthAttachmentRef.attachment = 1;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+	VkAttachmentReference colorAttachmentResolveRef{};
+	colorAttachmentResolveRef.attachment = 2;
+	colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
+	subpass.pResolveAttachments = &colorAttachmentResolveRef;
 	subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
-	std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
+	std::array<VkAttachmentDescription, 3> attachments =
+	{ 
+		colorAttachment, 
+		depthAttachment, 
+		colorAttachmentResolve 
+	};
+
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -622,7 +651,7 @@ void TriangleApp::CreateGraphicsPipeline()
 	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.rasterizationSamples = m_MSAASamples;
 
 	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -708,10 +737,11 @@ void TriangleApp::CreateFrameBuffers()
 
 	for (size_t i = 0; i < m_SwapchainImageViews.size(); i++)
 	{
-		std::array<VkImageView, 2> attachments = 
+		std::array<VkImageView, 3> attachments = 
 		{
+			m_ColorImageView,
+			m_DepthImageView,
 			m_SwapchainImageViews[i],
-			m_DepthImageView
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -820,7 +850,7 @@ void TriangleApp::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSiz
 	EndSingleTimeCommands(commandBuffer);
 }
 
-void TriangleApp::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) 
+void TriangleApp::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
 {
 	VkImageCreateInfo imageInfo{};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -828,13 +858,13 @@ void TriangleApp::CreateImage(uint32_t width, uint32_t height, VkFormat format, 
 	imageInfo.extent.width = width;
 	imageInfo.extent.height = height;
 	imageInfo.extent.depth = 1;
-	imageInfo.mipLevels = 1;
+	imageInfo.mipLevels = mipLevels;
+	imageInfo.samples = numSamples;
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = usage;
-	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	if (vkCreateImage(m_VulkanDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
@@ -857,7 +887,7 @@ void TriangleApp::CreateImage(uint32_t width, uint32_t height, VkFormat format, 
 	vkBindImageMemory(m_VulkanDevice, image, imageMemory, 0);
 }
 
-VkImageView TriangleApp::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+VkImageView TriangleApp::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
 {
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -866,7 +896,7 @@ VkImageView TriangleApp::CreateImageView(VkImage image, VkFormat format, VkImage
 	viewInfo.format = format;
 	viewInfo.subresourceRange.aspectMask = aspectFlags;
 	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
 	viewInfo.subresourceRange.layerCount = 1;
 
@@ -879,20 +909,132 @@ VkImageView TriangleApp::CreateImageView(VkImage image, VkFormat format, VkImage
 	return imageView;
 }
 
+void TriangleApp::CreateMultisampledColorResources()
+{
+	VkFormat colorFormat = m_SwapchainImageFormat;
+
+	CreateImage(
+		m_SwapchainExtent.width, 
+		m_SwapchainExtent.height, 
+		1, 
+		m_MSAASamples, 
+		colorFormat, 
+		VK_IMAGE_TILING_OPTIMAL, 
+		VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+		m_ColorImage, 
+		m_ColorImageMemory);
+
+	m_ColorImageView = CreateImageView(m_ColorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+}
+
 void TriangleApp::CreateDepthResources()
 {
 	VkFormat depthFormat = FindDepthFormat();
-	CreateImage(m_SwapchainExtent.width, m_SwapchainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_DepthImage, m_DepthImageMemory);
-	m_DepthImageView = CreateImageView(m_DepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	CreateImage(m_SwapchainExtent.width, m_SwapchainExtent.height, 1, m_MSAASamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_DepthImage, m_DepthImageMemory);
+	m_DepthImageView = CreateImageView(m_DepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 	
-	TransitionImageLayout(m_DepthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	TransitionImageLayout(m_DepthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+}
+
+void TriangleApp::GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
+{
+	// Check if image format supports linear blitting
+	VkFormatProperties formatProperties;
+	vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, imageFormat, &formatProperties);
+
+	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) 
+	{
+		throw std::runtime_error("texture image format does not support linear blitting!");
+	}
+
+	VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.image = image;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.levelCount = 1;
+
+	int32_t mipWidth = texWidth;
+	int32_t mipHeight = texHeight;
+
+	for (uint32_t i = 1; i < mipLevels; i++) 
+	{
+		barrier.subresourceRange.baseMipLevel = i - 1;
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		vkCmdPipelineBarrier(
+			commandBuffer,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+			0, nullptr,	
+			0, nullptr,
+			1, &barrier);
+
+		VkImageBlit blit{};
+		blit.srcOffsets[0] = { 0, 0, 0 };
+		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+		blit.dstOffsets[0] = { 0, 0, 0 };
+		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		blit.dstSubresource.mipLevel = i;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+
+		vkCmdBlitImage(
+			commandBuffer,
+			image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1, &blit,
+			VK_FILTER_LINEAR);
+
+		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		// Transition to read optimal before submitting
+		vkCmdPipelineBarrier(commandBuffer,
+			VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
+	
+		if (mipWidth > 1)  mipWidth  /= 2;
+		if (mipHeight > 1) mipHeight /= 2;
+	}
+
+	barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	// Transition to read optimal before submitting
+	vkCmdPipelineBarrier(commandBuffer,
+		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier);
+
+	EndSingleTimeCommands(commandBuffer);
 }
 
 void TriangleApp::CreateTextureImage()
 {
 	int texWidth, texHeight, texChannels;
-
-	stbi_uc* pixels = stbi_load("assets/viking_room.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load("assets/box.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 	VkDeviceSize imageSize = texWidth * texHeight * STBI_rgb_alpha;
 
@@ -901,11 +1043,13 @@ void TriangleApp::CreateTextureImage()
 		throw std::runtime_error("failed to load texture image!");
 	}
 
+	m_MipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
 	CreateBuffer(
-		imageSize, 
+		imageSize,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 		stagingBuffer, 
@@ -920,17 +1064,20 @@ void TriangleApp::CreateTextureImage()
 	
 	CreateImage(
 		texWidth, 
-		texHeight, 
+		texHeight,
+		m_MipLevels,
+		VK_SAMPLE_COUNT_1_BIT,
 		VK_FORMAT_R8G8B8A8_SRGB, 
 		VK_IMAGE_TILING_OPTIMAL, 
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
 		m_TextureImage, 
 		m_TextureImageMemory);
 	
-	TransitionImageLayout(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	TransitionImageLayout(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_MipLevels);
 	CopyBufferToImage(stagingBuffer, m_TextureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-	TransitionImageLayout(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	GenerateMipmaps(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, m_MipLevels);
 
 	vkDestroyBuffer(m_VulkanDevice, stagingBuffer, nullptr);
 	vkFreeMemory(m_VulkanDevice, stagingBufferMemory, nullptr);
@@ -938,7 +1085,7 @@ void TriangleApp::CreateTextureImage()
 
 void TriangleApp::CreateTextureImageView()
 {
-	m_TextureImageView = CreateImageView(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_TextureImageView = CreateImageView(m_TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_MipLevels);
 }
 
 void TriangleApp::CreateTextureSampler()
@@ -964,7 +1111,7 @@ void TriangleApp::CreateTextureSampler()
 	samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerInfo.mipLodBias              = 0.0f;
 	samplerInfo.minLod                  = 0.0f;
-	samplerInfo.maxLod                  = 0.0f;
+	samplerInfo.maxLod                  = static_cast<float>(m_MipLevels);
 
 	if (vkCreateSampler(m_VulkanDevice, &samplerInfo, nullptr, &m_TextureSampler) != VK_SUCCESS) 
 	{
@@ -979,7 +1126,7 @@ void TriangleApp::LoadModel()
 	std::vector<tinyobj::material_t> materials;
 	std::string err;
 
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "assets/viking_room.obj"))
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "assets/box.obj"))
 	{
 		throw std::runtime_error(err);
 	}
@@ -988,7 +1135,8 @@ void TriangleApp::LoadModel()
 
 	for (const auto& shape : shapes)
 	{
-		for (const auto& index : shape.mesh.indices) {
+		for (const auto& index : shape.mesh.indices) 
+		{
 			Vertex vertex{};
 
 			vertex.position = 
@@ -1006,7 +1154,8 @@ void TriangleApp::LoadModel()
 
 			vertex.color = { 1.0f, 1.0f, 1.0f };
 
-			if (uniqueVertices.count(vertex) == 0) {
+			if (uniqueVertices.count(vertex) == 0) 
+			{
 				uniqueVertices[vertex] = static_cast<uint32_t>(m_Vertices.size());
 				m_Vertices.push_back(vertex);
 			}
@@ -1185,7 +1334,7 @@ void TriangleApp::CreateCommandBuffers()
 #endif
 }
 
-void TriangleApp::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+void TriangleApp::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
 {
 	VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -1198,7 +1347,7 @@ void TriangleApp::TransitionImageLayout(VkImage image, VkFormat format, VkImageL
 	barrier.image                           = image;
 	barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
 	barrier.subresourceRange.baseMipLevel   = 0;
-	barrier.subresourceRange.levelCount     = 1;
+	barrier.subresourceRange.levelCount     = mipLevels;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount     = 1;
 
@@ -1490,6 +1639,7 @@ void TriangleApp::InitVulkan()
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateCommandPool();
+	CreateMultisampledColorResources();
 	CreateDepthResources();
 	CreateFrameBuffers();
 	CreateTextureImage();

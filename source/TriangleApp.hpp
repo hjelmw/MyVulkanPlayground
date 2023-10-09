@@ -12,7 +12,6 @@
 #include <fstream>
 #include <array>
 
-
 #include <algorithm> // std::clamp
 
 #define GLM_FORCE_RADIANS
@@ -115,6 +114,7 @@ private:
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
 	void CreateCommandPool();
+	void CreateMultisampledColorResources();
 	void CreateDepthResources();
 	void CreateTextureImage();
 	void CreateTextureImageView();
@@ -133,14 +133,15 @@ private:
 
 	VkCommandBuffer BeginSingleTimeCommands();
 	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void UpdateUniformBuffer(uint32_t currentImage);
-	void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-	VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+	void CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 	bool CheckValidationLayerSupport();
@@ -192,9 +193,10 @@ private:
 	VkBuffer                     m_IndexBuffer          = VK_NULL_HANDLE;
 
 	// Texture image & view
+	uint32_t                     m_MipLevels            = 1;
 	VkImage                      m_TextureImage         = VK_NULL_HANDLE;
 	VkDeviceMemory               m_TextureImageMemory   = VK_NULL_HANDLE;
-	VkImageView	                 m_TextureImageView = VK_NULL_HANDLE;
+	VkImageView	                 m_TextureImageView     = VK_NULL_HANDLE;
 
 	// Texture sampler
 	VkSampler                    m_TextureSampler       = VK_NULL_HANDLE;
@@ -203,6 +205,11 @@ private:
 	VkImage                      m_DepthImage           = VK_NULL_HANDLE;
 	VkDeviceMemory               m_DepthImageMemory     = VK_NULL_HANDLE;
 	VkImageView                  m_DepthImageView       = VK_NULL_HANDLE;
+
+	// Multisampled color resources
+	VkImage                      m_ColorImage           = VK_NULL_HANDLE;
+	VkDeviceMemory               m_ColorImageMemory     = VK_NULL_HANDLE;
+	VkImageView                  m_ColorImageView       = VK_NULL_HANDLE;
 
 	// Uniform buffers
 	std::vector<VkBuffer>        m_UniformBuffers	    = { VK_NULL_HANDLE };
@@ -214,6 +221,9 @@ private:
 	// CommandBuffer
 	VkCommandPool                m_CommandPool          = VK_NULL_HANDLE;
 	std::vector<VkCommandBuffer> m_CommandBuffers       = { VK_NULL_HANDLE };
+
+	// Multisampling
+	VkSampleCountFlagBits        m_MSAASamples          = VK_SAMPLE_COUNT_1_BIT;
 
 	// Synchronization
 	std::vector<VkSemaphore>     m_ImageAvailableSemaphores;
@@ -528,6 +538,21 @@ private:
 		}
 
 		return -1;
+	}
+
+	VkSampleCountFlagBits GetMaxUsableSampleCount() {
+		VkPhysicalDeviceProperties physicalDeviceProperties;
+		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &physicalDeviceProperties);
+
+		VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+		if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+		if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+		if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+		if (counts & VK_SAMPLE_COUNT_8_BIT)  { return VK_SAMPLE_COUNT_8_BIT; }
+		if (counts & VK_SAMPLE_COUNT_4_BIT)  { return VK_SAMPLE_COUNT_4_BIT; }
+		if (counts & VK_SAMPLE_COUNT_2_BIT)  { return VK_SAMPLE_COUNT_2_BIT; }
+
+		return VK_SAMPLE_COUNT_1_BIT;
 	}
 
 	// Validation layer callback

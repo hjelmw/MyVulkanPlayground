@@ -1,0 +1,35 @@
+# Aspose.3D Wavefront OBJ Exporter
+# Copyright 2004-2022 Aspose Pty Ltd.
+# File created: 02/10/2023 17:28:33
+
+mtllib floor.mtl
+
+#
+# object Plane
+#
+
+v 20 -2.34999990463256836 20
+v 20 -2.34999990463256836 -20
+v -20 -2.34999990463256836 -20
+v -20 -2.34999990463256836 20
+# 4 vertices
+
+vn 0 1 0
+vn 0 1 0
+vn 0 1 0
+vn 0 1 0
+# 4 vertex normals
+
+vt 2.49959969520568848 -2.4995999336242676 0
+vt 2.49959969520568848 1.49960017204284664 0
+vt -1.499599814414978 1.49960017204284664 0
+vt -1.499599814414978 -2.49959921836853024 0
+# 4 texture coords
+usemtl Material
+
+g Plane
+s 1
+f 1/1/1 2/2/2 3/3/3
+f 1/1/1 3/3/3 4/4/4
+#2 polygons
+
