@@ -19,11 +19,16 @@ namespace NVulkanEngine
 		void AddPosition(uint32_t index, glm::vec3 position);
 		void AddRotation(uint32_t index, glm::vec3 rotation);
 		void AddScaling(uint32_t index,  glm::vec3 scaling);
+		void AddTexture(const std::string& textureFilepath);
 
 		uint32_t GetCurrentModelIndex();
 		CModel*  GetModel(uint32_t index);
 
 		std::vector<CModel*> GetModels();
+
+
+		void AllocateModelDescriptorPool();
+		VkDescriptorPool GetModelDescriptorPool() { return m_DescriptorPool; };
 
 	private:
 		CModelManager();
@@ -33,5 +38,7 @@ namespace NVulkanEngine
 		std::vector<CModel*> m_Models{};
 
 		CGraphicsContext* m_Context{};
+
+		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
 	};
 };

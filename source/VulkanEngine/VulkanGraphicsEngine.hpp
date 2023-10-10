@@ -5,6 +5,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
@@ -23,9 +24,10 @@ namespace NVulkanEngine
 		CVulkanGraphicsEngine()  = default;
 		~CVulkanGraphicsEngine() = default;
 
-		void Init();
+		void Initialize();
 
-		void AddModel(const std::string& filepath);
+		void AddModel(const std::string& modelpath);
+		void SetModelTexture(const std::string& texturepath);
 		void SetModelPosition(float x, float y, float z);
 		void SetModelRotation(float x, float y, float z);
 		void SetModelScaling(float x, float y, float z);

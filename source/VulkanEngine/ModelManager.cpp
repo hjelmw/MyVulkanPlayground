@@ -1,6 +1,7 @@
 #include "ModelManager.hpp"
 
 #include <glm/glm.hpp>
+#include <vector>
 
 namespace NVulkanEngine
 {
@@ -64,6 +65,15 @@ namespace NVulkanEngine
 		m_Models[m_CurrentModelIndex]->SetTransform(modelMatrix);
 	}
 
+	void CModelManager::AddTexture(const std::string& textureFilepath)
+	{
+		CTexture* modelTexture = new CTexture();
+		modelTexture->SetGenerateMipmaps(false);
+		modelTexture->CreateTexture(m_Context, textureFilepath, VK_FORMAT_R8G8B8A8_SRGB);
+
+		m_Models[m_CurrentModelIndex]->SetModelTexture(modelTexture);
+	}
+
 	uint32_t CModelManager::GetCurrentModelIndex()
 	{
 		return m_CurrentModelIndex;
@@ -80,5 +90,11 @@ namespace NVulkanEngine
 	std::vector<CModel*> CModelManager::GetModels()
 	{
 		return m_Models;
+	}
+
+	void CModelManager::AllocateModelDescriptorPool()
+	{
+		/* Allocate 2 sets per frame in flight per model consisting of a single uniform buffer and combined image sampler descriptor */
+		AllocateDescriptorPool(m_Context, m_DescriptorPool, m_Models.size() * 2, 1, 1);
 	}
 }

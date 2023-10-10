@@ -5,7 +5,6 @@
 #include "../DrawPass.hpp"
 #include "../Pipeline.hpp"
 #include "../Model.hpp"
-#include "../Texture.hpp"
 
 #include <vector>
 
@@ -56,7 +55,5 @@ namespace NVulkanEngine
 
 		float                         m_RotationDegrees = 0.0f;
 		static glm::mat4              s_SphereMatrix;
-
-		CTexture*                     m_BoxTexture   = nullptr;
 	} ;
 }

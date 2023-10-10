@@ -1,4 +1,5 @@
 #include "Model.hpp"
+#include "ModelManager.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -6,6 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 
 
 namespace NVulkanEngine
@@ -286,9 +288,9 @@ namespace NVulkanEngine
 		return generatedNormal;
 	}
 
-	void CModel::CreateDescriptorSets()
+	void CModel::AllocateDescriptors(CGraphicsContext* context, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, VkSampler sampler, const uint32_t numDescriptors)
 	{
-		m_DescriptorSets = 
+		m_DescriptorSets = AllocateDescriptorSets(context, descriptorPool, descriptorSetLayout, numDescriptors);
 	}
 
 	glm::mat4 CModel::GetTransform()
@@ -299,6 +301,16 @@ namespace NVulkanEngine
 	void CModel::SetTransform(glm::mat4 transform)
 	{
 		m_Transform = transform;
+	}
+
+	CTexture* CModel::GetModelTexture()
+	{
+		return m_ModelTexture;
+	}
+
+	void CModel::SetModelTexture(CTexture* texture)
+	{
+		m_ModelTexture = texture;
 	}
 
 	std::vector<SMesh> CModel::GetMeshes()

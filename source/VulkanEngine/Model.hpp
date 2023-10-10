@@ -2,6 +2,7 @@
 
 #include "GraphicsContext.hpp"
 #include "VulkanGraphicsEngineUtils.hpp"
+#include "Texture.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
@@ -98,6 +99,7 @@ struct SMaterial
 	glm::float32 m_Emission     = glm::float32(0.0f);
 	glm::float32 m_Transparency = glm::float32(0.0f);
 	glm::vec3    m_Pad0         = glm::vec3(0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF);
+	glm::vec3    m_Pad1         = glm::vec3(0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF);
 };
 
 namespace NVulkanEngine
@@ -112,8 +114,14 @@ namespace NVulkanEngine
 		void               CreateModelMeshes(CGraphicsContext* context);
 		void               SetModelFilepath(const std::string& modelFilepath, const std::string materialSearchPath);
 
+		void               AllocateDescriptors(CGraphicsContext* context, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, VkSampler sampler, const uint32_t numDescriptors);
+
 		glm::mat4          GetTransform();
 		void               SetTransform(glm::mat4 transform);
+
+		CTexture*          GetModelTexture();
+		void               SetModelTexture(CTexture* texture);
+
 
 		std::vector<SMesh> GetMeshes();
 		
@@ -146,13 +154,17 @@ namespace NVulkanEngine
 		VkBuffer               m_IndexBuffer        = VK_NULL_HANDLE;
 		VkDeviceMemory         m_IndexBufferMemory  = VK_NULL_HANDLE;
 
+		VkBuffer               m_GeometryBuffer     = VK_NULL_HANDLE;
+		VkDeviceMemory         m_GeometryBufferMemory = VK_NULL_HANDLE;
+
 		std::vector<VkDescriptorSet> m_DescriptorSets = { VK_NULL_HANDLE };
+
+		CTexture*              m_ModelTexture       = nullptr;
 
 		// Load a model .obj file using relative path
 		bool LoadModel(const std::string modelFilepath, const std::string materialSearchPath);
 		void CreateVertexBuffer(CGraphicsContext* context);
 		void CreateIndexBuffer(CGraphicsContext* context);
-		void CreateDescriptorSets(CGraphicsContext* context);
 
 		// Generate a normal vector given 3 points (vertices)
 		glm::vec3 GenerateNormal(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2);

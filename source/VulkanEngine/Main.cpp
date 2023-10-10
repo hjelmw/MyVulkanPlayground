@@ -9,7 +9,7 @@ int main()
 	graphicsEngine.AddModel("assets/NewShip.obj");
 	graphicsEngine.SetModelPosition(0.0f, 10.0f, 0.0f);
 	graphicsEngine.SetModelRotation(0.0f, 90.0f, 0.0f);
-	graphicsEngine.AddModel("assets/BigSphere");
+	graphicsEngine.AddModel("assets/BigSphere.obj");
 	graphicsEngine.SetModelPosition(0.0f, -10.0f, 0.0f);
 
 	graphicsEngine.Initialize();

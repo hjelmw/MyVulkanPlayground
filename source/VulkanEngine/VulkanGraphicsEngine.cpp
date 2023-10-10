@@ -41,7 +41,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 namespace NVulkanEngine
 {
-	void CVulkanGraphicsEngine::Init()
+	void CVulkanGraphicsEngine::Initialize()
 	{
 		InitWindow();
 		InitVulkan();
@@ -538,9 +538,11 @@ namespace NVulkanEngine
 	{
 		CModelManager* modelManager = CModelManager::GetInstance();
 
+		modelManager->AllocateModelDescriptorPool();
+
 		for (uint32_t i = 0; i < modelManager->GetModels().size(); i++)
 		{
-			modelManager->GetModels()[i]->CreateModelMeshes(m_Context);
+			modelManager->GetModel(i)->CreateModelMeshes(m_Context);
 		}
 	}
 
@@ -567,12 +569,20 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CVulkanGraphicsEngine::AddModel(const std::string& filepath)
+	void CVulkanGraphicsEngine::AddModel(const std::string& modelpath)
 	{
 		CModelManager* modelManager = CModelManager::GetInstance();
 
-		modelManager->AddModel(filepath);
+		modelManager->AddModel(modelpath);
 	}
+
+	void SetModelTexture(const std::string& texturepath)
+	{
+		CModelManager* modelManager = CModelManager::GetInstance();
+
+		modelManager->AddTexture(texturepath);
+	}
+
 
 	void CVulkanGraphicsEngine::SetModelPosition(float x, float y, float z)
 	{

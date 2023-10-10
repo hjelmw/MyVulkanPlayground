@@ -7,6 +7,7 @@
 #endif
 
 #include "../InputManager.hpp"
+#include "../ModelManager.hpp"
 
 namespace NVulkanEngine
 {
@@ -108,9 +109,9 @@ namespace NVulkanEngine
 		m_FLoorModel->SetModelFilepath("assets/floor.obj", "./assets");
 		m_FLoorModel->CreateModelMeshes(context);
 
-		m_BoxTexture = new CTexture();
-		m_BoxTexture->SetGenerateMipmaps(false);
-		m_BoxTexture->CreateTexture(context, "assets/box.png", VK_FORMAT_R8G8B8A8_SRGB);
+		//m_BoxTexture = new CTexture();
+		//m_BoxTexture->SetGenerateMipmaps(false);
+		//m_BoxTexture->CreateTexture(context, "assets/box.png", VK_FORMAT_R8G8B8A8_SRGB);
 
 		m_GeometryBufferSphere = CreateBuffer(
 			context, 
@@ -141,10 +142,21 @@ namespace NVulkanEngine
 			VK_FILTER_LINEAR, 
 			0.0f, 
 			0.0f, 
-			static_cast<float>(m_BoxTexture->GetMipmapLevels()));
+			1.0f);
 
 		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
 		AllocateDescriptorPool(context, 8, 1, 1);
+
+		CModelManager* modelManager = CModelManager::GetInstance();
+
+		for (uint32_t i = 0; i < modelManager->GetModels().size(); i++)
+		{
+			CModel* model = modelManager->GetModel(i);
+
+			model->AllocateDescriptors(context, modelManager->GetModelDescriptorPool(), CDrawPass::m_DescriptorSetLayout, m_GeometrySampler, g_MaxFramesInFlight);
+
+
+		}
 
 		m_DescriptorSetsShip = AllocateDescriptorSets(context, g_MaxFramesInFlight);
 

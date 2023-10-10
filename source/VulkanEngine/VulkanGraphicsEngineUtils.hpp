@@ -237,6 +237,116 @@ namespace NVulkanEngine
 		return VK_SAMPLE_COUNT_1_BIT;
 	}
 
+	static void AllocateDescriptorPool(
+		CGraphicsContext* context,
+		VkDescriptorPool& descriptorPool,
+		uint32_t          numDescriptorSets,
+		uint32_t          descriptorImageCount,
+		uint32_t          descriptorBufferCount)
+	{
+		std::array<VkDescriptorPoolSize, 2> poolSizes{};
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[0].descriptorCount = descriptorBufferCount;
+
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[1].descriptorCount = descriptorImageCount;
+
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = descriptorImageCount > 0 ? static_cast<uint32_t>(poolSizes.size()) : 1;
+		poolInfo.pPoolSizes = poolSizes.data();
+		poolInfo.maxSets = numDescriptorSets;
+
+		if (vkCreateDescriptorPool(context->GetLogicalDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor pool!");
+		}
+	}
+
+	static std::vector<VkDescriptorSet> AllocateDescriptorSets(
+		CGraphicsContext*     context,
+		VkDescriptorPool      descriptorPool,
+		VkDescriptorSetLayout descriptorSetLayout,
+		uint32_t              numDescriptorSets)
+	{
+		std::vector<VkDescriptorSetLayout> layouts(numDescriptorSets, descriptorSetLayout);
+
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = descriptorPool;
+		allocInfo.pSetLayouts = layouts.data();
+		allocInfo.descriptorSetCount = numDescriptorSets;
+
+		std::vector<VkDescriptorSet> descriptorSets(numDescriptorSets);
+
+		VkResult result = vkAllocateDescriptorSets(context->GetLogicalDevice(), &allocInfo, descriptorSets.data());
+
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to allocate descriptor sets!");
+		}
+
+		return descriptorSets;
+	}
+
+	static void UpdateDescriptorSets(
+		CGraphicsContext* context,
+		std::vector<VkDescriptorSet> descriptorSets,
+		std::vector<VkWriteDescriptorSet> writeDescriptorSets)
+	{
+		// One set per frame in flight
+		for (uint32_t i = 0; i < descriptorSets.size(); i++)
+		{
+			for (uint32_t j = 0; j < writeDescriptorSets.size(); j++)
+			{
+				writeDescriptorSets[j].dstSet = descriptorSets[i];
+			}
+			vkUpdateDescriptorSets(context->GetLogicalDevice(), static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
+		}
+
+	}
+
+	VkDescriptorBufferInfo CreateDescriptorBufferInfo(VkBuffer uniformBuffer, uint32_t range)
+	{
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = uniformBuffer;
+		bufferInfo.offset = 0;
+		bufferInfo.range = range;
+
+		return bufferInfo;
+	}
+
+	static VkDescriptorImageInfo CreateDescriptorImageInfo(
+		VkSampler         sampler,
+		VkImageView       imageView,
+		VkImageLayout     imageLayout)
+	{
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = imageView;
+		imageInfo.sampler = sampler;
+
+		return imageInfo;
+	}
+
+	static VkWriteDescriptorSet CreateWriteDescriptorImage(
+		CGraphicsContext* context,
+		VkDescriptorSet* descriptorSets,
+		VkDescriptorType       descriptorType,
+		uint32_t               descriptorBinding,
+		VkDescriptorImageInfo* descriptorImageInfo)
+	{
+		VkWriteDescriptorSet descriptorImageWrites{};
+		descriptorImageWrites.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorImageWrites.dstBinding = descriptorBinding;
+		descriptorImageWrites.descriptorCount = 1;
+		descriptorImageWrites.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorImageWrites.dstArrayElement = 0;
+		descriptorImageWrites.pImageInfo = descriptorImageInfo;
+
+		return descriptorImageWrites;
+	}
+
 	static VkCommandBuffer BeginSingleTimeCommands(CGraphicsContext* context)
 	{
 		VkCommandBufferAllocateInfo allocInfo{};
