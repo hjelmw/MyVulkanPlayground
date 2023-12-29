@@ -1,5 +1,4 @@
 #include "Model.hpp"
-#include "ModelManager.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -288,9 +287,9 @@ namespace NVulkanEngine
 		return generatedNormal;
 	}
 
-	void CModel::AllocateDescriptors(CGraphicsContext* context, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, VkSampler sampler, const uint32_t numDescriptors)
+	std::vector<VkDescriptorSet>& CModel::GetDescriptorSets()
 	{
-		m_DescriptorSets = AllocateDescriptorSets(context, descriptorPool, descriptorSetLayout, numDescriptors);
+		return m_DescriptorSets;
 	}
 
 	glm::mat4 CModel::GetTransform()

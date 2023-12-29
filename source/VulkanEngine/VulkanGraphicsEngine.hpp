@@ -9,10 +9,10 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
-#include "Swapchain.hpp"
-#include "DrawPass.hpp"
 #include "ModelManager.hpp"
 
+#include "Swapchain.hpp"
+#include "DrawPass.hpp"
 
 #include "GraphicsContext.hpp"
 

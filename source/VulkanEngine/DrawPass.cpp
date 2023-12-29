@@ -197,30 +197,6 @@ namespace NVulkanEngine
 		}
 	}
 
-	std::vector<VkDescriptorSet> CDrawPass::AllocateDescriptorSets(
-		CGraphicsContext* context,
-		uint32_t          numDescriptorSets)
-	{
-		std::vector<VkDescriptorSetLayout> layouts(numDescriptorSets, m_DescriptorSetLayout);
-
-		VkDescriptorSetAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = m_DescriptorPool;
-		allocInfo.pSetLayouts = layouts.data();
-		allocInfo.descriptorSetCount = numDescriptorSets;
-
-		std::vector<VkDescriptorSet> descriptorSets(numDescriptorSets);
-
-		VkResult result = vkAllocateDescriptorSets(context->GetLogicalDevice(), &allocInfo, descriptorSets.data());
-
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate descriptor sets!");
-		}
-
-		return descriptorSets;
-	}
-
 	void CDrawPass::UpdateDescriptorSets(
 		CGraphicsContext* context,
 		std::vector<VkDescriptorSet> descriptorSets,

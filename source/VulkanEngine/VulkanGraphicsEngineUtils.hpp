@@ -306,47 +306,6 @@ namespace NVulkanEngine
 
 	}
 
-	VkDescriptorBufferInfo CreateDescriptorBufferInfo(VkBuffer uniformBuffer, uint32_t range)
-	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = uniformBuffer;
-		bufferInfo.offset = 0;
-		bufferInfo.range = range;
-
-		return bufferInfo;
-	}
-
-	static VkDescriptorImageInfo CreateDescriptorImageInfo(
-		VkSampler         sampler,
-		VkImageView       imageView,
-		VkImageLayout     imageLayout)
-	{
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = imageView;
-		imageInfo.sampler = sampler;
-
-		return imageInfo;
-	}
-
-	static VkWriteDescriptorSet CreateWriteDescriptorImage(
-		CGraphicsContext* context,
-		VkDescriptorSet* descriptorSets,
-		VkDescriptorType       descriptorType,
-		uint32_t               descriptorBinding,
-		VkDescriptorImageInfo* descriptorImageInfo)
-	{
-		VkWriteDescriptorSet descriptorImageWrites{};
-		descriptorImageWrites.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorImageWrites.dstBinding = descriptorBinding;
-		descriptorImageWrites.descriptorCount = 1;
-		descriptorImageWrites.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorImageWrites.dstArrayElement = 0;
-		descriptorImageWrites.pImageInfo = descriptorImageInfo;
-
-		return descriptorImageWrites;
-	}
-
 	static VkCommandBuffer BeginSingleTimeCommands(CGraphicsContext* context)
 	{
 		VkCommandBufferAllocateInfo allocInfo{};

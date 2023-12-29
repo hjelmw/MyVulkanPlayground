@@ -153,45 +153,20 @@ namespace NVulkanEngine
 		{
 			CModel* model = modelManager->GetModel(i);
 
-			model->AllocateDescriptors(context, modelManager->GetModelDescriptorPool(), CDrawPass::m_DescriptorSetLayout, m_GeometrySampler, g_MaxFramesInFlight);
+			model->GetDescriptorSets() = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
+			
+			VkImageView textureImageView = model->GetModelTexture()->GetTextureImageView();
+			VkDescriptorImageInfo  descriptorTexture = CreateDescriptorImageInfo(m_GeometrySampler, textureImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(m_GeometryBufferShip, sizeof(SGeometryUniformBuffer));
 
+			const std::vector<VkWriteDescriptorSet> writeDescriptorSetShip =
+			{
+				CreateWriteDescriptorBuffer(context, model->GetDescriptorSets().data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         0, &descriptorUniform),
+				CreateWriteDescriptorImage(context,  model->GetDescriptorSets().data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorTexture)
+			};
 
+			UpdateDescriptorSets(context, model->GetDescriptorSets(), writeDescriptorSetShip);
 		}
-
-		m_DescriptorSetsShip = AllocateDescriptorSets(context, g_MaxFramesInFlight);
-
-		VkImageView textureImageView = m_BoxTexture->GetTextureImageView();
-		VkDescriptorImageInfo  descriptorTexture  = CreateDescriptorImageInfo(m_GeometrySampler, textureImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		VkDescriptorBufferInfo descriptorUniformShip  = CreateDescriptorBufferInfo(m_GeometryBufferShip, sizeof(SGeometryUniformBuffer));
-		const std::vector<VkWriteDescriptorSet> writeDescriptorSetShip =
-		{
-			CreateWriteDescriptorBuffer(context, m_DescriptorSetsShip.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         0, &descriptorUniformShip),
-			CreateWriteDescriptorImage(context,  m_DescriptorSetsShip.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorTexture)
-		};
-
-		UpdateDescriptorSets(context, m_DescriptorSetsShip, writeDescriptorSetShip);
-
-		m_DescriptorSetFloor = AllocateDescriptorSets(context, g_MaxFramesInFlight);
-
-		VkDescriptorBufferInfo descriptorUniformFloor = CreateDescriptorBufferInfo(m_GeometryBufferFloor, sizeof(SGeometryUniformBuffer));
-		const std::vector<VkWriteDescriptorSet> writeDescriptorSetFloor =
-		{
-			CreateWriteDescriptorBuffer(context, m_DescriptorSetFloor.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         0, &descriptorUniformFloor),
-			CreateWriteDescriptorImage(context,  m_DescriptorSetFloor.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorTexture)
-		};
-
-		UpdateDescriptorSets(context, m_DescriptorSetFloor, writeDescriptorSetFloor);
-
-		m_DescriptorSetsSphere = AllocateDescriptorSets(context, g_MaxFramesInFlight);
-
-		VkDescriptorBufferInfo descriptorUniformSphere = CreateDescriptorBufferInfo(m_GeometryBufferSphere, sizeof(SGeometryUniformBuffer));
-		const std::vector<VkWriteDescriptorSet> writeDescriptorSetSphere =
-		{
-			CreateWriteDescriptorBuffer(context, m_DescriptorSetsSphere.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         0, &descriptorUniformSphere),
-			CreateWriteDescriptorImage(context,  m_DescriptorSetsSphere.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorTexture)
-		};
-
-		UpdateDescriptorSets(context, m_DescriptorSetsSphere, writeDescriptorSetSphere);
 	}
 
 	void CGeometryPass::UpdateGeometryBuffers(CGraphicsContext* context)

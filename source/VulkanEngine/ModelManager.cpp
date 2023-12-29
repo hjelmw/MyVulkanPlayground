@@ -95,6 +95,6 @@ namespace NVulkanEngine
 	void CModelManager::AllocateModelDescriptorPool()
 	{
 		/* Allocate 2 sets per frame in flight per model consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(m_Context, m_DescriptorPool, m_Models.size() * 2, 1, 1);
+		AllocateDescriptorPool(m_Context, m_DescriptorPool, (uint32_t) m_Models.size() * 2, 1, 1);
 	}
 }

@@ -114,7 +114,7 @@ namespace NVulkanEngine
 		void               CreateModelMeshes(CGraphicsContext* context);
 		void               SetModelFilepath(const std::string& modelFilepath, const std::string materialSearchPath);
 
-		void               AllocateDescriptors(CGraphicsContext* context, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, VkSampler sampler, const uint32_t numDescriptors);
+		std::vector<VkDescriptorSet>& GetDescriptorSets();
 
 		glm::mat4          GetTransform();
 		void               SetTransform(glm::mat4 transform);

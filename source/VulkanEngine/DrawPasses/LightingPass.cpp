@@ -90,7 +90,7 @@ namespace NVulkanEngine
 
 		VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(m_DeferredLightBuffer, sizeof(SDeferredLightingUniformBuffer));
 
-		m_DescriptorSetsLighting = AllocateDescriptorSets(context, g_MaxFramesInFlight);
+		m_DescriptorSetsLighting = AllocateDescriptorSets(context, m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
 
 		const std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 		{

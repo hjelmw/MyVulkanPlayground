@@ -72,10 +72,6 @@ namespace NVulkanEngine
 			uint32_t          descriptorImageCount,
 			uint32_t          descriptorBufferCount);
 
-		std::vector<VkDescriptorSet> AllocateDescriptorSets(
-			CGraphicsContext* context,
-			uint32_t          numDescriptorSets);
-
 		// Update descriptor set layout with a write descriptor set (vector of image views)
 		void UpdateDescriptorSets(
 			CGraphicsContext*                 context, 
