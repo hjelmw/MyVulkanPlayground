@@ -29,7 +29,10 @@
     <ClCompile Include="..\source\VulkanEngine\InputManager.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Main.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Model.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\ModelManager.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\ModelManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\Pipeline.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Swapchain.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Texture.cpp" />
@@ -57,9 +60,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VulkanSDK-1.3.261.1\Bin\glslangValidator -V -o $(OutDir)\%(Identity).spv %(Identity)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VulkanSDK-1.3.261.1\Bin\glslangValidator -V -o $(SolutionDir)shaders\%(Identity).spv %(Identity)</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader... %(Identity).spv</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\%(Identity).spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)shaders\%(Identity).spv</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator -V -o $(OutDir)\%(Identity).spv %(Identity)
 copy $(OutDir)\%(Identity).spv $(SolutionDir)shaders</Command>
@@ -73,9 +76,9 @@ copy $(OutDir)\%(Identity).spv $(SolutionDir)shaders</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VulkanSDK-1.3.261.1\Bin\glslangValidator -V -o $(OutDir)\%(Identity).spv %(Identity)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VulkanSDK-1.3.261.1\Bin\glslangValidator -V -o $(SolutionDir)shaders\%(Identity).spv %(Identity)</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader... %(Identity).spv</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\%(Identity).spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)shaders\%(Identity).spv</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator -V -o $(OutDir)\%(Identity).spv %(Identity)
 copy $(OutDir)\%(Identity).spv $(SolutionDir)shaders</Command>
@@ -89,9 +92,9 @@ copy $(OutDir)\%(Identity).spv $(SolutionDir)shaders</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VulkanSDK-1.3.261.1\Bin\glslangValidator -V -o $(OutDir)\%(Identity).spv %(Identity)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VulkanSDK-1.3.261.1\Bin\glslangValidator -V -o $(SolutionDir)shaders\%(Identity).spv %(Identity)</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader... %(Identity).spv</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\%(Identity).spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)shaders\%(Identity).spv</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator -V -o $(OutDir)\%(Identity).spv %(Identity)
 copy $(OutDir)\%(Identity).spv $(SolutionDir)shaders</Command>
@@ -105,9 +108,9 @@ copy $(OutDir)\%(Identity).spv $(SolutionDir)shaders</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VulkanSDK-1.3.261.1\Bin\glslangValidator -V -o $(OutDir)\%(Identity).spv %(Identity)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\VulkanSDK-1.3.261.1\Bin\glslangValidator -V -o $(SolutionDir)shaders\%(Identity).spv %(Identity)</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader... %(Identity).spv</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\%(Identity).spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)shaders\%(Identity).spv</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator -V -o $(OutDir)\%(Identity).spv %(Identity)
 copy $(OutDir)\%(Identity).spv $(SolutionDir)shaders</Command>

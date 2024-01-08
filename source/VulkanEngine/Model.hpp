@@ -81,6 +81,14 @@ namespace std {
 	};
 };
 
+// Unifom buffer object and its device memory
+struct SGeometryBuffer
+{
+	VkBuffer       m_Buffer = VK_NULL_HANDLE;
+	VkDeviceMemory m_Memory = VK_NULL_HANDLE;
+
+};
+
 // A mesh is a subset of polygons inside the model. Model is split up this way to handle multiple materials per mdel
 struct SMesh
 {
@@ -122,8 +130,12 @@ namespace NVulkanEngine
 		CTexture*          GetModelTexture();
 		void               SetModelTexture(CTexture* texture);
 
+		// Creates and returns the UBO
+		void               CreateGeometryBuffer(CGraphicsContext* context, const VkDeviceSize size);
+		SGeometryBuffer    GetGeometryBuffer();
 
-		std::vector<SMesh> GetMeshes();
+		uint32_t           GetNumMeshes();
+		SMesh              GetMesh(const uint32_t index);
 		
 		uint32_t           GetNumIndices();
 
@@ -140,7 +152,7 @@ namespace NVulkanEngine
 		std::string            m_ModelFilepath      = {};
 		std::string            m_MaterialFilepath   = {};
 
-		std::vector<SMesh>     m_Meshes             = {};
+		std::vector<SMesh>    m_Meshes             = {};
 		std::vector<SMaterial> m_Materials          = {};
 			
 		std::vector<SVertex>   m_Vertices           = {};
@@ -154,8 +166,7 @@ namespace NVulkanEngine
 		VkBuffer               m_IndexBuffer        = VK_NULL_HANDLE;
 		VkDeviceMemory         m_IndexBufferMemory  = VK_NULL_HANDLE;
 
-		VkBuffer               m_GeometryBuffer     = VK_NULL_HANDLE;
-		VkDeviceMemory         m_GeometryBufferMemory = VK_NULL_HANDLE;
+		SGeometryBuffer        m_GeometryBuffer     = {};
 
 		std::vector<VkDescriptorSet> m_DescriptorSets = { VK_NULL_HANDLE };
 

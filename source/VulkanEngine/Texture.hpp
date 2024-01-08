@@ -15,7 +15,7 @@ namespace NVulkanEngine
 		void        SetGenerateMipmaps(bool generate) { m_GenerateMipmaps = generate; };
 		void        CreateTexture(CGraphicsContext* context, std::string textureFilepath, VkFormat format);
 
-		VkImageView GetTextureImageView() { return m_TextureImageView; };
+		VkImageView GetTextureImageView() { return m_TextureImageView ? m_TextureImageView : VK_NULL_HANDLE; };
 		VkFormat    GetTextureFormat()    { return m_TextureFormat; }
 		uint32_t    GetMipmapLevels()     { return m_GenerateMipmaps ? m_MipLevels : 1; }
 		

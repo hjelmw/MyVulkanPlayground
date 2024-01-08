@@ -1,6 +1,5 @@
 #include "VulkanGraphicsEngine.hpp"
 #include "VulkanGraphicsEngineUtils.hpp"
-#include "GraphicsContext.hpp"
 
 #include "DrawPasses/GeometryPass.hpp"
 #include "DrawPasses/LightingPass.hpp"
@@ -103,8 +102,8 @@ namespace NVulkanEngine
 		CInputManager* inputManager = CInputManager::GetInstance();
 		CCamera* camera = inputManager->GetCamera();
 		
-		glm::vec3 cameraOriginPosition = glm::vec3(-23.0f, 15.0f, 8.0f); // Arbitrary camera start position
-		glm::vec3 cameraViewDirection  = glm::vec3(1.0f, -0.5f, 0.0f);
+		glm::vec3 cameraOriginPosition = glm::vec3(-165.0f, 90, -7.0f); // Arbitrary camera start position
+		glm::vec3 cameraViewDirection  = glm::vec3(1.0f, 0.0f, 0.0f);
 		glm::vec3 cameraUpDirection    = glm::vec3(0.0f, 1.0f, 0.0f);
 		
 		camera->SetPosition(cameraOriginPosition);
@@ -532,6 +531,9 @@ namespace NVulkanEngine
 			m_GraphicsQueue,
 			m_PresentQueue,
 			m_RenderResolution);
+
+		CModelManager* modelManager = CModelManager::GetInstance();
+		modelManager->SetGraphicsContext(m_Context);
 	}
 
 	void CVulkanGraphicsEngine::CreateModels()
@@ -540,7 +542,7 @@ namespace NVulkanEngine
 
 		modelManager->AllocateModelDescriptorPool();
 
-		for (uint32_t i = 0; i < modelManager->GetModels().size(); i++)
+		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
 		{
 			modelManager->GetModel(i)->CreateModelMeshes(m_Context);
 		}

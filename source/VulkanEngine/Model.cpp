@@ -287,6 +287,22 @@ namespace NVulkanEngine
 		return generatedNormal;
 	}
 
+	void CModel::CreateGeometryBuffer(CGraphicsContext* context, const VkDeviceSize size)
+	{
+		m_GeometryBuffer.m_Buffer = CreateBuffer(
+			context,
+			m_GeometryBuffer.m_Memory,
+			size,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	}
+
+	SGeometryBuffer CModel::GetGeometryBuffer()
+	{
+		return m_GeometryBuffer;
+	}
+
+
 	std::vector<VkDescriptorSet>& CModel::GetDescriptorSets()
 	{
 		return m_DescriptorSets;
@@ -296,6 +312,7 @@ namespace NVulkanEngine
 	{
 		return m_Transform;
 	}
+
 
 	void CModel::SetTransform(glm::mat4 transform)
 	{
@@ -312,9 +329,14 @@ namespace NVulkanEngine
 		m_ModelTexture = texture;
 	}
 
-	std::vector<SMesh> CModel::GetMeshes()
+	uint32_t CModel::GetNumMeshes()
 	{
-		return m_Meshes;
+		return (uint32_t)m_Meshes.size();
+	}
+
+	SMesh CModel::GetMesh(uint32_t index)
+	{
+		return m_Meshes[index];
 	}
 	
 	SMaterial CModel::GetMaterial(uint32_t materialId)
@@ -325,17 +347,6 @@ namespace NVulkanEngine
 	uint32_t CModel::GetNumIndices()
 	{
 		return static_cast<uint32_t>(m_Indices.size());
-	}
-
-	void CModel::BindMesh(VkCommandBuffer commandBuffer, SMesh mesh)
-	{
-		VkBuffer vertexBuffers[] = { m_VertexBuffer };
-
-		VkDeviceSize vertexOffsets[] = { 0 };
-		VkDeviceSize indexOfssets    = 0;
-
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, vertexOffsets);
-		vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, indexOfssets, VK_INDEX_TYPE_UINT32);
 	}
 
 	void CModel::BindMesh(VkCommandBuffer commandBuffer)

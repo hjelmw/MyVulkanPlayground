@@ -26,8 +26,6 @@ namespace NVulkanEngine
 	private:
 		void UpdateGeometryBuffers(CGraphicsContext* context);
 
-		std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings();
-
 		// Geometry pass image attachments (gbuffers) needs to be static since deferred lighting pass needs to sample them
 		inline static std::vector<SImageAttachment> s_GeometryAttachments;
 
@@ -48,11 +46,8 @@ namespace NVulkanEngine
 
 		VkSampler                     m_GeometrySampler     = VK_NULL_HANDLE;
 
-		// Model vertices & indices
-		CModel*                       m_ShipModel    = nullptr;
-		CModel*                       m_SphereModel  = nullptr;
-		CModel*                       m_FLoorModel   = nullptr;
-
+		CTexture*                     m_BoxTexture          = nullptr;
+		
 		float                         m_RotationDegrees = 0.0f;
 		static glm::mat4              s_SphereMatrix;
 	} ;

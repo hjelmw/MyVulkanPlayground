@@ -1,6 +1,5 @@
 #include "ModelManager.hpp"
 
-#include <glm/glm.hpp>
 #include <vector>
 
 namespace NVulkanEngine
@@ -87,9 +86,9 @@ namespace NVulkanEngine
 		return m_Models[index];
 	}
 
-	std::vector<CModel*> CModelManager::GetModels()
+	const uint32_t CModelManager::GetNumModels()
 	{
-		return m_Models;
+		return (uint32_t)m_Models.size();
 	}
 
 	void CModelManager::AllocateModelDescriptorPool()

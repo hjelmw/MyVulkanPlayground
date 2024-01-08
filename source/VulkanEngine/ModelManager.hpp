@@ -1,5 +1,9 @@
+#pragma once
+
 #include <string>
 #include <vector>
+
+#include <glm/glm.hpp>
 
 #include "Model.hpp"
 #include "GraphicsContext.hpp"
@@ -24,7 +28,7 @@ namespace NVulkanEngine
 		uint32_t GetCurrentModelIndex();
 		CModel*  GetModel(uint32_t index);
 
-		std::vector<CModel*> GetModels();
+		const uint32_t GetNumModels();
 
 
 		void AllocateModelDescriptorPool();

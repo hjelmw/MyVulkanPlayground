@@ -1,7 +1,5 @@
 #include "GeometryPass.hpp"
 
-#include <glm/glm.hpp>
-
 #ifndef M_PI
 #define M_PI 3.1415f
 #endif
@@ -30,6 +28,27 @@ namespace NVulkanEngine
 		glm::mat4 m_ViewMat;
 		glm::mat4 m_ProjectionMat;
 	};
+
+	static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings()
+	{
+		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(2);
+
+		// 0: Vertex shader uniform buffer
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		attributeDescriptions[0].descriptorCount = 1;
+		attributeDescriptions[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		attributeDescriptions[0].pImmutableSamplers = nullptr;
+
+		// 1: Fragment shader texture sampler
+		attributeDescriptions[1].binding = 1;
+		attributeDescriptions[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		attributeDescriptions[1].descriptorCount = 1;
+		attributeDescriptions[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		attributeDescriptions[1].pImmutableSamplers = nullptr;
+
+		return attributeDescriptions;
+	}
 
 	void CGeometryPass::InitPass(CGraphicsContext* context)
 	{
@@ -69,7 +88,7 @@ namespace NVulkanEngine
 			context->GetRenderResolution().height);
 
 		/* Setup descriptor bindings, vertex binding and vertex attributes */
-		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = CGeometryPass::GetDescriptorSetLayoutBindings();
+		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetDescriptorSetLayoutBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = SVertex::GetVertexBindingDescription();
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetVertexInputAttributeDescriptions();
 
@@ -97,42 +116,9 @@ namespace NVulkanEngine
 			colorAttachmentFormats,
 			depthFormat);
 
-		m_SphereModel = new CModel();
-		m_SphereModel->SetModelFilepath("assets/BigSPhere.obj", "./assets");
-		m_SphereModel->CreateModelMeshes(context);
-
-		m_ShipModel = new CModel();
-		m_ShipModel->SetModelFilepath("assets/NewShip.obj", "./assets");
-		m_ShipModel->CreateModelMeshes(context);
-
-		m_FLoorModel = new CModel();
-		m_FLoorModel->SetModelFilepath("assets/floor.obj", "./assets");
-		m_FLoorModel->CreateModelMeshes(context);
-
-		//m_BoxTexture = new CTexture();
-		//m_BoxTexture->SetGenerateMipmaps(false);
-		//m_BoxTexture->CreateTexture(context, "assets/box.png", VK_FORMAT_R8G8B8A8_SRGB);
-
-		m_GeometryBufferSphere = CreateBuffer(
-			context, 
-			m_GeometryBufferMemorySphere,
-			sizeof(SGeometryUniformBuffer), 
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-		m_GeometryBufferFloor = CreateBuffer(
-			context,
-			m_GeometryBufferMemoryFloor,
-			sizeof(SGeometryUniformBuffer),
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-		m_GeometryBufferShip = CreateBuffer(
-			context,
-			m_GeometryBufferMemoryShip,
-			sizeof(SGeometryUniformBuffer),
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		m_BoxTexture = new CTexture();
+		m_BoxTexture->SetGenerateMipmaps(false);
+		m_BoxTexture->CreateTexture(context, "assets/box.png", VK_FORMAT_R8G8B8A8_SRGB);
 		
 		m_GeometrySampler = CreateSampler(
 			context, 
@@ -149,15 +135,15 @@ namespace NVulkanEngine
 
 		CModelManager* modelManager = CModelManager::GetInstance();
 
-		for (uint32_t i = 0; i < modelManager->GetModels().size(); i++)
+		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
 		{
 			CModel* model = modelManager->GetModel(i);
 
 			model->GetDescriptorSets() = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
-			
-			VkImageView textureImageView = model->GetModelTexture()->GetTextureImageView();
-			VkDescriptorImageInfo  descriptorTexture = CreateDescriptorImageInfo(m_GeometrySampler, textureImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(m_GeometryBufferShip, sizeof(SGeometryUniformBuffer));
+			model->CreateGeometryBuffer(context, (VkDeviceSize)sizeof(SGeometryUniformBuffer));
+
+			VkDescriptorImageInfo  descriptorTexture = CreateDescriptorImageInfo(m_GeometrySampler, m_BoxTexture->GetTextureImageView()/*model->GetModelTexture()->GetTextureImageView()*/, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(model->GetGeometryBuffer().m_Buffer, sizeof(SGeometryUniformBuffer));
 
 			const std::vector<VkWriteDescriptorSet> writeDescriptorSetShip =
 			{
@@ -171,128 +157,59 @@ namespace NVulkanEngine
 
 	void CGeometryPass::UpdateGeometryBuffers(CGraphicsContext* context)
 	{
-		glm::mat4 sphereMatrix = glm::identity<glm::mat4>();
-		glm::mat4 ShipMatrix   = glm::identity<glm::mat4>();
-		glm::mat4 floorMatrix  = glm::identity<glm::mat4>();
-		
-		sphereMatrix = glm::rotate(sphereMatrix, m_RotationDegrees, glm::vec3(0.0f, 1.0f, 0.0f));
-		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(0.0f, 20.0f, 25.0f));
-		sphereMatrix = glm::scale(sphereMatrix, glm::vec3(0.3f, 0.3f, 0.3f));
-		s_SphereMatrix = sphereMatrix;
-		m_RotationDegrees = fmod(m_RotationDegrees + 2.0f * context->GetDeltaTime(), 360.0f);
+		//m_RotationDegrees = fmod(m_RotationDegrees + 4.0f * context->GetDeltaTime(), 360.0f);
 
-		floorMatrix  = glm::translate(floorMatrix, glm::vec3(0.0f, -5.0f, 0.0f));
+		glm::mat4 sphereMatrix = glm::identity<glm::mat4>();
+		sphereMatrix = glm::rotate(sphereMatrix, m_RotationDegrees, glm::vec3(0.0f, 30.0f, 1.0f));
+		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(0.0f, 30.0f, 30.0f));
+		sphereMatrix = glm::scale(sphereMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
+		s_SphereMatrix = sphereMatrix;
 
 		CCamera* camera = CInputManager::GetInstance()->GetCamera();
 
+		CModelManager* modelManager = CModelManager::GetInstance();
+
+		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
 		{
-			SGeometryUniformBuffer uboSphere{};
-			uboSphere.m_ModelMat = sphereMatrix;
-			uboSphere.m_ViewMat = camera->GetLookAtMatrix();
-			uboSphere.m_ProjectionMat = camera->GetProjectionMatrix();
+			CModel* model = modelManager->GetModel(i);
 
-			void* sphereData;
-			vkMapMemory(context->GetLogicalDevice(), m_GeometryBufferMemorySphere, 0, sizeof(SGeometryUniformBuffer), 0, &sphereData);
-			memcpy(sphereData, &uboSphere, sizeof(uboSphere));
-			vkUnmapMemory(context->GetLogicalDevice(), m_GeometryBufferMemorySphere);
+			SGeometryUniformBuffer uboModel{};
+			uboModel.m_ModelMat      = model->GetTransform();
+			uboModel.m_ViewMat       = camera->GetLookAtMatrix();
+			uboModel.m_ProjectionMat = camera->GetProjectionMatrix();
+
+			void* data;
+			vkMapMemory(context->GetLogicalDevice(), model->GetGeometryBuffer().m_Memory, 0, sizeof(SGeometryUniformBuffer), 0, &data);
+			memcpy(data, &uboModel, sizeof(uboModel));
+			vkUnmapMemory(context->GetLogicalDevice(), model->GetGeometryBuffer().m_Memory);
 		}
-
-		{
-			SGeometryUniformBuffer uboFloor{};
-			uboFloor.m_ModelMat = floorMatrix;
-			uboFloor.m_ViewMat = camera->GetLookAtMatrix();
-			uboFloor.m_ProjectionMat = camera->GetProjectionMatrix();
-
-			void* floorData;
-			vkMapMemory(context->GetLogicalDevice(), m_GeometryBufferMemoryFloor, 0, sizeof(SGeometryUniformBuffer), 0, &floorData);
-			memcpy(floorData, &uboFloor, sizeof(uboFloor));
-			vkUnmapMemory(context->GetLogicalDevice(), m_GeometryBufferMemoryFloor);
-		}
-
-
-		{
-			SGeometryUniformBuffer uboShip{};
-			uboShip.m_ModelMat = ShipMatrix;
-			uboShip.m_ViewMat = camera->GetLookAtMatrix();
-			uboShip.m_ProjectionMat = camera->GetProjectionMatrix();
-
-			void* ShipData;
-			vkMapMemory(context->GetLogicalDevice(), m_GeometryBufferMemoryShip, 0, sizeof(SGeometryUniformBuffer), 0, &ShipData);
-			memcpy(ShipData, &uboShip, sizeof(uboShip));
-			vkUnmapMemory(context->GetLogicalDevice(), m_GeometryBufferMemoryShip);
-		}
-	}
-
-	std::vector<VkDescriptorSetLayoutBinding> CGeometryPass::GetDescriptorSetLayoutBindings()
-	{
-		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(2);
-
-		// 0: Vertex shader uniform buffer
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		attributeDescriptions[0].descriptorCount = 1;
-		attributeDescriptions[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		attributeDescriptions[0].pImmutableSamplers = nullptr;
-
-		// 1: Fragment shader texture sampler
-		attributeDescriptions[1].binding = 1;
-		attributeDescriptions[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		attributeDescriptions[1].descriptorCount = 1;
-		attributeDescriptions[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		attributeDescriptions[1].pImmutableSamplers = nullptr;
-
-		return attributeDescriptions;
 	}
 
 	void CGeometryPass::Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer)
 	{
-
 		BeginRendering(context, commandBuffer, s_GeometryAttachments);
+		UpdateGeometryBuffers(context);
 
 		m_GeometryPipeline->BindPipeline(commandBuffer);
 
-		UpdateGeometryBuffers(context);
-
-		std::vector<SMesh> sphereMeshes = m_SphereModel->GetMeshes();
-
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSetsSphere[context->GetFrameIndex()], 0, nullptr);
-
-		for (uint32_t i = 0; i < sphereMeshes.size(); i++)
+		CModelManager* modelManager = CModelManager::GetInstance();
+		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
 		{
-			SMesh sphereMesh = sphereMeshes[i];
-			m_SphereModel->BindMesh(commandBuffer, sphereMesh);
+			CModel* model = modelManager->GetModel(i);
 
-			const SMaterial material = m_SphereModel->GetMaterial(sphereMesh.m_MaterialId);
-			vkCmdPushConstants(commandBuffer, CDrawPass::m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(SMaterial)), &material);
-			vkCmdDrawIndexed(commandBuffer, m_SphereModel->GetNumIndices(), 1, 0, sphereMesh.m_StartIndex, sphereMesh.m_NumVertices);
-		}
+			VkDescriptorSet modelDescriptor = model->GetDescriptorSets()[context->GetFrameIndex()];
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &modelDescriptor, 0, nullptr);
 
-		std::vector<SMesh> floorMeshes = m_SphereModel->GetMeshes();
+			model->BindMesh(commandBuffer);
+			for (uint32_t j = 0; j < model->GetNumMeshes(); j++)
+			{
+				SMesh modelMesh = model->GetMesh(j);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSetFloor[context->GetFrameIndex()], 0, nullptr);
+				const SMaterial material = model->GetMaterial(modelMesh.m_MaterialId);
+				vkCmdPushConstants(commandBuffer, CDrawPass::m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(SMaterial)), &material);
+				vkCmdDrawIndexed(commandBuffer, modelMesh.m_NumVertices, 1, modelMesh.m_StartIndex, 0, 0);
 
-		for (uint32_t i = 0; i < floorMeshes.size(); i++)
-		{
-			SMesh floorMesh = floorMeshes[i];
-			m_FLoorModel->BindMesh(commandBuffer, floorMesh);
-
-			const SMaterial material = m_FLoorModel->GetMaterial(floorMesh.m_MaterialId);
-			vkCmdPushConstants(commandBuffer, CDrawPass::m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(SMaterial)), &material);
-			vkCmdDrawIndexed(commandBuffer, m_FLoorModel->GetNumIndices(), 1, 0, floorMesh.m_StartIndex, floorMesh.m_NumVertices);
-		}
-
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSetsShip[context->GetFrameIndex()], 0, nullptr);
-
-		std::vector<SMesh> shipMeshes = m_ShipModel->GetMeshes();
-		m_ShipModel->BindMesh(commandBuffer);
-
-		for (uint32_t i = 0; i < shipMeshes.size(); i++)
-		{
-			SMesh shipMesh = shipMeshes[i];
-
-			const SMaterial material = m_ShipModel->GetMaterial(shipMesh.m_MaterialId);
-			vkCmdPushConstants(commandBuffer, CDrawPass::m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(SMaterial)), &material);
-			vkCmdDrawIndexed(commandBuffer, shipMesh.m_NumVertices, 1, shipMesh.m_StartIndex, 0, 0);
+			}
 		}
 
 		EndRendering(commandBuffer);
@@ -303,10 +220,6 @@ namespace NVulkanEngine
 		// Uniform buffer
 		vkDestroyBuffer(context->GetLogicalDevice(), m_GeometryBufferSphere, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_GeometryBufferMemorySphere, nullptr);
-
-		m_ShipModel->CleanupModel(context);
-		m_SphereModel->CleanupModel(context);
-		m_FLoorModel->CleanupModel(context);
 
 		// Descriptor pool and layout (don't need to destroy the sets since they are allocated from the pool)
 		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
