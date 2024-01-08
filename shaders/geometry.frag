@@ -30,10 +30,14 @@ layout( push_constant ) uniform constants
 
 void main() 
 {
-	outPosition = vec4(inWorldPosition, 1.0);
+	float metalness = SMaterialConstants.m_Metalness;
+	float fresnel   = SMaterialConstants.m_Fresnel;
+	float roughness = SMaterialConstants.m_Shininess; // Same thing
+
+	outPosition = vec4(inWorldPosition, metalness);
 	
-	outNormal = vec4(normalize(inNormal), 1.0f);
+	outNormal = vec4(normalize(inNormal), fresnel);
 
 	//outAlbedo = texture(samplerColor, inUV); 
-	outAlbedo = vec4(vec3(SMaterialConstants.m_Diffuse), 1.0f);
+	outAlbedo = vec4(vec3(SMaterialConstants.m_Diffuse), roughness);
 }

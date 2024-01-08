@@ -13,7 +13,7 @@ struct SLight
 	vec3   m_Position;
 	float  m_Radius;
 	vec3   m_Color;
-	float  m_Pad0;
+	float  m_Intensity;
 };
 
 // Deferred lighting uniform buffer constants
@@ -30,52 +30,62 @@ layout (location = 0) out vec4 outFragcolor;
 void main()
 {
 	// Get G-Buffer values
-	vec3 position = texture(GBufferPositions, inUV).rgb;
-	vec3 albedo   = texture(GBufferAlbedo,    inUV).rgb;
-	vec3 normal   = texture(GBufferNormals,   inUV).rgb;
-	float depth   = texture(GBufferDepth,     inUV).r;
+	vec3  position  = texture(GBufferPositions, inUV).rgb;
+	float metalness = texture(GBufferPositions, inUV).a;
+	vec3  albedo    = texture(GBufferAlbedo,    inUV).rgb;
+	float fresnel   = texture(GBufferAlbedo,    inUV).a;
+	vec3  normal    = texture(GBufferNormals,   inUV).rgb;
+	float roughness = texture(GBufferNormals,   inUV).a;
+	float depth     = texture(GBufferDepth,     inUV).r;
+
+	if(depth == 1.0f)
+		discard;
 	
 	vec3 viewPos   = SDeferredLightingConstants.m_ViewPos;
 	vec3 fragColor = vec3(0.0f, 0.0f ,0.0f);
-	
+
 	for(int i = 0; i < NUM_LIGHTS; i++)
 	{
-		vec3  lightPos    = SDeferredLightingConstants.m_Lights[i].m_Position;
-		vec3  lightColor  = SDeferredLightingConstants.m_Lights[i].m_Color; 
-		float lightRadius = SDeferredLightingConstants.m_Lights[i].m_Radius;
+		vec3  lightPos       = SDeferredLightingConstants.m_Lights[i].m_Position;
+		vec3  lightColor     = SDeferredLightingConstants.m_Lights[i].m_Color; 
+		float lightRadius    = SDeferredLightingConstants.m_Lights[i].m_Radius;
+		float lightIntensity = SDeferredLightingConstants.m_Lights[i].m_Intensity;
 
 		// Vector from fragment towards light
-		vec3 L = lightPos - position;
+		vec3 lightDir = lightPos - position;
+		float distToLight = length(lightDir);
 
-		// Vector from fragment to camera
-		vec3 V = normalize(viewPos - position);
-
-		float distToLight = length(L);
-
-		if(abs(distToLight) <= lightRadius)
+		float diffuse  = 0.0f;
+		float specular = 0.0f;
+		float ambient  = 0.0f; // 0.2f;
 		{
-			fragColor = albedo * dot(V,normal);
-		}
-		else
-		{
-			// Inverse square law
-			float attenuation = lightRadius / (pow(distToLight, 2.0) + 1.0);
-
 			// Diffuse part
-			vec3 N = normalize(normal);
-			float NdotL = max(0.0f, dot(N, L));
-			vec3 diffuse = lightColor * albedo * NdotL * attenuation;
+			diffuse = max(dot(normalize(normal), lightDir), 0.0f);
 
 			// Specular part
-			vec3 R = reflect(-L, N);
-			float NdotR = max(0.0f, dot(R, V));
-			vec3 specular = lightColor * pow(NdotR, 16.0f) * attenuation;
+			specular = 0.0;
+			if(diffuse != 0.0f)
+			{
+				// Vector from fragment to camera
+				vec3 viewDir = normalize(viewPos - position);
 
-			fragColor += diffuse;// + specular;
+				vec3 halfwayDir  = normalize(viewDir + lightDir);
+				specular = pow(max(dot(normalize(normal), halfwayDir), 0.0f), 16.0f);
+			}
+
+			// Inverse square law
+			float attenuation = lightRadius / (distToLight * distToLight + 1.0);
+			attenuation *= lightIntensity;
+
+			fragColor += albedo * (diffuse * attenuation);
+			fragColor += specular;
+			fragColor *= lightColor;
 		}
 
 
 	}
+
+
 
 	outFragcolor = vec4(fragColor, 1.0f);
 
