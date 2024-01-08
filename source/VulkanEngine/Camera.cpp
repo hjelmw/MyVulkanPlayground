@@ -1,6 +1,4 @@
 #include "Camera.hpp"
-#include <glm/glm.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
 
 
 namespace NVulkanEngine

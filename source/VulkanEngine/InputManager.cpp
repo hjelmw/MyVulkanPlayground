@@ -120,7 +120,7 @@ namespace NVulkanEngine
 
 	void CInputManager::UpdateCameraTransforms(CGraphicsContext* context, float deltaTime)
 	{
-		const float sensitivity = 0.05f;
+		const float sensitivity = 0.5f;
 
 		glm::vec3 cameraPosition  = m_Camera.GetPosition();
 		glm::vec3 cameraDirection = m_Camera.GetDirection();
@@ -147,7 +147,7 @@ namespace NVulkanEngine
 			offsetX *= (deltaTime + sensitivity);
 			offsetY *= (deltaTime + sensitivity);
 
-			m_CameraTransforms.m_Yaw += offsetX;
+			m_CameraTransforms.m_Yaw   += offsetX;
 			m_CameraTransforms.m_Pitch += offsetY;
 
 			if (m_CameraTransforms.m_Pitch > 89.0f)
@@ -161,7 +161,7 @@ namespace NVulkanEngine
 		}
 
 		constexpr float pi = glm::pi<glm::float32>();
-		float yawRadians = m_CameraTransforms.m_Yaw * (pi / 180.0f);
+		float yawRadians   = m_CameraTransforms.m_Yaw * (pi / 180.0f);
 		float pitchRadians = m_CameraTransforms.m_Pitch * (pi / 180.0f);
 
 		glm::vec3 lookDirection;

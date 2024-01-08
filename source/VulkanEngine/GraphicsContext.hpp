@@ -5,8 +5,8 @@
 
 namespace NVulkanEngine
 {
-	static const uint32_t g_DisplayWidth      = 1280;
-	static const uint32_t g_DisplayHeight     = 720;
+	static const uint32_t g_DisplayWidth      = 1920;
+	static const uint32_t g_DisplayHeight     = 1080;
 	static const uint16_t g_MaxFramesInFlight = 2;
 
 	//Singleton class
