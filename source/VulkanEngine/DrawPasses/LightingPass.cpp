@@ -24,7 +24,7 @@ namespace NVulkanEngine
 			float     m_LightRadius;
 
 			glm::vec3 m_LightColor;
-			float     m_Pad0;
+			float     m_LightIntensity;
 		};
 
 		Light     m_Lights[1];
@@ -111,7 +111,7 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_Lights[0].m_LightPosition = CGeometryPass::GetSphereMatrix()[3];
 		deferredLightingUbo.m_Lights[0].m_LightRadius   = 5.0f;
 
-		deferredLightingUbo.m_Lights[0].m_Pad0 = 0.0f;
+		deferredLightingUbo.m_Lights[0].m_LightIntensity = 10.0f;
 
 		CCamera* camera = CInputManager::GetInstance()->GetCamera();
 		deferredLightingUbo.m_ViewPos = camera->GetPosition();
