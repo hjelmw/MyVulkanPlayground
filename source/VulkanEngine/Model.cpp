@@ -287,7 +287,7 @@ namespace NVulkanEngine
 		return generatedNormal;
 	}
 
-	void CModel::CreateGeometryBuffer(CGraphicsContext* context, const VkDeviceSize size)
+	void CModel::CreateGeometryMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size)
 	{
 		m_GeometryBuffer.m_Buffer = CreateBuffer(
 			context,
@@ -297,13 +297,32 @@ namespace NVulkanEngine
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	}
 
-	SGeometryBuffer CModel::GetGeometryBuffer()
+	void CModel::CreateShadowMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size)
+	{
+		m_ShadowBuffer.m_Buffer = CreateBuffer(
+			context,
+			m_ShadowBuffer.m_Memory,
+			size,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	}
+
+	SUniformMemoryBuffer CModel::GetGeometryMemoryBuffer()
 	{
 		return m_GeometryBuffer;
 	}
 
+	SUniformMemoryBuffer CModel::GetShadowMemoryBuffer()
+	{
+		return m_ShadowBuffer;
+	}
 
-	std::vector<VkDescriptorSet>& CModel::GetDescriptorSets()
+	SDescriptorSets& CModel::GetDescriptorSetsRef()
+	{
+		return m_DescriptorSets;
+	}
+
+	SDescriptorSets CModel::GetDescriptorSets()
 	{
 		return m_DescriptorSets;
 	}

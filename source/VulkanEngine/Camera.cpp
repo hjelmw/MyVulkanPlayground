@@ -46,8 +46,8 @@ namespace NVulkanEngine
 	void CCamera::UpdateCamera(CGraphicsContext* context)
 	{
 		m_LookAtMatrix = glm::lookAt(
-			m_CameraPosition,            // Camera world pos
-			m_CameraPosition + m_CameraDirection, // Center of world
+			m_CameraPosition,                     // Camera world pos
+			m_CameraPosition + m_CameraDirection, // Camera look dir
 			m_CameraUp
 		);
 

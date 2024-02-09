@@ -4,6 +4,7 @@
 
 #include "../DrawPass.hpp"
 #include "../Pipeline.hpp"
+#include "../Model.hpp"
 
 namespace NVulkanEngine
 {
@@ -17,17 +18,23 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
-		// This is the shadow map. Accessed later by deferred lighting pass
-		SImageAttachment s_ShadowAttachment;
+		inline static SImageAttachment GetShadowMapAttachment() { return s_ShadowAttachment; }
+		static glm::mat4 GetLightMatrix() { return s_LightMatrix; };
+
+
 	private:
 		void UpdateShadowBuffers(CGraphicsContext* context);
 
-
-		std::vector<VkDescriptorSet> m_DescriptorSetsShadow = { VK_NULL_HANDLE };
+		std::vector<SDescriptorSets> m_DescriptorSetsShadow = { };
 
 		// Shadow Uniform Buffer
 		VkBuffer					  m_ShadowBuffer       = VK_NULL_HANDLE;
 		VkDeviceMemory				  m_ShadowBufferMemory = VK_NULL_HANDLE;
+
+		// This is the shadow map. Used by deferred lighting pass
+		inline static SImageAttachment s_ShadowAttachment;
+
+		static glm::mat4              s_LightMatrix;
 
 		// Pipeline
 		CPipeline* m_ShadowPipeline = nullptr;

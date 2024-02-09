@@ -2,6 +2,7 @@
 
 // GBuffer attachments
 #include "GeometryPass.hpp"
+#include "ShadowPass.hpp"
 #include "../InputManager.hpp"
 
 namespace NVulkanEngine
@@ -12,14 +13,17 @@ namespace NVulkanEngine
 		ENormals                  = 1,
 		EAlbedo                   = 2,
 		EDepth                    = 3,
-		ESwapchainImage           = 4,
-		ELightingAttachmentsCount = 5
+		EShadowMap                = 4,
+		ESwapchainImage           = 5,
+		ELightingAttachmentsCount = 6
 	};
 
 	struct SDeferredLightingUniformBuffer
 	{
 		struct Light
 		{
+			glm::mat4 m_LightMatrix;
+
 			glm::vec3 m_LightPosition;
 			float     m_LightRadius;
 
@@ -40,12 +44,14 @@ namespace NVulkanEngine
 		m_DeferredAttachments[ENormals]   = CGeometryPass::GetGBufferAttachment(ENormals);
 		m_DeferredAttachments[EAlbedo]    = CGeometryPass::GetGBufferAttachment(EAlbedo);
 		m_DeferredAttachments[EDepth]     = CGeometryPass::GetGBufferAttachment(EDepth);
+		m_DeferredAttachments[EShadowMap] = CShadowPass::GetShadowMapAttachment();
 
 		// Don't clear contents on BeginRendering()
 		m_DeferredAttachments[EPositions].m_RenderAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		m_DeferredAttachments[ENormals].m_RenderAttachmentInfo.loadOp   = VK_ATTACHMENT_LOAD_OP_LOAD;
 		m_DeferredAttachments[EAlbedo].m_RenderAttachmentInfo.loadOp    = VK_ATTACHMENT_LOAD_OP_LOAD;
 		m_DeferredAttachments[EDepth].m_RenderAttachmentInfo.loadOp     = VK_ATTACHMENT_LOAD_OP_LOAD;
+		m_DeferredAttachments[EShadowMap].m_RenderAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = CLightingPass::GetDescriptorSetLayoutBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = {};
@@ -71,8 +77,8 @@ namespace NVulkanEngine
 			colorAttachmentFormats,
 			depthFormat);
 
-		/* Allocat sets for 4 sampled images (pos, normals, albedo, depth) and 1 uniform light buffer  */
-		AllocateDescriptorPool(context, g_MaxFramesInFlight, 4, 1);
+		/* Allocat sets for 5 sampled images (pos, normals, albedo, depth, shadowmap) and 1 uniform light buffer  */
+		AllocateDescriptorPool(context, g_MaxFramesInFlight, 5, 1);
 
 		m_DeferredSampler = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 0.0f, 0.0f, 1.0f);
 
@@ -80,6 +86,7 @@ namespace NVulkanEngine
 		VkDescriptorImageInfo  descriptorNormals   = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[ENormals].m_ImageView,   VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
 		VkDescriptorImageInfo  descriptorAlbedo    = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[EAlbedo].m_ImageView,    VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
 		VkDescriptorImageInfo  descriptorDepth     = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[EDepth].m_ImageView,     VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+		VkDescriptorImageInfo  descriptorShadow    = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[EShadowMap].m_ImageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
 		m_DeferredLightBuffer = CreateBuffer(
 			context,
@@ -98,7 +105,9 @@ namespace NVulkanEngine
 			CreateWriteDescriptorImage(context,  m_DescriptorSetsLighting.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorNormals),
 			CreateWriteDescriptorImage(context,  m_DescriptorSetsLighting.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, &descriptorAlbedo),
 			CreateWriteDescriptorImage(context,  m_DescriptorSetsLighting.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, &descriptorDepth),
-			CreateWriteDescriptorBuffer(context, m_DescriptorSetsLighting.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         4, &descriptorUniform)
+			CreateWriteDescriptorImage(context,  m_DescriptorSetsLighting.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, &descriptorShadow),
+
+			CreateWriteDescriptorBuffer(context, m_DescriptorSetsLighting.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         5, &descriptorUniform)
 		};
 
 		UpdateDescriptorSets(context, m_DescriptorSetsLighting, writeDescriptorSets);
@@ -109,9 +118,10 @@ namespace NVulkanEngine
 		SDeferredLightingUniformBuffer deferredLightingUbo{};
 		deferredLightingUbo.m_Lights[0].m_LightColor    = glm::vec3(1.0f, 1.0f, 1.0f);
 		deferredLightingUbo.m_Lights[0].m_LightPosition = CGeometryPass::GetSphereMatrix()[3];
-		deferredLightingUbo.m_Lights[0].m_LightRadius   = 5.0f;
+		deferredLightingUbo.m_Lights[0].m_LightRadius   = 20.0f;
 
 		deferredLightingUbo.m_Lights[0].m_LightIntensity = 10.0f;
+		deferredLightingUbo.m_Lights[0].m_LightMatrix = CShadowPass::GetLightMatrix();
 
 		CCamera* camera = CInputManager::GetInstance()->GetCamera();
 		deferredLightingUbo.m_ViewPos = camera->GetPosition();
@@ -141,6 +151,8 @@ namespace NVulkanEngine
 		VkFormat albedoFormat    = m_DeferredAttachments[EAlbedo].m_Format;
 		VkImage  depthImage      = m_DeferredAttachments[EDepth].m_Image;
 		VkFormat depthFormat     = m_DeferredAttachments[EDepth].m_Format;
+		VkImage  ShadowImage     = m_DeferredAttachments[EShadowMap].m_Image;
+		VkFormat ShadowFormat    = m_DeferredAttachments[EShadowMap].m_Format;
 
 		TransitionImageLayout(commandBuffer, swapchainImage, swapchainFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
 		
@@ -148,6 +160,7 @@ namespace NVulkanEngine
 		TransitionImageLayout(commandBuffer, normalsImage,   normalsFormat,   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 		TransitionImageLayout(commandBuffer, albedoImage,    albedoFormat,    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 		TransitionImageLayout(commandBuffer, depthImage,     depthFormat,     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, ShadowImage,    depthFormat,     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 
 		std::vector<SImageAttachment> swapchainAttachment = { m_DeferredAttachments[ESwapchainImage] };
 		BeginRendering(context, commandBuffer, swapchainAttachment);
@@ -167,6 +180,7 @@ namespace NVulkanEngine
 		TransitionImageLayout(commandBuffer, normalsImage,   normalsFormat,   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
 		TransitionImageLayout(commandBuffer, albedoImage,    albedoFormat,    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
 		TransitionImageLayout(commandBuffer, depthImage,     depthFormat,     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, ShadowImage,    depthFormat,     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 
 	}
 
@@ -191,7 +205,7 @@ namespace NVulkanEngine
 
 	const std::vector<VkDescriptorSetLayoutBinding> CLightingPass::GetDescriptorSetLayoutBindings()
 	{
-		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(5);
+		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(6);
 
 		// 0: GBuffer positions
 		attributeDescriptions[0].binding = 0;
@@ -221,12 +235,19 @@ namespace NVulkanEngine
 		attributeDescriptions[3].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		attributeDescriptions[3].pImmutableSamplers = nullptr;
 
-		// 0: Vertex shader uniform buffer
+		// 4: Shadowmap depth
 		attributeDescriptions[4].binding = 4;
-		attributeDescriptions[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		attributeDescriptions[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		attributeDescriptions[4].descriptorCount = 1;
 		attributeDescriptions[4].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		attributeDescriptions[4].pImmutableSamplers = nullptr;
+
+		// 0: Vertex shader uniform buffer
+		attributeDescriptions[5].binding = 5;
+		attributeDescriptions[5].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		attributeDescriptions[5].descriptorCount = 1;
+		attributeDescriptions[5].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		attributeDescriptions[5].pImmutableSamplers = nullptr;
 
 		return attributeDescriptions;
 	}

@@ -30,7 +30,21 @@ struct SVertex
 	};
 
 	// Vertex attributes
-	static std::vector<VkVertexInputAttributeDescription> GetVertexInputAttributeDescriptions()
+	static std::vector<VkVertexInputAttributeDescription> GetShadowVertexInputAttributes()
+	{
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(1);
+
+		// inPosition
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].location = 0;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT; //vec2
+		attributeDescriptions[0].offset = 0;
+
+		return attributeDescriptions;
+	}
+
+	// Vertex attributes
+	static std::vector<VkVertexInputAttributeDescription> GetModelVertexInputAttributes()
 	{
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(5);
 
@@ -81,8 +95,14 @@ namespace std {
 	};
 };
 
+struct SDescriptorSets
+{
+	std::vector<VkDescriptorSet>      m_DescriptorSets   = { VK_NULL_HANDLE };
+	std::vector<VkWriteDescriptorSet> m_WriteDescriptors = { };
+};
+
 // Unifom buffer object and its device memory
-struct SGeometryBuffer
+struct SUniformMemoryBuffer
 {
 	VkBuffer       m_Buffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_Memory = VK_NULL_HANDLE;
@@ -122,7 +142,8 @@ namespace NVulkanEngine
 		void               CreateModelMeshes(CGraphicsContext* context);
 		void               SetModelFilepath(const std::string& modelFilepath, const std::string materialSearchPath);
 
-		std::vector<VkDescriptorSet>& GetDescriptorSets();
+		SDescriptorSets& GetDescriptorSetsRef();
+		SDescriptorSets  GetDescriptorSets();
 
 		glm::mat4          GetTransform();
 		void               SetTransform(glm::mat4 transform);
@@ -130,9 +151,13 @@ namespace NVulkanEngine
 		CTexture*          GetModelTexture();
 		void               SetModelTexture(CTexture* texture);
 
-		// Creates and returns the UBO
-		void               CreateGeometryBuffer(CGraphicsContext* context, const VkDeviceSize size);
-		SGeometryBuffer    GetGeometryBuffer();
+		// Creates the geometry and shadow UBOs. Fetch with functions just below this
+		void               CreateGeometryMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size);
+		void               CreateShadowMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size);
+
+		SUniformMemoryBuffer GetGeometryMemoryBuffer();
+		SUniformMemoryBuffer GetShadowMemoryBuffer();
+
 
 		uint32_t           GetNumMeshes();
 		SMesh              GetMesh(const uint32_t index);
@@ -152,7 +177,7 @@ namespace NVulkanEngine
 		std::string            m_ModelFilepath      = {};
 		std::string            m_MaterialFilepath   = {};
 
-		std::vector<SMesh>    m_Meshes             = {};
+		std::vector<SMesh>     m_Meshes             = {};
 		std::vector<SMaterial> m_Materials          = {};
 			
 		std::vector<SVertex>   m_Vertices           = {};
@@ -160,15 +185,18 @@ namespace NVulkanEngine
 
 		glm::mat4              m_Transform          = glm::identity<glm::mat4>();
 
+		SDescriptorSets        m_DescriptorSets     = {};
+
 		VkBuffer               m_VertexBuffer       = VK_NULL_HANDLE;
 		VkDeviceMemory         m_VertexBufferMemory = VK_NULL_HANDLE;
 
 		VkBuffer               m_IndexBuffer        = VK_NULL_HANDLE;
 		VkDeviceMemory         m_IndexBufferMemory  = VK_NULL_HANDLE;
 
-		SGeometryBuffer        m_GeometryBuffer     = {};
+		// UBOs
+		SUniformMemoryBuffer   m_GeometryBuffer     = {};
+		SUniformMemoryBuffer   m_ShadowBuffer       = {};
 
-		std::vector<VkDescriptorSet> m_DescriptorSets = { VK_NULL_HANDLE };
 
 		CTexture*              m_ModelTexture       = nullptr;
 

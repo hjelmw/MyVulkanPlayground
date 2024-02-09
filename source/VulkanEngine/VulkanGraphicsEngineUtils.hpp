@@ -631,7 +631,6 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		}
-
 		else
 		{
 			std::cout << "Transition Image Layout failed due to unsupported layout transition!" << std::endl;

@@ -90,7 +90,7 @@ namespace NVulkanEngine
 		/* Setup descriptor bindings, vertex binding and vertex attributes */
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetDescriptorSetLayoutBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = SVertex::GetVertexBindingDescription();
-		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetVertexInputAttributeDescriptions();
+		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetModelVertexInputAttributes();
 
 		const std::vector<VkFormat> colorAttachmentFormats =
 		{
@@ -130,39 +130,41 @@ namespace NVulkanEngine
 			0.0f, 
 			1.0f);
 
-		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, 8, 1, 1);
-
 		CModelManager* modelManager = CModelManager::GetInstance();
+
+		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
+		AllocateDescriptorPool(context, modelManager->GetNumModels() * 2, 1, 1);
 
 		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
 		{
 			CModel* model = modelManager->GetModel(i);
 
-			model->GetDescriptorSets() = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
-			model->CreateGeometryBuffer(context, (VkDeviceSize)sizeof(SGeometryUniformBuffer));
+			SDescriptorSets& modelDescriptorRef = model->GetDescriptorSetsRef();
+
+			modelDescriptorRef.m_DescriptorSets = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
+			model->CreateGeometryMemoryBuffer(context, (VkDeviceSize)sizeof(SGeometryUniformBuffer));
 
 			VkDescriptorImageInfo  descriptorTexture = CreateDescriptorImageInfo(m_GeometrySampler, m_BoxTexture->GetTextureImageView()/*model->GetModelTexture()->GetTextureImageView()*/, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(model->GetGeometryBuffer().m_Buffer, sizeof(SGeometryUniformBuffer));
+			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(model->GetGeometryMemoryBuffer().m_Buffer, sizeof(SGeometryUniformBuffer));
 
-			const std::vector<VkWriteDescriptorSet> writeDescriptorSetShip =
+			modelDescriptorRef.m_WriteDescriptors =
 			{
-				CreateWriteDescriptorBuffer(context, model->GetDescriptorSets().data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         0, &descriptorUniform),
-				CreateWriteDescriptorImage(context,  model->GetDescriptorSets().data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorTexture)
+				CreateWriteDescriptorBuffer(context, modelDescriptorRef.m_DescriptorSets.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         0, &descriptorUniform),
+				CreateWriteDescriptorImage(context,  modelDescriptorRef.m_DescriptorSets.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorTexture)
 			};
 
-			UpdateDescriptorSets(context, model->GetDescriptorSets(), writeDescriptorSetShip);
+			UpdateDescriptorSets(context, modelDescriptorRef.m_DescriptorSets, modelDescriptorRef.m_WriteDescriptors);
 		}
 	}
 
 	void CGeometryPass::UpdateGeometryBuffers(CGraphicsContext* context)
 	{
-		//m_RotationDegrees = fmod(m_RotationDegrees + 4.0f * context->GetDeltaTime(), 360.0f);
+		//m_RotationDegrees = fmod(m_RotationDegrees + 2.0f * context->GetDeltaTime(), 360.0f);
 
 		glm::mat4 sphereMatrix = glm::identity<glm::mat4>();
-		sphereMatrix = glm::rotate(sphereMatrix, m_RotationDegrees, glm::vec3(0.0f, 30.0f, 1.0f));
-		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(0.0f, 30.0f, 30.0f));
-		sphereMatrix = glm::scale(sphereMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
+		//sphereMatrix = glm::rotate(sphereMatrix, m_RotationDegrees, glm::vec3(1.0f, 1.0f, 1.0f));
+		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(0.0f, 300.0f, 30.0f));
+		//sphereMatrix = glm::scale(sphereMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
 		s_SphereMatrix = sphereMatrix;
 
 		CCamera* camera = CInputManager::GetInstance()->GetCamera();
@@ -179,9 +181,9 @@ namespace NVulkanEngine
 			uboModel.m_ProjectionMat = camera->GetProjectionMatrix();
 
 			void* data;
-			vkMapMemory(context->GetLogicalDevice(), model->GetGeometryBuffer().m_Memory, 0, sizeof(SGeometryUniformBuffer), 0, &data);
+			vkMapMemory(context->GetLogicalDevice(), model->GetGeometryMemoryBuffer().m_Memory, 0, sizeof(SGeometryUniformBuffer), 0, &data);
 			memcpy(data, &uboModel, sizeof(uboModel));
-			vkUnmapMemory(context->GetLogicalDevice(), model->GetGeometryBuffer().m_Memory);
+			vkUnmapMemory(context->GetLogicalDevice(), model->GetGeometryMemoryBuffer().m_Memory);
 		}
 	}
 
@@ -197,7 +199,7 @@ namespace NVulkanEngine
 		{
 			CModel* model = modelManager->GetModel(i);
 
-			VkDescriptorSet modelDescriptor = model->GetDescriptorSets()[context->GetFrameIndex()];
+			VkDescriptorSet modelDescriptor = model->GetDescriptorSetsRef().m_DescriptorSets[context->GetFrameIndex()];
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &modelDescriptor, 0, nullptr);
 
 			model->BindMesh(commandBuffer);

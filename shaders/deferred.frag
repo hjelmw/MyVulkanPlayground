@@ -6,10 +6,12 @@ layout (binding = 0) uniform sampler2D GBufferPositions;
 layout (binding = 1) uniform sampler2D GBufferNormals;
 layout (binding = 2) uniform sampler2D GBufferAlbedo;
 layout (binding = 3) uniform sampler2D GBufferDepth;
+layout (binding = 4) uniform sampler2D ShadowMapBuffer;
 
 // Per Light data
 struct SLight
 {
+	mat4   m_LightMatrix;
 	vec3   m_Position;
 	float  m_Radius;
 	vec3   m_Color;
@@ -17,7 +19,7 @@ struct SLight
 };
 
 // Deferred lighting uniform buffer constants
-layout (binding = 4) uniform UBO
+layout (binding = 5) uniform UBO
 {
 	SLight m_Lights[NUM_LIGHTS];
 	vec3   m_ViewPos;
@@ -26,6 +28,22 @@ layout (binding = 4) uniform UBO
 
 layout (location = 0) in  vec2 inUV;
 layout (location = 0) out vec4 outFragcolor;
+
+float CalculateShadow(vec4 fragPosLightSpace)
+{
+	// Perspective divide
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	
+	// NDC [-1,1] to UV space [0, 1] 
+	vec2 shadowMapUV = projCoords.xy * vec2(0.5f, 0.5f) + vec2(0.5f, 0.5f);
+	
+	float currentDepth   = projCoords.z;
+	float shadowMapDepth = texture(ShadowMapBuffer, shadowMapUV).r;
+
+	float shadow = currentDepth < shadowMapDepth ? 1.0f : 0.0f;
+	
+	return shadow;
+}
 
 void main()
 {
@@ -57,13 +75,13 @@ void main()
 
 		float diffuse  = 0.0f;
 		float specular = 0.0f;
-		float ambient  = 0.0f; // 0.2f;
+		vec3  ambient  = 0.15 * lightColor; // 0.2f;
 		{
 			// Diffuse part
 			diffuse = max(dot(normalize(normal), lightDir), 0.0f);
 
 			// Specular part
-			specular = 0.0;
+			specular = 0.0f;
 			if(diffuse != 0.0f)
 			{
 				// Vector from fragment to camera
@@ -74,14 +92,21 @@ void main()
 			}
 
 			// Inverse square law
-			float attenuation = lightRadius / (distToLight * distToLight + 1.0);
+			float attenuation = lightRadius / (distToLight * distToLight + 1.0f);
 			attenuation *= lightIntensity;
+
+			mat4 lightMatrix = SDeferredLightingConstants.m_Lights[i].m_LightMatrix;
+
+			// Move world space fragment to light view projection space [-1, 1]
+			vec4 fragPosLightSpace = lightMatrix * vec4(position, 1.0f);
+			float shadow = CalculateShadow(fragPosLightSpace);
 
 			fragColor += albedo * (diffuse * attenuation);
 			fragColor += specular;
-			fragColor *= lightColor;
+			fragColor *= lightColor;						
+			fragColor *= ambient + shadow;
 		}
-
+		
 
 	}
 

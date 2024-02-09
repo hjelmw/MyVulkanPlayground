@@ -102,7 +102,7 @@ namespace NVulkanEngine
 		CInputManager* inputManager = CInputManager::GetInstance();
 		CCamera* camera = inputManager->GetCamera();
 		
-		glm::vec3 cameraOriginPosition = glm::vec3(-165.0f, 90, -7.0f); // Arbitrary camera start position
+		glm::vec3 cameraOriginPosition = glm::vec3(-300.0f, 150, -7.0f); // Arbitrary camera start position
 		glm::vec3 cameraViewDirection  = glm::vec3(1.0f, 0.0f, 0.0f);
 		glm::vec3 cameraUpDirection    = glm::vec3(0.0f, 1.0f, 0.0f);
 		
@@ -552,14 +552,16 @@ namespace NVulkanEngine
 	{
 		m_DrawPasses.resize(3);
 
-		// Specifies order of execution
+		// Also Specifies order of execution
 		m_DrawPasses[0] = new CGeometryPass();
 		m_DrawPasses[1] = new CShadowPass();
 		m_DrawPasses[2] = new CLightingPass();
 
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
-			m_DrawPasses[i]->InitPass(m_Context);
+			CDrawPass* drawPass = m_DrawPasses[i];
+			if (drawPass)
+				drawPass->InitPass(m_Context);
 		}
 	}
 
@@ -567,7 +569,9 @@ namespace NVulkanEngine
 	{
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
-			m_DrawPasses[i]->Draw(m_Context, commandBuffer);
+			CDrawPass* drawPass = m_DrawPasses[i];
+			if (drawPass)
+				drawPass->Draw(m_Context, commandBuffer);
 		}
 	}
 

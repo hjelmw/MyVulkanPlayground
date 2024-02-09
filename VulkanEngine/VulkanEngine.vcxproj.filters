@@ -130,5 +130,11 @@
     <CustomBuild Include="..\shaders\geometry.vert">
       <Filter>Shaders</Filter>
     </CustomBuild>
+    <CustomBuild Include="..\shaders\shadow.vert">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\shaders\shadow.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
