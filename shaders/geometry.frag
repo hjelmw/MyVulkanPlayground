@@ -40,4 +40,6 @@ void main()
 
 	//outAlbedo = texture(samplerColor, inUV); 
 	outAlbedo = vec4(vec3(SMaterialConstants.m_Diffuse), roughness);
+	
+	gl_FragDepth = gl_FragCoord.z;
 }

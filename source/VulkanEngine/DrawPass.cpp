@@ -11,7 +11,9 @@ namespace NVulkanEngine
 
 	VkSampler CDrawPass::CreateSampler(
 		CGraphicsContext*    context,
-		VkSamplerAddressMode samplerMode,
+		VkSamplerAddressMode samplerModeU,
+		VkSamplerAddressMode samplerModeV,
+		VkSamplerAddressMode samplerModeW,
 		VkSamplerMipmapMode  samplerMipmapMode,
 		VkFilter             minFilter,
 		VkFilter             magFilter,
@@ -25,9 +27,9 @@ namespace NVulkanEngine
 		samplerInfo.minFilter = minFilter;
 		samplerInfo.magFilter = magFilter;
 		samplerInfo.mipmapMode = samplerMipmapMode;
-		samplerInfo.addressModeU = samplerMode;
-		samplerInfo.addressModeV = samplerMode;
-		samplerInfo.addressModeW = samplerMode;
+		samplerInfo.addressModeU = samplerModeU;
+		samplerInfo.addressModeV = samplerModeV;
+		samplerInfo.addressModeW = samplerModeW;
 		samplerInfo.mipLodBias = lodbias;
 		samplerInfo.maxAnisotropy = 1.0f;
 		samplerInfo.minLod = minLod;

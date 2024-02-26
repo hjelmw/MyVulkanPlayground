@@ -31,16 +31,17 @@ layout (location = 0) out vec4 outFragcolor;
 
 float CalculateShadow(vec4 fragPosLightSpace)
 {
-	// Perspective divide
+	// Perspective divide to get normalized device coordinates [-1,1]
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	
 	// NDC [-1,1] to UV space [0, 1] 
 	vec2 shadowMapUV = projCoords.xy * vec2(0.5f, 0.5f) + vec2(0.5f, 0.5f);
 	
-	float currentDepth   = projCoords.z;
+	float currentDepth   = clamp(projCoords.z, 0.0f, 1.0f);
 	float shadowMapDepth = texture(ShadowMapBuffer, shadowMapUV).r;
 
-	float shadow = currentDepth < shadowMapDepth ? 1.0f : 0.0f;
+	const float bias = 0.05f;
+	float shadow = ( currentDepth - bias ) < shadowMapDepth ? 1.0f : 0.0f;
 	
 	return shadow;
 }
@@ -97,14 +98,14 @@ void main()
 
 			mat4 lightMatrix = SDeferredLightingConstants.m_Lights[i].m_LightMatrix;
 
-			// Move world space fragment to light view projection space [-1, 1]
+			// Move world space fragment to light view space
 			vec4 fragPosLightSpace = lightMatrix * vec4(position, 1.0f);
 			float shadow = CalculateShadow(fragPosLightSpace);
 
 			fragColor += albedo * (diffuse * attenuation);
 			fragColor += specular;
 			fragColor *= lightColor;						
-			fragColor *= ambient + shadow;
+			fragColor *= shadow;
 		}
 		
 

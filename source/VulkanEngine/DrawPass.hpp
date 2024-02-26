@@ -47,11 +47,13 @@ namespace NVulkanEngine
 
 		// Creates a sampler with the provided parameters
 		VkSampler CreateSampler(
-			CGraphicsContext*    context,
-			VkSamplerAddressMode samplerMode,
+			CGraphicsContext* context,
+			VkSamplerAddressMode samplerModeU,
+			VkSamplerAddressMode samplerModeV,
+			VkSamplerAddressMode samplerModeW,
 			VkSamplerMipmapMode  samplerMipmapMode,
 			VkFilter             minFilter,
-			VkFilter             magFilter, 
+			VkFilter             magFilter,
 			float                lodbias,
 			float                minLod,
 			float                maxLod);

@@ -12,11 +12,11 @@ int main()
 	}*/
 
 	graphicsEngine.AddModel("assets/Box.obj");
-	graphicsEngine.SetModelPosition(30.0f, 10.0f, 0.0f);
+	graphicsEngine.SetModelPosition(30.0f, 30.0f, 0.0f);
 	graphicsEngine.SetModelRotation(0.0f, 0.0f, 0.0f);
 	graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
 	graphicsEngine.AddModel("assets/Box.obj");
-	graphicsEngine.SetModelPosition(150.0f, 10.0f, 150.0f);
+	graphicsEngine.SetModelPosition(150.0f, 30.0f, 150.0f);
 	graphicsEngine.SetModelRotation(0.0f, 0.0f, 0.0f);
 	graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
 	graphicsEngine.AddModel("assets/Floor.obj");

@@ -80,13 +80,14 @@ namespace NVulkanEngine
 		/* Allocat sets for 5 sampled images (pos, normals, albedo, depth, shadowmap) and 1 uniform light buffer  */
 		AllocateDescriptorPool(context, g_MaxFramesInFlight, 5, 1);
 
-		m_DeferredSampler = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 0.0f, 0.0f, 1.0f);
+		m_DeferredSampler = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,       VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_NEAREST, VK_FILTER_NEAREST, 0.0f, 0.0f, 1.0f);
+		m_ClampSampler    = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_LINEAR,  VK_FILTER_LINEAR, 0.0f, 0.0f, 1.0f);
 
 		VkDescriptorImageInfo  descriptorPositions = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[EPositions].m_ImageView, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
 		VkDescriptorImageInfo  descriptorNormals   = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[ENormals].m_ImageView,   VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
 		VkDescriptorImageInfo  descriptorAlbedo    = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[EAlbedo].m_ImageView,    VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
 		VkDescriptorImageInfo  descriptorDepth     = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[EDepth].m_ImageView,     VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
-		VkDescriptorImageInfo  descriptorShadow    = CreateDescriptorImageInfo(m_DeferredSampler, m_DeferredAttachments[EShadowMap].m_ImageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+		VkDescriptorImageInfo  descriptorShadow    = CreateDescriptorImageInfo(m_ClampSampler, m_DeferredAttachments[EShadowMap].m_ImageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
 		m_DeferredLightBuffer = CreateBuffer(
 			context,
@@ -197,6 +198,9 @@ namespace NVulkanEngine
 
 			vkDestroyImage(context->GetLogicalDevice(), m_DeferredAttachments[i].m_Image, nullptr);
 			vkFreeMemory(context->GetLogicalDevice(), m_DeferredAttachments[i].m_Memory, nullptr);
+
+			vkDestroySampler(context->GetLogicalDevice(), m_DeferredSampler, nullptr);
+			vkDestroySampler(context->GetLogicalDevice(), m_ClampSampler, nullptr);
 
 			m_DeferredAttachments[i].m_Format = VK_FORMAT_UNDEFINED;
 			m_DeferredAttachments[i].m_RenderAttachmentInfo = {};

@@ -32,6 +32,7 @@ namespace NVulkanEngine
 		VkDeviceMemory				  m_DeferredLightBufferMemory = VK_NULL_HANDLE;
 
 		VkSampler					  m_DeferredSampler = VK_NULL_HANDLE;
+		VkSampler					  m_ClampSampler    = VK_NULL_HANDLE;
 
 		// Pipeline
 		CPipeline* m_DeferredPipeline = nullptr;

@@ -11,9 +11,9 @@ namespace NVulkanEngine
 
 	struct SShadowUniformBuffer
 	{
-		glm::vec3 m_LightDirection;
-		float     m_Pad0;
-		glm::mat4 m_DepthModelViewProjectionMatrix;
+		glm::mat4 m_ModelMatrix;
+		glm::mat4 m_ViewMatrix;
+		glm::mat4 m_ProjectionMatrix;
 	};
 
 	static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings()
@@ -34,7 +34,7 @@ namespace NVulkanEngine
 	{
 		s_ShadowAttachment = CreateAttachment(
 			context,
-			VK_FORMAT_D16_UNORM,
+			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			context->GetRenderResolution().width,
@@ -97,28 +97,29 @@ namespace NVulkanEngine
 			glm::vec3 lightPosition  = CGeometryPass::GetSphereMatrix()[3];
 			glm::vec3 lightDirection = normalize(-lightPosition);
 
- 			glm::mat4 lookAtMatrix = glm::lookAt(
-				lightPosition,
-				lightDirection,
-				glm::vec3(0.0f, 1.0f, 0.0f)
-			);
 			glm::mat4 perspectiveMatrix = glm::perspective(
 				glm::radians(90.0f),
 				(float)context->GetRenderResolution().width / (float)context->GetRenderResolution().height,
-				1.0f,
+				100.0f,
 				1000.0f
-			);
+				);
 			perspectiveMatrix[1][1] *= -1; // Stupid vulkan requirement
+
+			glm::mat4 lookAtMatrix = glm::lookAt(
+				lightPosition,
+				lightDirection,
+				glm::vec3(0.0f, 1.0f, 0.0f)
+			);	
+			//lookAtMatrix[3][1] *= -1.0f;
 
 			s_LightMatrix = perspectiveMatrix * lookAtMatrix;
 
 			glm::mat4 modelMatrix = model->GetTransform();
-			glm::mat4 lightMatrix = s_LightMatrix * modelMatrix;
 			
 			SShadowUniformBuffer uboShadow{};
-			uboShadow.m_DepthModelViewProjectionMatrix = lightMatrix;
-			uboShadow.m_LightDirection = lightDirection;
-
+			uboShadow.m_ViewMatrix       = lookAtMatrix;
+			uboShadow.m_ProjectionMatrix = perspectiveMatrix;
+			uboShadow.m_ModelMatrix      = modelMatrix;
 
 			void* data;
 			vkMapMemory(context->GetLogicalDevice(), model->GetShadowMemoryBuffer().m_Memory, 0, sizeof(SShadowUniformBuffer), 0, &data);
