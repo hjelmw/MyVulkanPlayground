@@ -78,7 +78,7 @@ namespace NVulkanEngine
 			depthFormat);
 
 		/* Allocat sets for 5 sampled images (pos, normals, albedo, depth, shadowmap) and 1 uniform light buffer  */
-		AllocateDescriptorPool(context, g_MaxFramesInFlight, 5, 1);
+		AllocateDescriptorPool(context, g_MaxFramesInFlight, g_MaxFramesInFlight * 5, g_MaxFramesInFlight * 1);
 
 		m_DeferredSampler = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,       VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_NEAREST, VK_FILTER_NEAREST, 0.0f, 0.0f, 1.0f);
 		m_ClampSampler    = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_LINEAR,  VK_FILTER_LINEAR, 0.0f, 0.0f, 1.0f);

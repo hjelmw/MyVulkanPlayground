@@ -123,6 +123,8 @@ namespace NVulkanEngine
 		m_GeometrySampler = CreateSampler(
 			context, 
 			VK_SAMPLER_ADDRESS_MODE_REPEAT, 
+			VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			VK_SAMPLER_ADDRESS_MODE_REPEAT,
 			VK_SAMPLER_MIPMAP_MODE_LINEAR, 
 			VK_FILTER_LINEAR, 
 			VK_FILTER_LINEAR, 
@@ -133,7 +135,7 @@ namespace NVulkanEngine
 		CModelManager* modelManager = CModelManager::GetInstance();
 
 		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, modelManager->GetNumModels() * 2, 1, 1);
+		AllocateDescriptorPool(context, modelManager->GetNumModels() * 2, modelManager->GetNumModels() * 2, modelManager->GetNumModels() * 2);
 
 		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
 		{

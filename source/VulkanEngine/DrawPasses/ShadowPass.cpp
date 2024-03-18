@@ -64,7 +64,7 @@ namespace NVulkanEngine
 		CModelManager* modelManager = CModelManager::GetInstance();
 
 		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, 8, 0, 1);
+		AllocateDescriptorPool(context, modelManager->GetNumModels() * 2, 0, modelManager->GetNumModels() * 2);
 
 		m_DescriptorSetsShadow.resize(modelManager->GetNumModels());
 
