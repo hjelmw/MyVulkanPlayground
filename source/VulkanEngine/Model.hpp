@@ -82,7 +82,10 @@ struct SVertex
 	}
 
 	bool operator==(const SVertex& other) const {
-		return m_Position == other.m_Position && m_Color == other.m_Color && m_TexCoord == other.m_TexCoord;
+		return m_Position == other.m_Position &&
+		m_Color == other.m_Color              &&
+		m_TexCoord == other.m_TexCoord        &&
+		m_Normal == other.m_Normal;
 	}
 };
 
@@ -90,7 +93,7 @@ struct SVertex
 namespace std {
 	template<> struct hash<SVertex> {
 		size_t operator()(SVertex const& vertex) const {
-			return ((hash<glm::vec3>()(vertex.m_Position)));
+			return ((hash<glm::vec3>()(vertex.m_Position + vertex.m_Color + vertex.m_Normal)));
 		}
 	};
 };
