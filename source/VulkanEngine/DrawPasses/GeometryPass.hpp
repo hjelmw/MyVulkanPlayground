@@ -45,10 +45,10 @@ namespace NVulkanEngine
 		CPipeline*					  m_GeometryPipeline    = nullptr;
 
 		VkSampler                     m_GeometrySampler     = VK_NULL_HANDLE;
-
-		CTexture*                     m_BoxTexture          = nullptr;
 		
 		float                         m_RotationDegrees = 0.0f;
+		glm::vec3                     m_LightPosition   = glm::vec3(0.0f, 0.0f, 0.0f);
+
 		static glm::mat4              s_SphereMatrix;
 	} ;
 }

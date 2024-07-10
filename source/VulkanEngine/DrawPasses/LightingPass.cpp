@@ -121,7 +121,7 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_Lights[0].m_LightPosition = CGeometryPass::GetSphereMatrix()[3];
 		deferredLightingUbo.m_Lights[0].m_LightRadius   = 20.0f;
 
-		deferredLightingUbo.m_Lights[0].m_LightIntensity = 10.0f;
+		deferredLightingUbo.m_Lights[0].m_LightIntensity = 1.0f;
 		deferredLightingUbo.m_Lights[0].m_LightMatrix = CShadowPass::GetLightMatrix();
 
 		CCamera* camera = CInputManager::GetInstance()->GetCamera();
@@ -166,7 +166,7 @@ namespace NVulkanEngine
 		std::vector<SImageAttachment> swapchainAttachment = { m_DeferredAttachments[ESwapchainImage] };
 		BeginRendering(context, commandBuffer, swapchainAttachment);
 
-		m_DeferredPipeline->BindPipeline(commandBuffer);
+		m_DeferredPipeline->Bind(commandBuffer);
 		
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSetsLighting[context->GetFrameIndex()], 0, nullptr);
 

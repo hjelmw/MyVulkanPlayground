@@ -1,11 +1,16 @@
 #include "GeometryPass.hpp"
 
+#include <imgui.h>
+
 #ifndef M_PI
 #define M_PI 3.1415f
 #endif
 
 #include "../InputManager.hpp"
 #include "../ModelManager.hpp"
+
+
+static float g_LightPosition[] = { 0.0f, 300.0f, 30.0f };
 
 namespace NVulkanEngine
 {
@@ -101,7 +106,6 @@ namespace NVulkanEngine
 		const VkFormat depthFormat = s_GeometryAttachments[EDepth].m_Format;
 
 		m_GeometryPipeline = new CPipeline(EGraphicsPipeline);
-		
 		m_GeometryPipeline->SetVertexShader("shaders/geometry.vert.spv");
 		m_GeometryPipeline->SetFragmentShader("shaders/geometry.frag.spv");
 		m_GeometryPipeline->AddPushConstantSlot(VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(SMaterial), 0);
@@ -115,21 +119,17 @@ namespace NVulkanEngine
 			vertexAttributeDescriptions,
 			colorAttachmentFormats,
 			depthFormat);
-
-		m_BoxTexture = new CTexture();
-		m_BoxTexture->SetGenerateMipmaps(false);
-		m_BoxTexture->CreateTexture(context, "assets/box.png", VK_FORMAT_R8G8B8A8_SRGB);
 		
 		m_GeometrySampler = CreateSampler(
-			context, 
-			VK_SAMPLER_ADDRESS_MODE_REPEAT, 
+			context,
+			VK_SAMPLER_ADDRESS_MODE_REPEAT,
 			VK_SAMPLER_ADDRESS_MODE_REPEAT,
 			VK_SAMPLER_ADDRESS_MODE_REPEAT,
 			VK_SAMPLER_MIPMAP_MODE_LINEAR, 
-			VK_FILTER_LINEAR, 
-			VK_FILTER_LINEAR, 
-			0.0f, 
-			0.0f, 
+			VK_FILTER_LINEAR,
+			VK_FILTER_LINEAR,
+			0.0f,
+			0.0f,
 			1.0f);
 
 		CModelManager* modelManager = CModelManager::GetInstance();
@@ -146,13 +146,13 @@ namespace NVulkanEngine
 			modelDescriptorRef.m_DescriptorSets = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
 			model->CreateGeometryMemoryBuffer(context, (VkDeviceSize)sizeof(SGeometryUniformBuffer));
 
-			VkDescriptorImageInfo  descriptorTexture = CreateDescriptorImageInfo(m_GeometrySampler, m_BoxTexture->GetTextureImageView()/*model->GetModelTexture()->GetTextureImageView()*/, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(model->GetGeometryMemoryBuffer().m_Buffer, sizeof(SGeometryUniformBuffer));
+			VkDescriptorImageInfo descriptorTexture = CreateDescriptorImageInfo(m_GeometrySampler, model->UsesModelTexture() ? model->GetModelTexture()->GetTextureImageView() : VK_NULL_HANDLE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 			modelDescriptorRef.m_WriteDescriptors =
 			{
-				CreateWriteDescriptorBuffer(context, modelDescriptorRef.m_DescriptorSets.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         0, &descriptorUniform),
-				CreateWriteDescriptorImage(context,  modelDescriptorRef.m_DescriptorSets.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorTexture)
+				CreateWriteDescriptorBuffer(context, modelDescriptorRef.m_DescriptorSets.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &descriptorUniform),
+				CreateWriteDescriptorImage(context,  modelDescriptorRef.m_DescriptorSets.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, &descriptorTexture),
 			};
 
 			UpdateDescriptorSets(context, modelDescriptorRef.m_DescriptorSets, modelDescriptorRef.m_WriteDescriptors);
@@ -165,7 +165,7 @@ namespace NVulkanEngine
 
 		glm::mat4 sphereMatrix = glm::identity<glm::mat4>();
 		//sphereMatrix = glm::rotate(sphereMatrix, m_RotationDegrees, glm::vec3(1.0f, 1.0f, 1.0f));
-		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(0.0f, 300.0f, 30.0f));
+		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(g_LightPosition[0], g_LightPosition[1], g_LightPosition[2]));
 		//sphereMatrix = glm::scale(sphereMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
 		s_SphereMatrix = sphereMatrix;
 
@@ -194,7 +194,13 @@ namespace NVulkanEngine
 		BeginRendering(context, commandBuffer, s_GeometryAttachments);
 		UpdateGeometryBuffers(context);
 
-		m_GeometryPipeline->BindPipeline(commandBuffer);
+		m_GeometryPipeline->Bind(commandBuffer);
+
+		ImGui::ShowDemoWindow();
+
+		ImGui::Begin("Geometry Pass");
+		ImGui::SliderFloat3("Light Position", g_LightPosition, -500.0f, 500.0f);
+		ImGui::End();
 
 		CModelManager* modelManager = CModelManager::GetInstance();
 		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
@@ -204,12 +210,14 @@ namespace NVulkanEngine
 			VkDescriptorSet modelDescriptor = model->GetDescriptorSetsRef().m_DescriptorSets[context->GetFrameIndex()];
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &modelDescriptor, 0, nullptr);
 
-			model->BindMesh(commandBuffer);
+			model->Bind(commandBuffer);
 			for (uint32_t j = 0; j < model->GetNumMeshes(); j++)
 			{
 				SMesh modelMesh = model->GetMesh(j);
 
-				const SMaterial material = model->GetMaterial(modelMesh.m_MaterialId);
+				SMaterial material          = model->GetMaterial(modelMesh.m_MaterialId);
+				material.m_UseAlbedoTexture = model->GetModelTexture() != nullptr;
+
 				vkCmdPushConstants(commandBuffer, CDrawPass::m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, static_cast<uint32_t>(sizeof(SMaterial)), &material);
 				vkCmdDrawIndexed(commandBuffer, modelMesh.m_NumVertices, 1, modelMesh.m_StartIndex, 0, 0);
 
@@ -230,7 +238,7 @@ namespace NVulkanEngine
 		vkDestroyDescriptorSetLayout(context->GetLogicalDevice(), m_DescriptorSetLayout, nullptr);
 
 		// Pipeline and layout
-		m_GeometryPipeline->CleanupPipeline(context);
+		m_GeometryPipeline->Cleanup(context);
 		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
 
 		// Attachments

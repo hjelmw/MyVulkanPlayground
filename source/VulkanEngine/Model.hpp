@@ -122,15 +122,16 @@ struct SMesh
 
 struct SMaterial
 {
-	glm::vec3    m_Diffuse      = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::float32 m_Reflectivity = glm::float32(0.0f);
-	glm::float32 m_Shininess    = glm::float32(0.0f);
-	glm::float32 m_Metallness   = glm::float32(0.0f);
-	glm::float32 m_Fresnel      = glm::float32(0.0f);
-	glm::float32 m_Emission     = glm::float32(0.0f);
-	glm::float32 m_Transparency = glm::float32(0.0f);
-	glm::vec3    m_Pad0         = glm::vec3(0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF);
-	glm::vec3    m_Pad1         = glm::vec3(0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF);
+	glm::vec4    m_Diffuse          = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	//
+	glm::float32 m_Shininess        = glm::float32(0.0f);
+	glm::float32 m_Metallness       = glm::float32(0.0f);
+	glm::float32 m_Fresnel          = glm::float32(0.0f);
+	glm::float32 m_Emission         = glm::float32(0.0f);
+	//
+	glm::float32 m_Transparency     = glm::float32(0.0f);
+	glm::float32 m_Reflectivity     = glm::float32(0.0f);
+	glm::int32   m_UseAlbedoTexture = 0;
 };
 
 namespace NVulkanEngine
@@ -144,12 +145,18 @@ namespace NVulkanEngine
 		// Loads the model and creates meshes. Initializes vertex and index buffers and assigns materials for them
 		void               CreateModelMeshes(CGraphicsContext* context);
 		void               SetModelFilepath(const std::string& modelFilepath, const std::string materialSearchPath);
+		void               SetModelTexturePath(const std::string& modeTexturePath);
+		
+		std::string        GetModelTexturePath();
 
-		SDescriptorSets& GetDescriptorSetsRef();
-		SDescriptorSets  GetDescriptorSets();
+		SDescriptorSets&   GetDescriptorSetsRef();
+		SDescriptorSets    GetDescriptorSets();
 
 		glm::mat4          GetTransform();
 		void               SetTransform(glm::mat4 transform);
+
+		void               SetUsesModelTexture(bool uses_texture);
+		bool               UsesModelTexture();
 
 		CTexture*          GetModelTexture();
 		void               SetModelTexture(CTexture* texture);
@@ -171,14 +178,15 @@ namespace NVulkanEngine
 		SMaterial          GetMaterial(uint32_t materialId);
 
 		// Bind vertex and index buffers for a mesh
-		void               BindMesh(VkCommandBuffer commandBuffer);
-		void               BindMesh(VkCommandBuffer commandBuffer, SMesh mesh);
+		void               Bind(VkCommandBuffer commandBuffer);
+		void               Bind(VkCommandBuffer commandBuffer, SMesh mesh);
 
 		// Cleanup model and meshes
 		void               CleanupModel(CGraphicsContext* context);
 	private:
 		std::string            m_ModelFilepath      = {};
 		std::string            m_MaterialFilepath   = {};
+		std::string            m_ModelTexturePath   = {};
 
 		std::vector<SMesh>     m_Meshes             = {};
 		std::vector<SMaterial> m_Materials          = {};
@@ -200,7 +208,7 @@ namespace NVulkanEngine
 		SUniformMemoryBuffer   m_GeometryBuffer     = {};
 		SUniformMemoryBuffer   m_ShadowBuffer       = {};
 
-
+		bool                   m_UsesModelTexture   = false;
 		CTexture*              m_ModelTexture       = nullptr;
 
 		// Load a model .obj file using relative path

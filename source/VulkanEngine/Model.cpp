@@ -17,6 +17,17 @@ namespace NVulkanEngine
 		m_MaterialFilepath = materialSearchPath;
 	}
 
+	void CModel::SetModelTexturePath(const std::string& modelTexturePath)
+	{
+		m_ModelTexturePath = modelTexturePath;
+		m_UsesModelTexture = true;
+	}
+
+	std::string CModel::GetModelTexturePath()
+	{
+		return m_ModelTexturePath;
+	}
+
 	void CModel::CreateModelMeshes(CGraphicsContext* context)
 	{
 		LoadModel(m_ModelFilepath, m_MaterialFilepath);
@@ -57,7 +68,7 @@ namespace NVulkanEngine
 			tinyobj::real_t cg = material.diffuse[1];
 			tinyobj::real_t cb = material.diffuse[2];
 
-			newMaterial.m_Diffuse      = glm::vec3(cr, cg, cb);
+			newMaterial.m_Diffuse      = glm::vec4(cr, cg, cb, 0.0f);
 			newMaterial.m_Reflectivity = material.specular[0];
 			newMaterial.m_Metallness   = material.metallic;
 			newMaterial.m_Fresnel      = material.sheen;
@@ -348,6 +359,16 @@ namespace NVulkanEngine
 		m_ModelTexture = texture;
 	}
 
+	void CModel::SetUsesModelTexture(bool uses_texture)
+	{
+		m_UsesModelTexture = uses_texture;
+	}
+
+	bool CModel::UsesModelTexture()
+	{
+		return m_UsesModelTexture;
+	}
+
 	uint32_t CModel::GetNumMeshes()
 	{
 		return (uint32_t)m_Meshes.size();
@@ -368,7 +389,7 @@ namespace NVulkanEngine
 		return static_cast<uint32_t>(m_Indices.size());
 	}
 
-	void CModel::BindMesh(VkCommandBuffer commandBuffer)
+	void CModel::Bind(VkCommandBuffer commandBuffer)
 	{
 		VkBuffer vertexBuffers[] = { m_VertexBuffer };
 

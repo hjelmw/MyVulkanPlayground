@@ -58,7 +58,10 @@ void main()
 	float depth     = texture(GBufferDepth,     inUV).r;
 
 	if(depth == 1.0f)
-		discard;
+	{
+		outFragColor = vec4(0.0f, 0.0f, 1.0f, 0.0f);
+		return;
+	}
 	
 	vec3 viewPos   = SDeferredLightingConstants.m_ViewPos;
 	vec3 fragColor = vec3(0.0f, 0.0f ,0.0f);

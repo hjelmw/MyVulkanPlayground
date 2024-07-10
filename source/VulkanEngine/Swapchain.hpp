@@ -38,6 +38,8 @@ namespace NVulkanEngine
 		// Returns the swapchain extent (i.e resolution)
 		VkExtent2D	        GetExtent() { return m_SwapchainExtent; };
 
+		uint32_t            GetMinImageCount() { return m_ImageCount; };
+
 		// Destroys and initializes the swap chain again
 		void                Recreate(CGraphicsContext* context);
 
@@ -72,5 +74,7 @@ namespace NVulkanEngine
 		VkFormat                 m_SwapchainImageFormat = VK_FORMAT_UNDEFINED;
 
 		VkExtent2D               m_SwapchainExtent      = { 0, 0 };
+
+		uint32_t                 m_ImageCount = 0;
 	};
 }

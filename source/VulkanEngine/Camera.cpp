@@ -55,7 +55,7 @@ namespace NVulkanEngine
 			glm::radians(90.0f),
 			(float)context->GetRenderResolution().width / (float)context->GetRenderResolution().height,
 			0.1f,
-			1000.0f
+			10000.0f
 		);
 		m_ProjectionMatrix[1][1] *= -1; // Stupid vulkan requirement
 	}

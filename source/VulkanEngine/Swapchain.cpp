@@ -27,16 +27,16 @@ namespace NVulkanEngine
 		VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities, context->GetGLFWWindow());
 
 		// Request one more image than the minium supported
-		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+		m_ImageCount = swapChainSupport.capabilities.minImageCount + 1;
+		if (swapChainSupport.capabilities.maxImageCount > 0 && m_ImageCount > swapChainSupport.capabilities.maxImageCount)
 		{
-			imageCount = swapChainSupport.capabilities.maxImageCount;
+			m_ImageCount = swapChainSupport.capabilities.maxImageCount;
 		}
 
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 		createInfo.surface = context->GetVulkanSurface();
-		createInfo.minImageCount = imageCount;
+		createInfo.minImageCount = m_ImageCount;
 		createInfo.imageFormat = surfaceFormat.format;
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
 		createInfo.imageExtent = extent;
@@ -78,9 +78,9 @@ namespace NVulkanEngine
 			throw std::runtime_error("Failed to create swap chain!");
 		}
 
-		vkGetSwapchainImagesKHR(context->GetLogicalDevice(), m_VulkanSwapchain, &imageCount, nullptr);
-		m_SwapchainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(context->GetLogicalDevice(), m_VulkanSwapchain, &imageCount, m_SwapchainImages.data());
+		vkGetSwapchainImagesKHR(context->GetLogicalDevice(), m_VulkanSwapchain, &m_ImageCount, nullptr);
+		m_SwapchainImages.resize(m_ImageCount);
+		vkGetSwapchainImagesKHR(context->GetLogicalDevice(), m_VulkanSwapchain, &m_ImageCount, m_SwapchainImages.data());
 
 		m_SwapchainImageFormat = surfaceFormat.format;
 		m_SwapchainExtent = extent;

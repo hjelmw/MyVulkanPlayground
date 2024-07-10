@@ -64,13 +64,9 @@ namespace NVulkanEngine
 		m_Models[m_CurrentModelIndex]->SetTransform(modelMatrix);
 	}
 
-	void CModelManager::AddTexture(const std::string& textureFilepath)
+	void CModelManager::AddTexturePath(uint32_t index, const std::string& textureFilepath)
 	{
-		CTexture* modelTexture = new CTexture();
-		modelTexture->SetGenerateMipmaps(false);
-		modelTexture->CreateTexture(m_Context, textureFilepath, VK_FORMAT_R8G8B8A8_SRGB);
-
-		m_Models[m_CurrentModelIndex]->SetModelTexture(modelTexture);
+		m_Models[m_CurrentModelIndex]->SetModelTexturePath(textureFilepath);
 	}
 
 	uint32_t CModelManager::GetCurrentModelIndex()

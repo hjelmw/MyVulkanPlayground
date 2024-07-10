@@ -3,7 +3,7 @@
 #include "../ModelManager.hpp"
 #include "../InputManager.hpp"
 
-#define SHADOWMAP_RESOLUTION 1024
+#define SHADOWMAP_RESOLUTION 2048
 
 namespace NVulkanEngine
 {
@@ -37,8 +37,8 @@ namespace NVulkanEngine
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			context->GetRenderResolution().width,
-			context->GetRenderResolution().height);
+			(float)SHADOWMAP_RESOLUTION,
+			(float)SHADOWMAP_RESOLUTION);
 
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetDescriptorSetLayoutBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = SVertex::GetVertexBindingDescription();
@@ -98,19 +98,19 @@ namespace NVulkanEngine
 			glm::vec3 lightDirection = normalize(-lightPosition);
 
 			glm::mat4 perspectiveMatrix = glm::perspective(
-				glm::radians(90.0f),
-				(float)context->GetRenderResolution().width / (float)context->GetRenderResolution().height,
-				100.0f,
+				(float)glm::radians(90.0f),
+				(float)SHADOWMAP_RESOLUTION / SHADOWMAP_RESOLUTION,
+				1.0f,
 				1000.0f
 				);
-			perspectiveMatrix[1][1] *= -1; // Stupid vulkan requirement
+
+			//orthoMatrix[1][1] *= -1; // Stupid vulkan requirement
 
 			glm::mat4 lookAtMatrix = glm::lookAt(
 				lightPosition,
 				lightDirection,
 				glm::vec3(0.0f, 1.0f, 0.0f)
 			);	
-			//lookAtMatrix[3][1] *= -1.0f;
 
 			s_LightMatrix = perspectiveMatrix * lookAtMatrix;
 
@@ -133,7 +133,7 @@ namespace NVulkanEngine
 		BeginRendering(context, commandBuffer, { s_ShadowAttachment });
 		UpdateShadowBuffers(context);
 
-		m_ShadowPipeline->BindPipeline(commandBuffer);
+		m_ShadowPipeline->Bind(commandBuffer);
 
 		CModelManager* modelManager = CModelManager::GetInstance();
 		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
@@ -143,7 +143,7 @@ namespace NVulkanEngine
 			VkDescriptorSet shadowDescriptor = m_DescriptorSetsShadow[i].m_DescriptorSets[context->GetFrameIndex() % 2];
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &shadowDescriptor, 0, nullptr);
 
-			model->BindMesh(commandBuffer);
+			model->Bind(commandBuffer);
 			for (uint32_t j = 0; j < model->GetNumMeshes(); j++)
 			{
 				SMesh modelMesh = model->GetMesh(j);

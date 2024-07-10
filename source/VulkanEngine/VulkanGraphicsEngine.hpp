@@ -39,6 +39,7 @@ namespace NVulkanEngine
 	private:
 		void InitWindow();
 		void InitVulkan();
+		void InitImGui();
 		void InitSwapchain();
 		void InitCamera();
 		void CreateGraphicsContext();
@@ -58,6 +59,7 @@ namespace NVulkanEngine
 		void CleanupDrawPasses();
 		void CleanupVulkan();
 		void CleanupWindow();
+		void CleanupImGui();
 
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*> deviceExtensions);
 		bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<const char*> deviceExtensions);
@@ -67,6 +69,8 @@ namespace NVulkanEngine
 		VkResult DestroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
 		void     RecordDrawPasses(VkCommandBuffer commandBuffer);
+		void	 RenderImGuiDebug(uint32_t imageIndex);
+
 
 		CGraphicsContext*	                m_Context                  = nullptr;
 
@@ -83,6 +87,7 @@ namespace NVulkanEngine
 		VkSurfaceKHR		                m_VulkanSurface            = VK_NULL_HANDLE;
 
 		// Queues
+		SVulkanQueueFamilyIndices           m_QueueFamilies            = {};
 		VkQueue				                m_GraphicsQueue            = VK_NULL_HANDLE;
 		VkQueue				                m_PresentQueue             = VK_NULL_HANDLE;
 
@@ -105,6 +110,7 @@ namespace NVulkanEngine
 		VkDebugUtilsMessengerEXT            m_DebugMessenger           = VK_NULL_HANDLE;
 		GLFWwindow*					        m_Window                   = nullptr;
 
+		VkDescriptorPool                    m_ImGuiDescriptorPool      = VK_NULL_HANDLE;
 
 	};
 }

@@ -7,6 +7,10 @@
 
 #include "InputManager.hpp"
 
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_vulkan.h"
+
 #include <cstdlib>
 #include <vector>
 #include <set>
@@ -14,6 +18,16 @@
 #include <optional>
 #include <chrono>
 #include <thread>
+
+
+static void check_vk_result(VkResult err)
+{
+	if (err == 0)
+		return;
+	fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+	if (err < 0)
+		abort();
+}
 
 // Validation layer callback
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -49,6 +63,7 @@ namespace NVulkanEngine
 		InitSwapchain();
 		CreateModels();
 		InitDrawPasses();
+		InitImGui();
 	}
 
 	void CVulkanGraphicsEngine::Cleanup()
@@ -57,6 +72,7 @@ namespace NVulkanEngine
 		CleanupDrawPasses();
 		CleanupVulkan();
 		CleanupWindow();
+		//CleanupImGui();
 	}
 
 	void CVulkanGraphicsEngine::InitWindow()
@@ -398,10 +414,10 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CreateLogicalDevice()
 	{
-		SVulkanQueueFamilyIndices queueIndices = FindVulkanQueueFamilies(m_PhysicalDevice, m_VulkanSurface);
+		m_QueueFamilies = FindVulkanQueueFamilies(m_PhysicalDevice, m_VulkanSurface);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { queueIndices.m_GraphicsFamily.value(), queueIndices.m_PresentFamily.value() };
+		std::set<uint32_t> uniqueQueueFamilies = { m_QueueFamilies.m_GraphicsFamily.value(), m_QueueFamilies.m_PresentFamily.value() };
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -415,10 +431,15 @@ namespace NVulkanEngine
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceVulkan13Features features{};
-		features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-		features.dynamicRendering = VK_TRUE;
-		features.robustImageAccess = VK_TRUE;
+		VkPhysicalDeviceRobustness2FeaturesEXT nullDescriptorFeature{};
+		nullDescriptorFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+		nullDescriptorFeature.nullDescriptor = VK_TRUE;
+
+		VkPhysicalDeviceVulkan13Features vulkan13Features{};
+		vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+		vulkan13Features.dynamicRendering = VK_TRUE;
+		vulkan13Features.robustImageAccess = VK_TRUE;
+		vulkan13Features.pNext = &nullDescriptorFeature;
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		deviceFeatures.robustBufferAccess = VK_TRUE;
@@ -429,7 +450,7 @@ namespace NVulkanEngine
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());;
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 		createInfo.pEnabledFeatures = &deviceFeatures;
-		createInfo.pNext = &features;
+		createInfo.pNext = &vulkan13Features;
 
 		createInfo.enabledExtensionCount = (uint32_t)g_DeviceExtensions.size();
 		createInfo.ppEnabledExtensionNames = g_DeviceExtensions.data();
@@ -446,8 +467,8 @@ namespace NVulkanEngine
 			throw std::runtime_error("failed to create logical device!");
 		}
 
-		vkGetDeviceQueue(m_VulkanDevice, queueIndices.m_GraphicsFamily.value(), 0, &m_GraphicsQueue);
-		vkGetDeviceQueue(m_VulkanDevice, queueIndices.m_PresentFamily.value(), 0, &m_PresentQueue);
+		vkGetDeviceQueue(m_VulkanDevice, m_QueueFamilies.m_GraphicsFamily.value(), 0, &m_GraphicsQueue);
+		vkGetDeviceQueue(m_VulkanDevice, m_QueueFamilies.m_PresentFamily.value(), 0, &m_PresentQueue);
 
 #if defined(_DEBUG)
 		std::cout << "Succesfully created logical device and queues!\n" << std::endl;
@@ -518,6 +539,62 @@ namespace NVulkanEngine
 		}
 	}
 
+	void CVulkanGraphicsEngine::InitImGui()
+	{
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+
+		ImGui_ImplGlfw_InitForVulkan(m_Window, true);
+
+		std::array<VkDescriptorPoolSize, 2> poolSizes{};
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[0].descriptorCount = 2;
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[1].descriptorCount = CSwapchain::GetInstance()->GetMinImageCount() + 1;
+
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = (uint32_t)poolSizes.size();
+		poolInfo.pPoolSizes    = poolSizes.data();
+		poolInfo.maxSets       = 4;
+
+		if (vkCreateDescriptorPool(m_Context->GetLogicalDevice(), &poolInfo, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor pool!");
+		}
+
+		VkFormat swapchain_format = CSwapchain::GetInstance()->GetSwapchainFormat();
+
+		VkPipelineRenderingCreateInfoKHR pipeline_rendering_create_info{};
+		pipeline_rendering_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+		pipeline_rendering_create_info.colorAttachmentCount = 1;
+		pipeline_rendering_create_info.pColorAttachmentFormats = &swapchain_format;
+
+		ImGui_ImplVulkan_InitInfo init_info{};
+		init_info.Instance                    = m_Context->GetVulkanInstance();
+		init_info.PhysicalDevice              = m_Context->GetPhysicalDevice();
+		init_info.Device                      = m_Context->GetLogicalDevice();
+		init_info.QueueFamily                 = m_QueueFamilies.m_GraphicsFamily.value();
+		init_info.Queue                       = m_Context->GetGraphicsQueue();
+		init_info.PipelineCache               = VK_NULL_HANDLE;
+		init_info.DescriptorPool              = m_ImGuiDescriptorPool;
+		init_info.UseDynamicRendering         = true;
+		init_info.PipelineRenderingCreateInfo = pipeline_rendering_create_info;
+		init_info.RenderPass                  = nullptr; // Not needed since using dynamic rendering
+		init_info.Subpass                     = 0;
+		init_info.MinImageCount               = CSwapchain::GetInstance()->GetMinImageCount();
+		init_info.ImageCount                  = CSwapchain::GetInstance()->GetMinImageCount() + 1;
+		init_info.MSAASamples                 = VK_SAMPLE_COUNT_1_BIT;
+		init_info.Allocator                   = nullptr; // For now. Add to enable validation layer debugging?
+		init_info.CheckVkResultFn             = check_vk_result; // For now
+		ImGui_ImplVulkan_Init(&init_info);
+	}
+
 	void CVulkanGraphicsEngine::CreateGraphicsContext()
 	{
 		m_Context = new CGraphicsContext();
@@ -544,7 +621,18 @@ namespace NVulkanEngine
 
 		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
 		{
-			modelManager->GetModel(i)->CreateModelMeshes(m_Context);
+			CModel* model = modelManager->GetModel(i);
+
+			if (model->UsesModelTexture())
+			{
+				CTexture* modelTexture = new CTexture();
+				modelTexture->SetGenerateMipmaps(false);
+				modelTexture->CreateTexture(m_Context, model->GetModelTexturePath(), VK_FORMAT_R8G8B8A8_SRGB);
+
+				model->SetModelTexture(modelTexture);
+			}
+
+			model->CreateModelMeshes(m_Context);
 		}
 	}
 
@@ -575,6 +663,48 @@ namespace NVulkanEngine
 		}
 	}
 
+	void CVulkanGraphicsEngine::RenderImGuiDebug(uint32_t imageIndex)
+	{
+		CSwapchain* swapchain = CSwapchain::GetInstance();
+
+		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+		ImGui::Render();
+		ImDrawData* main_draw_data = ImGui::GetDrawData();
+		const bool main_is_minimized = (main_draw_data->DisplaySize.x <= 0.0f || main_draw_data->DisplaySize.y <= 0.0f);
+
+		VkRenderingAttachmentInfo render_attachment_info{};
+
+		VkRenderingAttachmentInfo swapChainInfo{};
+		swapChainInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+		swapChainInfo.imageView = swapchain->GetSwapchainImageView(imageIndex);
+		swapChainInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		swapChainInfo.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		swapChainInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+		std::vector<VkRenderingAttachmentInfo> colorAttachmentInfos = { swapChainInfo };
+
+		VkRenderingInfo renderInfo{};
+		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+		renderInfo.renderArea.extent = m_Context->GetRenderResolution();
+		renderInfo.renderArea.offset = { 0, 0 };
+		renderInfo.layerCount = 1;
+		renderInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfos.size());
+		renderInfo.pColorAttachments = colorAttachmentInfos.data();
+		renderInfo.pDepthAttachment = nullptr;
+
+		VkImage swapchainImage = swapchain->GetSwapchainImage(imageIndex);
+		VkFormat swapchainFormat = swapchain->GetSwapchainFormat();
+		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainImage, swapchainFormat, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+
+		// Record dear imgui primitives into command buffer
+		vkCmdBeginRendering(m_CommandBuffers[m_FrameIndex], &renderInfo);
+		ImGui_ImplVulkan_RenderDrawData(main_draw_data, m_CommandBuffers[m_FrameIndex]);
+		vkCmdEndRendering(m_CommandBuffers[m_FrameIndex]);
+
+		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainImage, swapchainFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
+	}
+
 	void CVulkanGraphicsEngine::AddModel(const std::string& modelpath)
 	{
 		CModelManager* modelManager = CModelManager::GetInstance();
@@ -582,11 +712,11 @@ namespace NVulkanEngine
 		modelManager->AddModel(modelpath);
 	}
 
-	void SetModelTexture(const std::string& texturepath)
+	void CVulkanGraphicsEngine::SetModelTexture(const std::string& texturePath)
 	{
 		CModelManager* modelManager = CModelManager::GetInstance();
 
-		modelManager->AddTexture(texturepath);
+		modelManager->AddTexturePath(modelManager->GetCurrentModelIndex(), texturePath);
 	}
 
 
@@ -649,7 +779,6 @@ namespace NVulkanEngine
 
 		vkResetCommandBuffer(m_CommandBuffers[m_FrameIndex], 0);
 
-
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = 0; // Optional
@@ -662,7 +791,14 @@ namespace NVulkanEngine
 
 		SetViewportScissor(m_CommandBuffers[m_FrameIndex], m_Context->GetRenderResolution());
 
+		// Start the Dear ImGui frame
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
 		RecordDrawPasses(m_CommandBuffers[m_FrameIndex]);
+
+		RenderImGuiDebug(imageIndex);
 
 		if (vkEndCommandBuffer(m_CommandBuffers[m_FrameIndex]) != VK_SUCCESS)
 		{

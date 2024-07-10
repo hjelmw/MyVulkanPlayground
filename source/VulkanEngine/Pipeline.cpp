@@ -251,12 +251,12 @@ namespace NVulkanEngine
 		vkDestroyShaderModule(context->GetLogicalDevice(), fragmentShaderModule, nullptr);
 	}
 
-	void CPipeline::BindPipeline(VkCommandBuffer commandBuffer)
+	void CPipeline::Bind(VkCommandBuffer commandBuffer)
 	{
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 	}
 
-	void CPipeline::CleanupPipeline(CGraphicsContext* context)
+	void CPipeline::Cleanup(CGraphicsContext* context)
 	{
 		vkDestroyPipeline(context->GetLogicalDevice(), m_Pipeline, nullptr);
 	}

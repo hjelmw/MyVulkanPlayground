@@ -18,7 +18,7 @@
 namespace NVulkanEngine
 {
 	static const std::vector<const char*> g_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
-	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME };
+	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
 
 #if defined(_DEBUG)
 	static const bool g_EnableValidationLayers = true;
@@ -275,6 +275,7 @@ namespace NVulkanEngine
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = descriptorPool;
 		allocInfo.pSetLayouts = layouts.data();
+		
 		allocInfo.descriptorSetCount = numDescriptorSets;
 
 		std::vector<VkDescriptorSet> descriptorSets(numDescriptorSets);

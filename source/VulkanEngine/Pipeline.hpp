@@ -39,9 +39,9 @@ namespace NVulkanEngine
 			VkFormat                                       depthFormat);
 
 
-		void BindPipeline(VkCommandBuffer commandBuffer);
+		void Bind(VkCommandBuffer commandBuffer);
 
-		void CleanupPipeline(CGraphicsContext* context);
+		void Cleanup(CGraphicsContext* context);
 	private:
 		void CreateGraphicsPipeline(
 			CGraphicsContext*                              context,

@@ -15,8 +15,7 @@ layout (location = 2) out vec4 outAlbedo;
 //material push constants block
 layout( push_constant ) uniform constants
 {
-	vec3  m_Diffuse;
-	float m_Reflectivity;
+	vec4  m_Diffuse;
 	//
 	float m_Shininess;
 	float m_Metalness;
@@ -24,7 +23,8 @@ layout( push_constant ) uniform constants
 	float m_Emission;
 	//
 	float m_Transparency;
-	vec3  m_Pad0;
+	float m_Reflectivity;
+	bool  m_UseAlbedoTexture;
 } SMaterialConstants;
 
 
@@ -32,14 +32,15 @@ void main()
 {
 	float metalness = SMaterialConstants.m_Metalness;
 	float fresnel   = SMaterialConstants.m_Fresnel;
-	float roughness = SMaterialConstants.m_Shininess; // Same thing
+	float roughness = SMaterialConstants.m_Shininess;
 
 	outPosition = vec4(inWorldPosition, metalness);
 	
-	outNormal = vec4(normalize(inNormal), fresnel);
+	outNormal = vec4(inNormal, fresnel);
 
-	//outAlbedo = texture(samplerColor, inUV); 
-	outAlbedo = vec4(vec3(SMaterialConstants.m_Diffuse), roughness);
-	
+	outAlbedo = vec4(SMaterialConstants.m_UseAlbedoTexture ? 
+		texture(samplerColor, inUV).rgb : 
+		SMaterialConstants.m_Diffuse.rgb, roughness);
+
 	gl_FragDepth = gl_FragCoord.z;
 }

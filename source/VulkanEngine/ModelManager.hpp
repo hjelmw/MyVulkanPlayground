@@ -23,7 +23,7 @@ namespace NVulkanEngine
 		void AddPosition(uint32_t index, glm::vec3 position);
 		void AddRotation(uint32_t index, glm::vec3 rotation);
 		void AddScaling(uint32_t index,  glm::vec3 scaling);
-		void AddTexture(const std::string& textureFilepath);
+		void AddTexturePath(uint32_t index, const std::string& textureFilepath);
 
 		uint32_t GetCurrentModelIndex();
 		CModel*  GetModel(uint32_t index);
