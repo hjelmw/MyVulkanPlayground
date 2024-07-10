@@ -22,6 +22,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{55a3c1cb-d3d7-4e2b-b1eb-1e34cabf7751}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ImGui">
+      <UniqueIdentifier>{54d24e3d-db98-4f81-9c6c-e8be1456d542}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\GeometryPass.cpp">
@@ -68,6 +71,30 @@
     </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\Camera.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui-docking\imgui.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui-docking\backends\imgui_impl_glfw.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui-docking\backends\imgui_impl_vulkan.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui-docking\imgui_demo.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui-docking\imgui_draw.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui-docking\imgui_tables.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vendor\imgui-docking\imgui_widgets.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.cpp">
+      <Filter>Source Files\DrawPasses</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -116,6 +143,24 @@
     <ClInclude Include="..\source\VulkanEngine\Device.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\vendor\imgui-docking\imgui.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui-docking\backends\imgui_impl_glfw.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui-docking\backends\imgui_impl_vulkan.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui-docking\imgui_internal.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vendor\imgui-docking\imconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.hpp">
+      <Filter>Header Files\DrawPasses</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\shaders\deferred.frag">
@@ -136,5 +181,17 @@
     <CustomBuild Include="..\shaders\shadow.frag">
       <Filter>Shaders</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\vendor\imgui-docking\misc\debuggers\imgui.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\vendor\imgui-docking\misc\debuggers\imgui.natstepfilter" />
+    <None Include="..\shaders\atmospherics.fp">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\shaders\atmospherics.vp">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
