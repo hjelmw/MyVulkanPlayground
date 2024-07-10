@@ -14,7 +14,7 @@ namespace NVulkanEngine
 	void CInputManager::ResetInputs()
 	{
 		// Reset all keyboard input
-		m_KeyStatus.m_Esc = m_KeyStatus.m_Forward = m_KeyStatus.m_Backward = m_KeyStatus.m_Left = m_KeyStatus.m_Right = m_KeyStatus.m_Up = m_KeyStatus.m_Down = false;
+		m_KeyStatus.m_Esc = m_KeyStatus.m_Shift = m_KeyStatus.m_Forward = m_KeyStatus.m_Backward = m_KeyStatus.m_Left = m_KeyStatus.m_Right = m_KeyStatus.m_Up = m_KeyStatus.m_Down = false;
 
 		// Reset mouse input
 		m_MouseStatus.m_RightButton = false;
@@ -46,6 +46,9 @@ namespace NVulkanEngine
 			case GLFW_KEY_ESCAPE:
 				m_KeyStatus.m_Esc = true;
 				break;
+			case GLFW_KEY_LEFT_SHIFT:
+				m_KeyStatus.m_Shift = true;
+				break;
 			case GLFW_KEY_W:
 				m_KeyStatus.m_Forward = true;
 				break;
@@ -72,6 +75,9 @@ namespace NVulkanEngine
 			{
 			case GLFW_KEY_ESCAPE:
 				m_KeyStatus.m_Esc = false;
+				break;
+			case GLFW_KEY_LEFT_SHIFT:
+				m_KeyStatus.m_Shift = false;
 				break;
 			case GLFW_KEY_W:
 				m_KeyStatus.m_Forward = false;
@@ -120,7 +126,8 @@ namespace NVulkanEngine
 
 	void CInputManager::UpdateCameraTransforms(CGraphicsContext* context, float deltaTime)
 	{
-		const float sensitivity = 0.5f;
+		const float sensitivity_mouse = 1.0f;
+		const float sensitivity_keys  = m_KeyStatus.m_Shift ? 8.0f : 2.0f;
 
 		glm::vec3 cameraPosition  = m_Camera.GetPosition();
 		glm::vec3 cameraDirection = m_Camera.GetDirection();
@@ -144,8 +151,8 @@ namespace NVulkanEngine
 			float offsetX = static_cast<float>(previousMouseX - currentMouseX);
 			float offsetY = static_cast<float>(currentMouseY  - previousMouseY);
 
-			offsetX *= (deltaTime + sensitivity);
-			offsetY *= (deltaTime + sensitivity);
+			offsetX *= (deltaTime + sensitivity_mouse);
+			offsetY *= (deltaTime + sensitivity_mouse);
 
 			m_CameraTransforms.m_Yaw   += offsetX;
 			m_CameraTransforms.m_Pitch += offsetY;
@@ -173,27 +180,27 @@ namespace NVulkanEngine
 
 		if (m_KeyStatus.m_Forward)
 		{
-			cameraPosition += cameraFront * (deltaTime + sensitivity);
+			cameraPosition += cameraFront * (deltaTime + sensitivity_keys);
 		}
 		if (m_KeyStatus.m_Backward)
 		{
-			cameraPosition -= cameraFront * (deltaTime + sensitivity);
+			cameraPosition -= cameraFront * (deltaTime + sensitivity_keys);
 		}
 		if (m_KeyStatus.m_Left)
 		{
-			cameraPosition -= glm::normalize(glm::cross(cameraDirection, cameraUp)) * (deltaTime + sensitivity);
+			cameraPosition -= glm::normalize(glm::cross(cameraDirection, cameraUp)) * (deltaTime + sensitivity_keys);
 		}
 		if (m_KeyStatus.m_Right)
 		{
-			cameraPosition += glm::normalize(glm::cross(cameraDirection, cameraUp)) * (deltaTime + sensitivity);
+			cameraPosition += glm::normalize(glm::cross(cameraDirection, cameraUp)) * (deltaTime + sensitivity_keys);
 		}
 		if (m_KeyStatus.m_Up)
 		{
-			cameraPosition.y += (deltaTime + sensitivity);
+			cameraPosition.y += (deltaTime + sensitivity_keys);
 		}
 		if (m_KeyStatus.m_Down)
 		{
-			cameraPosition.y -= (deltaTime + sensitivity);
+			cameraPosition.y -= (deltaTime + sensitivity_keys);
 		}
 
 		m_Camera.SetPosition(cameraPosition);

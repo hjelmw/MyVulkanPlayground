@@ -37,6 +37,7 @@ namespace NVulkanEngine
 			bool m_Backward;
 			bool m_Up;
 			bool m_Down;
+			bool m_Shift;
 
 			// Exits app
 			bool m_Esc;
