@@ -74,38 +74,40 @@ void main()
 		vec3 lightDir = lightPos - position;
 		float distToLight = length(lightDir);
 
-		float diffuse  = 0.0f;
 		float specular = 0.0f;
-		vec3  ambient  = 0.15 * lightColor; // 0.2f;
+		vec3  diffuse  = vec3(0.0f, 0.0f, 0.0f);
 		{
+			// Inverse square law
+			float attenuation = lightRadius / (distToLight * distToLight + 1.0f);
+
 			// Diffuse part
-			diffuse = max(dot(normalize(normal), lightDir), 0.0f);
+			{
+				float NdotL = dot(normalize(normal), lightDir);
+				diffuse = lightColor * albedo * NdotL * attenuation;
+			}
 
 			// Specular part
-			specular = 0.0f;
-			if(diffuse != 0.0f)
 			{
 				// Vector from fragment to camera
 				vec3 viewDir = normalize(viewPos - position);
 
 				vec3 halfwayDir  = normalize(viewDir + lightDir);
-				specular = pow(max(dot(normalize(normal), halfwayDir), 0.0f), 16.0f);
+				specular = pow(max(dot(normalize(normal), halfwayDir), 0.0f), 32.0f) * attenuation;
 			}
 
-			// Inverse square law
-			float attenuation = lightRadius / (distToLight * distToLight + 1.0f);
-			attenuation *= lightIntensity;
+			// Shadow map lookup
+			float shadow = 0.0f;
+			{
+				mat4 lightMatrix = SDeferredLightingConstants.m_Lights[i].m_LightMatrix;
 
-			mat4 lightMatrix = SDeferredLightingConstants.m_Lights[i].m_LightMatrix;
+				// Move world space fragment to light view space
+				vec4 fragPosLightSpace = lightMatrix * vec4(position, 1.0f);
 
-			// Move world space fragment to light view space
-			vec4 fragPosLightSpace = lightMatrix * vec4(position, 1.0f);
-			float shadow = CalculateShadow(fragPosLightSpace);
+				shadow = CalculateShadow(fragPosLightSpace);
+			}
 
-			fragColor += albedo * (diffuse * attenuation);
-			fragColor += specular;
-			fragColor *= lightColor;						
-			fragColor *= shadow;
+			fragColor = diffuse + specular;
+			//fragColor *= shadow;
 		}
 		
 
