@@ -18,18 +18,16 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
-		inline static SImageAttachment GetAtmosphericInscatteringAttachment() { return s_InscatteringAttachment; }
-
 	private:
 		void UpdateAtmosphericsBuffer(CGraphicsContext* context);
 
-		std::vector<SDescriptorSets> m_DescriptorSetsAtmospherics = { };
+		std::vector<VkDescriptorSet> m_DescriptorSetsAtmospherics = { };
 
 		// Atmospherics Uniform Buffer
 		VkBuffer					  m_AtmosphericsBuffer       = VK_NULL_HANDLE;
 		VkDeviceMemory				  m_AtmosphericsBufferMemory = VK_NULL_HANDLE;
 
-		inline static SImageAttachment s_InscatteringAttachment;
+		VkSampler                     m_AtmosphericsSampler      = VK_NULL_HANDLE;
 
 		// Pipeline
 		CPipeline* m_AtmosphericsPipeline = nullptr;

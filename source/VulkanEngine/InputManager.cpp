@@ -22,7 +22,7 @@ namespace NVulkanEngine
 		m_MouseStatus.m_MouseX = m_MouseStatus.m_MouseY = 0;
 
 		// Reset camera rotation
-		m_CameraTransforms.m_CameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+		m_CameraTransforms.m_PlanetCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 		m_CameraTransforms.m_Pitch = 0.0f;
 		m_CameraTransforms.m_Yaw = -90.0f;
 	}
@@ -205,6 +205,8 @@ namespace NVulkanEngine
 
 		m_Camera.SetPosition(cameraPosition);
 		m_Camera.SetDirection(cameraFront);
+		m_Camera.SetNear(0.1f);
+		m_Camera.SetFar(10000.0f);
 		m_Camera.UpdateCamera(context);
 	}
 

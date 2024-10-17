@@ -3,7 +3,9 @@
 
 #include "DrawPasses/GeometryPass.hpp"
 #include "DrawPasses/LightingPass.hpp"
+#include "DrawPasses/AtmosphericsPass.hpp"
 #include "DrawPasses/ShadowPass.hpp"
+
 
 #include "InputManager.hpp"
 
@@ -118,7 +120,7 @@ namespace NVulkanEngine
 		CInputManager* inputManager = CInputManager::GetInstance();
 		CCamera* camera = inputManager->GetCamera();
 		
-		glm::vec3 cameraOriginPosition = glm::vec3(-300.0f, 150, -7.0f); // Arbitrary camera start position
+		glm::vec3 cameraOriginPosition = glm::vec3(-300.0f, 250, -7.0f); // Arbitrary camera start position
 		glm::vec3 cameraViewDirection  = glm::vec3(1.0f, 0.0f, 0.0f);
 		glm::vec3 cameraUpDirection    = glm::vec3(0.0f, 1.0f, 0.0f);
 		
@@ -638,12 +640,13 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::InitDrawPasses()
 	{
-		m_DrawPasses.resize(3);
+		m_DrawPasses.resize(4);
 
 		// Also Specifies order of execution
 		m_DrawPasses[0] = new CGeometryPass();
 		m_DrawPasses[1] = new CShadowPass();
 		m_DrawPasses[2] = new CLightingPass();
+		m_DrawPasses[3] = new CAtmosphericsPass();
 
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
@@ -679,7 +682,7 @@ namespace NVulkanEngine
 		swapChainInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 		swapChainInfo.imageView = swapchain->GetSwapchainImageView(imageIndex);
 		swapChainInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		swapChainInfo.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		swapChainInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		swapChainInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
 		std::vector<VkRenderingAttachmentInfo> colorAttachmentInfos = { swapChainInfo };

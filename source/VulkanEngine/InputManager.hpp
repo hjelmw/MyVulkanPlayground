@@ -61,7 +61,7 @@ namespace NVulkanEngine
 			float     m_Yaw;
 
 			glm::vec3 m_CameraDirection;
-			glm::vec3 m_CameraPosition;
+			glm::vec3 m_PlanetCameraPosition;
 		} m_CameraTransforms;
 
 		CCamera m_Camera;

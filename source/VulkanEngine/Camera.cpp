@@ -5,7 +5,7 @@ namespace NVulkanEngine
 {
 	void CCamera::SetPosition(glm::vec3 position)
 	{
-		m_CameraPosition = position;
+		m_PlanetCameraPosition = position;
 	}
 
 	void CCamera::SetDirection(glm::vec3 direction)
@@ -18,9 +18,19 @@ namespace NVulkanEngine
 		m_CameraUp = up;
 	}
 
+	void CCamera::SetNear(float near)
+	{
+		m_Near = near;
+	}
+
+	void CCamera::SetFar(float far)
+	{
+		m_Far = far;
+	}
+
 	glm::vec3 CCamera::GetPosition()
 	{
-		return m_CameraPosition;
+		return m_PlanetCameraPosition;
 	}
 
 	glm::vec3 CCamera::GetDirection()
@@ -31,6 +41,16 @@ namespace NVulkanEngine
 	glm::vec3 CCamera::GetUp()
 	{
 		return m_CameraUp;
+	}
+
+	float CCamera::GetNear()
+	{
+		return m_Near;
+	}
+
+	float CCamera::GetFar()
+	{
+		return m_Far;
 	}
 
 	glm::mat4 CCamera::GetLookAtMatrix()
@@ -46,16 +66,16 @@ namespace NVulkanEngine
 	void CCamera::UpdateCamera(CGraphicsContext* context)
 	{
 		m_LookAtMatrix = glm::lookAt(
-			m_CameraPosition,                     // Camera world pos
-			m_CameraPosition + m_CameraDirection, // Camera look dir
+			m_PlanetCameraPosition,                     // Camera world pos
+			m_PlanetCameraPosition + m_CameraDirection, // Camera look dir
 			m_CameraUp
 		);
 
 		m_ProjectionMatrix = glm::perspective(
 			glm::radians(90.0f),
 			(float)context->GetRenderResolution().width / (float)context->GetRenderResolution().height,
-			0.1f,
-			10000.0f
+			m_Near,
+			m_Far
 		);
 		m_ProjectionMatrix[1][1] *= -1; // Stupid vulkan requirement
 	}

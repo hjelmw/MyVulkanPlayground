@@ -10,22 +10,11 @@
 #include "../ModelManager.hpp"
 
 
-static float g_LightPosition[] = { 0.0f, 300.0f, 30.0f };
+static float g_LightPosition[] = { 0.0f, 1000.0f, 30.0f };
 
 namespace NVulkanEngine
 {
 	glm::mat4 CGeometryPass::s_SphereMatrix = glm::identity<glm::mat4>();
-
-
-	// Render targets (outputs)
-	enum EGeometryAttachments
-	{
-		EPositions = 0,
-		ENormals = 1,
-		EAlbedo = 2,
-		EDepth = 3,
-		EGeometryAttachmentCount = 4
-	};
 
 	struct SGeometryUniformBuffer
 	{
@@ -34,7 +23,7 @@ namespace NVulkanEngine
 		glm::mat4 m_ProjectionMat;
 	};
 
-	static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings()
+	std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings()
 	{
 		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(2);
 
@@ -57,10 +46,10 @@ namespace NVulkanEngine
 
 	void CGeometryPass::InitPass(CGraphicsContext* context)
 	{
-		s_GeometryAttachments.resize(EGeometryAttachmentCount);
+		s_GeometryAttachments.resize(4);
 
 		/* Setup the attachments */
-		s_GeometryAttachments[EPositions] = CreateAttachment(
+		s_GeometryAttachments[(uint32_t)ERenderAttachments::Positions] = CreateAttachment(
 			context,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -68,7 +57,7 @@ namespace NVulkanEngine
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[ENormals] = CreateAttachment(
+		s_GeometryAttachments[(uint32_t)ERenderAttachments::Normals] = CreateAttachment(
 			context,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -76,7 +65,7 @@ namespace NVulkanEngine
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[EAlbedo] = CreateAttachment(
+		s_GeometryAttachments[(uint32_t)ERenderAttachments::Albedo] = CreateAttachment(
 			context,
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -84,11 +73,11 @@ namespace NVulkanEngine
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[EDepth] = CreateAttachment(
+		s_GeometryAttachments[(uint32_t)ERenderAttachments::Depth] = CreateAttachment(
 			context,
 			FindDepthFormat(context->GetPhysicalDevice()),
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
@@ -99,11 +88,11 @@ namespace NVulkanEngine
 
 		const std::vector<VkFormat> colorAttachmentFormats =
 		{
-			s_GeometryAttachments[EPositions].m_Format,
-			s_GeometryAttachments[ENormals].m_Format,
-			s_GeometryAttachments[EAlbedo].m_Format,
+			s_GeometryAttachments[(uint32_t)ERenderAttachments::Positions].m_Format,
+			s_GeometryAttachments[(uint32_t)ERenderAttachments::Normals].m_Format,
+			s_GeometryAttachments[(uint32_t)ERenderAttachments::Albedo].m_Format,
 		};
-		const VkFormat depthFormat = s_GeometryAttachments[EDepth].m_Format;
+		const VkFormat depthFormat = s_GeometryAttachments[(uint32_t)ERenderAttachments::Depth].m_Format;
 
 		m_GeometryPipeline = new CPipeline(EGraphicsPipeline);
 		m_GeometryPipeline->SetVertexShader("shaders/geometry.vert.spv");
@@ -191,16 +180,15 @@ namespace NVulkanEngine
 
 	void CGeometryPass::Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer)
 	{
+		ImGui::Begin("Geometry Pass");
+		ImGui::SliderFloat3("Light Position", g_LightPosition, -500.0f, 500.0f);
+		ImGui::End();
+
 		BeginRendering(context, commandBuffer, s_GeometryAttachments);
 		UpdateGeometryBuffers(context);
 
 		m_GeometryPipeline->Bind(commandBuffer);
 
-		ImGui::ShowDemoWindow();
-
-		ImGui::Begin("Geometry Pass");
-		ImGui::SliderFloat3("Light Position", g_LightPosition, -500.0f, 500.0f);
-		ImGui::End();
 
 		CModelManager* modelManager = CModelManager::GetInstance();
 		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)

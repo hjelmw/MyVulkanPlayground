@@ -3,6 +3,8 @@
 #include "../ModelManager.hpp"
 #include "../InputManager.hpp"
 
+#include "imgui.h"
+
 #define SHADOWMAP_RESOLUTION 2048
 
 namespace NVulkanEngine
@@ -16,7 +18,7 @@ namespace NVulkanEngine
 		glm::mat4 m_ProjectionMatrix;
 	};
 
-	static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings()
+	std::vector<VkDescriptorSetLayoutBinding> GetShadowBindings()
 	{
 		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(1);
 
@@ -37,10 +39,10 @@ namespace NVulkanEngine
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			(float)SHADOWMAP_RESOLUTION,
-			(float)SHADOWMAP_RESOLUTION);
+			(uint32_t)SHADOWMAP_RESOLUTION,
+			(uint32_t)SHADOWMAP_RESOLUTION);
 
-		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetDescriptorSetLayoutBindings();
+		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetShadowBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = SVertex::GetVertexBindingDescription();
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetShadowVertexInputAttributes();
 
@@ -97,12 +99,23 @@ namespace NVulkanEngine
 			glm::vec3 lightPosition  = CGeometryPass::GetSphereMatrix()[3];
 			glm::vec3 lightDirection = normalize(-lightPosition);
 
-			glm::mat4 perspectiveMatrix = glm::perspective(
-				(float)glm::radians(90.0f),
-				(float)SHADOWMAP_RESOLUTION / SHADOWMAP_RESOLUTION,
-				1.0f,
-				1000.0f
-				);
+			static float left   = 0.0f;
+			static float right  = 0.0f;
+			static float bottom = 0.0f;
+			static float top    = 0.0f;
+			static float near   = 0.0f;
+			static float far    = 0.0f;
+
+			//ImGui::Begin("Shadow Pass");
+			//ImGui::SliderFloat("Left",   &left,   -1000.0f, 1000.0f);
+			//ImGui::SliderFloat("Right",  &right,  -1000.0f, 1000.0f);
+			//ImGui::SliderFloat("Bottom", &bottom, -1000.0f, 1000.0f);
+			//ImGui::SliderFloat("Top",    &top,    -1000.0f, 1000.0f);
+			//ImGui::SliderFloat("Near",   &near,   -1000.0f, 1000.0f);
+			//ImGui::SliderFloat("Far",    &far,    -1000.0f, 1000.0f);
+			//ImGui::End();
+
+			glm::mat4 perspectiveMatrix = glm::ortho(left, right, bottom, top, near, far);
 
 			//orthoMatrix[1][1] *= -1; // Stupid vulkan requirement
 

@@ -43,6 +43,7 @@ namespace NVulkanEngine
 		void SetDeltaTime(float deltaTime);
 		void SetFrameIndex(uint32_t frameIndex);
 		void SetSwapchainImageIndex(uint32_t imageIndex);
+		void SetRenderResolution(const VkExtent2D resolution);
 
 	private:
 		VkInstance        m_VulkanInstance                 = VK_NULL_HANDLE;

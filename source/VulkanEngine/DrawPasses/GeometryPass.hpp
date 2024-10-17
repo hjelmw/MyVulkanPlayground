@@ -8,6 +8,7 @@
 
 #include <vector>
 
+
 namespace NVulkanEngine
 {
 	class CGeometryPass : public CDrawPass
@@ -20,7 +21,7 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
-		static SImageAttachment GetGBufferAttachment(uint32_t index) { return s_GeometryAttachments[index]; }
+		static SImageAttachment GetGBufferAttachment(ERenderAttachments index) { return s_GeometryAttachments[(uint32_t)index]; }
 		static glm::mat4 GetSphereMatrix() { return s_SphereMatrix; };
 
 	private:

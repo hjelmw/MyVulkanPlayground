@@ -43,4 +43,9 @@ namespace NVulkanEngine
 	{ 
 		m_SwapchainImageIndex = imageIndex; 
 	}
+
+	void CGraphicsContext::SetRenderResolution(VkExtent2D resolution)
+	{
+		m_RenderResolution = resolution;
+	}
 };

@@ -9,6 +9,18 @@
 #include <glm/glm.hpp>
 #include <array>
 
+enum class ERenderAttachments : uint32_t
+{
+	Positions      = 0,
+	Normals        = 1,
+	Albedo         = 2,
+	Depth          = 3,
+	ShadowMap      = 4,
+	SceneColor     = 5,
+	Count          = 6
+};
+
+
 namespace NVulkanEngine
 {
 	class CDrawPass

@@ -129,7 +129,7 @@ namespace NVulkanEngine
 		VkImageLayout     imageLayout)
 	{
 		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageLayout = imageLayout;
 		imageInfo.imageView = imageView;
 		imageInfo.sampler = sampler;
 
@@ -147,7 +147,7 @@ namespace NVulkanEngine
 		descriptorImageWrites.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorImageWrites.dstBinding      = descriptorBinding;
 		descriptorImageWrites.descriptorCount = 1;
-		descriptorImageWrites.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorImageWrites.descriptorType  = descriptorType;
 		descriptorImageWrites.dstArrayElement = 0;
 		descriptorImageWrites.pImageInfo      = descriptorImageInfo;
 
