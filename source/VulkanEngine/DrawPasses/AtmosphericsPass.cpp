@@ -5,14 +5,30 @@
 #include "../InputManager.hpp"
 #include <imgui.h>
 
-static glm::vec3 g_Wavelengths = glm::vec3(700.0f, 530.0f, 440.0f);
+//
+// I took all these values from shadertoy so no idea if they are scientifically accurate
+// Source https://www.shadertoy.com/view/wlBXWK
+// 
 
-static float g_PlanetRadius = 6000;
-static float g_AtmosphereScale = 0.5f;
-static float g_DensityFallof = 1.0f;
-static float g_ScatteringStrength = 1.0f;
-static int   g_NumInscatteringPoints = 16;
-static int   g_NumOpticalDepthPoints = 8;
+// Atmosphere skybox size
+static float     g_PlanetRadius = 6340e3;
+static float     g_AtmosphereScale = 0.015f; // Atmosphere radius is x% larger than planet radius
+// Scattering coefficients
+static constexpr glm::vec3 g_RayleighBetaScattering = glm::vec3(5.5e-6f, 13.0e-6f, 22.4e-6f);
+static constexpr glm::vec3 g_MieBetaScattering = glm::vec3(21e-6, 21e-6, 21e-6);
+static constexpr glm::vec3 g_AmbientBeta = glm::vec3(0.0f, 0.0f, 0.0f);
+static constexpr glm::vec3 g_AbsorptionBeta = glm::vec3(2.04e-5, 4.97e-5, 1.95e-6);
+
+// Height values, i.e up to what height does the scattering no longer have an effect
+static constexpr float g_RayleighMaxHeight   = 8e3f;
+static constexpr float g_MieMaxHeight        = 1.2e3f;
+static constexpr float g_AbsorptionMaxHeight = 30e3f;
+static constexpr float g_AbsorptionFallof    = 4e3f;
+
+
+static float     g_ScatteringIntensity = 40.0f;
+static int       g_NumInscatteringPoints = 16;
+static int       g_NumOpticalDepthPoints = 8;
 
 namespace NVulkanEngine
 {
@@ -24,25 +40,34 @@ namespace NVulkanEngine
 		//
 		float m_CameraFar = 0.0f;
 	};
-
 	struct SAtmosphericsFragmentConstants
 	{
-		glm::vec3 m_PlanetCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-		float m_CameraNear = 0.1f;
+		glm::vec3    m_PlanetCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_CameraNear           = 0.0f;
 		//
-		glm::vec3 m_PlanetCenter = glm::vec3(0.0f, 0.0f, 0.0f);
-		float m_CameraFar = 10000.0f;
+		glm::vec3    m_PlanetCenter = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_CameraFar    = 0.0f;
 		//
-		glm::vec3 m_PlanetToSunDir = glm::vec3(0.0f, 0.0f, 0.0f);
-		uint32_t m_NumInScatteringPoints = (uint32_t)g_NumInscatteringPoints;
+		glm::vec3     m_PlanetToSunDir        = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::uint32_t m_NumInScatteringPoints = 0;
 		//
-		uint32_t m_NumOpticalDepthPoints = (uint32_t)g_NumOpticalDepthPoints;
-		float m_PlanetRadius = g_PlanetRadius;
-		float m_AtmosphereRadius = (1.0f + g_AtmosphereScale) * g_PlanetRadius;
-		float m_DensityFallof = g_DensityFallof;
+		glm::uint32_t m_NumOpticalDepthPoints = 0;
+		glm::float32  m_PlanetRadius          = 0.0f;
+		glm::float32  m_AtmosphereRadius      = 0.0f;
+		glm::float32  m_AbsorptionFallof      = 0.0f;
 		//
-		glm::vec3 m_ScatteringCoefficients = glm::vec3(0.0f, 0.0f, 0.0f);
-		float m_Pad0 = 0.0f;
+		glm::vec3    m_AbsorptionBeta        = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_AbsorptionHeight      = 0.0f;
+		//
+		glm::vec3    m_RayleighBetaScattering = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_RayleighHeight         = 0.0f;
+		//
+		glm::vec3    m_MieBetaScattering = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_MieHeight         = 0.0f;
+		//
+		glm::uint32_t m_AllowMieScattering  = 0;
+		glm::float32  m_ScatteringIntensity = 0.0f;
+		glm::vec2     m_Pad0;
 	};
 
 	std::vector<VkDescriptorSetLayoutBinding> GetAtmosphericsBindings()
@@ -136,15 +161,10 @@ namespace NVulkanEngine
 		float cameraNear = camera->GetNear();
 		float cameraFar = camera->GetFar();
 
-		glm::vec3 planetCameraPos = glm::vec3(0.0f, camera->GetPosition().y, 0.0f);
-		glm::vec3 planetCenter    = glm::vec3(0.0f, -g_PlanetRadius, 0.0f);
-		glm::vec3 sunDirection    = glm::vec3(0.0f, -1, 0.0f);
-		glm::vec3 planetToSunDir  = sunDirection;//glm::normalize(sunDirection - planetCenter);
-
-		float scatterRed   = 1.0f;//powf(400.0f / g_Wavelengths.x, 4.0f) * g_ScatteringStrength;
-		float scatterGreen = 1.0f;//powf(400.0f / g_Wavelengths.y, 4.0f) * g_ScatteringStrength;
-		float scatterBlue  = 1.0f;//powf(400.0f / g_Wavelengths.z, 4.0f) * g_ScatteringStrength;
-		glm::vec3 scatteringCoefficients = glm::vec3(scatterRed, scatterGreen, scatterBlue);
+		glm::vec3 planetCameraPos = glm::vec3(0.0f, g_PlanetRadius + camera->GetPosition().y, 0.0f);
+		glm::vec3 planetCenter    = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 sunDirection    = -glm::vec3(0.0f, -1.0f, 0.0f);
+		glm::vec3 planetToSunDir  = sunDirection;
 
 		SAtmosphericsFragmentConstants atmosphericsUbo{};
 		atmosphericsUbo.m_PlanetToSunDir         = planetToSunDir;
@@ -156,8 +176,16 @@ namespace NVulkanEngine
 		atmosphericsUbo.m_NumOpticalDepthPoints  = g_NumOpticalDepthPoints;
 		atmosphericsUbo.m_CameraNear             = cameraNear;
 		atmosphericsUbo.m_CameraFar              = cameraFar;
-		atmosphericsUbo.m_DensityFallof          = g_DensityFallof;
-		atmosphericsUbo.m_ScatteringCoefficients = scatteringCoefficients;
+		atmosphericsUbo.m_AbsorptionFallof       = g_AbsorptionFallof;
+		atmosphericsUbo.m_AbsorptionBeta         = g_AbsorptionBeta;
+		atmosphericsUbo.m_AbsorptionHeight       = g_AbsorptionMaxHeight;
+		atmosphericsUbo.m_RayleighBetaScattering = g_RayleighBetaScattering;
+		atmosphericsUbo.m_RayleighHeight         = g_RayleighMaxHeight;
+		atmosphericsUbo.m_MieBetaScattering      = g_MieBetaScattering;
+		atmosphericsUbo.m_MieHeight              = g_MieMaxHeight;
+		atmosphericsUbo.m_AllowMieScattering     = true;
+		atmosphericsUbo.m_ScatteringIntensity    = g_ScatteringIntensity;
+
 
 		void* data;
 		vkMapMemory(context->GetLogicalDevice(), m_AtmosphericsBufferMemory, 0, sizeof(SAtmosphericsFragmentConstants), 0, &data);
@@ -173,8 +201,7 @@ namespace NVulkanEngine
 		ImGui::SliderFloat("Planet Radius", &g_PlanetRadius, 0.0f, 6000.0f);
 		ImGui::SliderInt("Num Inscattering Points", &g_NumInscatteringPoints, 0, 128);
 		ImGui::SliderInt("Num Optical Depth Points", &g_NumOpticalDepthPoints, 0, 64);
-		ImGui::SliderFloat("Scattering Strength", &g_ScatteringStrength, 0.0f, 10.0f);
-		ImGui::SliderFloat("Density Fallof", &g_DensityFallof, -1.0f, 100.0f);
+		ImGui::SliderFloat("Scattering Intensity", &g_ScatteringIntensity, 0.0f, 1000.0f);
 		ImGui::End();
 
 		UpdateAtmosphericsBuffer(context);
