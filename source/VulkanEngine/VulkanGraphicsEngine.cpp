@@ -64,17 +64,21 @@ namespace NVulkanEngine
 		InitCamera();
 		InitSwapchain();
 		CreateModels();
-		InitDrawPasses();
 		InitImGui();
+		InitDrawPasses();
+
+		m_IsRunning = true;
 	}
 
 	void CVulkanGraphicsEngine::Cleanup()
 	{
+		vkDeviceWaitIdle(m_VulkanDevice);
+
 		CleanupSwapchain();
 		CleanupDrawPasses();
+		CleanupImGui();
 		CleanupVulkan();
 		CleanupWindow();
-		//CleanupImGui();
 	}
 
 	void CVulkanGraphicsEngine::InitWindow()
@@ -169,6 +173,13 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::CleanupWindow()
 	{
 		glfwDestroyWindow(m_Window);
+	}
+
+	void CVulkanGraphicsEngine::CleanupImGui()
+	{
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
 	}
 
 	bool CVulkanGraphicsEngine::CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*> deviceExtensions)
@@ -341,8 +352,8 @@ namespace NVulkanEngine
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
 		createInfo.ppEnabledExtensionNames = instanceExtensions.data();
-
-		if (vkCreateInstance(&createInfo, nullptr, &m_VulkanInstance) != VK_SUCCESS)
+		VkResult result = vkCreateInstance(&createInfo, nullptr, &m_VulkanInstance);
+		if (result != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create instance!");
 		}
@@ -561,6 +572,7 @@ namespace NVulkanEngine
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 		poolInfo.poolSizeCount = (uint32_t)poolSizes.size();
 		poolInfo.pPoolSizes    = poolSizes.data();
 		poolInfo.maxSets       = 4;
@@ -585,8 +597,8 @@ namespace NVulkanEngine
 		init_info.Queue                       = m_Context->GetGraphicsQueue();
 		init_info.PipelineCache               = VK_NULL_HANDLE;
 		init_info.DescriptorPool              = m_ImGuiDescriptorPool;
-		init_info.UseDynamicRendering         = true;
 		init_info.PipelineRenderingCreateInfo = pipeline_rendering_create_info;
+		init_info.UseDynamicRendering         = true;
 		init_info.RenderPass                  = nullptr; // Not needed since using dynamic rendering
 		init_info.Subpass                     = 0;
 		init_info.MinImageCount               = CSwapchain::GetInstance()->GetMinImageCount();
@@ -595,6 +607,8 @@ namespace NVulkanEngine
 		init_info.Allocator                   = nullptr; // For now. Add to enable validation layer debugging?
 		init_info.CheckVkResultFn             = check_vk_result; // For now
 		ImGui_ImplVulkan_Init(&init_info);
+
+		//m_ImGuiPipeline = new CPipeline(EGraphicsPipeline);
 	}
 
 	void CVulkanGraphicsEngine::CreateGraphicsContext()
@@ -640,13 +654,13 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::InitDrawPasses()
 	{
-		m_DrawPasses.resize(4);
+		m_DrawPasses;
 
 		// Also Specifies order of execution
-		m_DrawPasses[0] = new CGeometryPass();
-		m_DrawPasses[1] = new CShadowPass();
-		m_DrawPasses[2] = new CLightingPass();
-		m_DrawPasses[3] = new CAtmosphericsPass();
+		m_DrawPasses.push_back(new CGeometryPass());
+		m_DrawPasses.push_back(new CShadowPass());
+		m_DrawPasses.push_back(new CLightingPass());
+		m_DrawPasses.push_back(new CAtmosphericsPass());
 
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
@@ -672,6 +686,14 @@ namespace NVulkanEngine
 
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+
+		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+		ImGui::Begin("Viewport");
+		ImGui::End();
+		ImGui::Begin("Textures");
+		static int test;
+		ImGui::InputInt("Search", &test);
+		ImGui::End();
 		ImGui::Render();
 		ImDrawData* main_draw_data = ImGui::GetDrawData();
 		const bool main_is_minimized = (main_draw_data->DisplaySize.x <= 0.0f || main_draw_data->DisplaySize.y <= 0.0f);
@@ -696,16 +718,24 @@ namespace NVulkanEngine
 		renderInfo.pColorAttachments = colorAttachmentInfos.data();
 		renderInfo.pDepthAttachment = nullptr;
 
+		SRenderAttachment swapchainAttachment{};
+		swapchainAttachment.m_Format = swapchain->GetSwapchainFormat();
+		swapchainAttachment.m_Image = swapchain->GetSwapchainImage(imageIndex);
+		swapchainAttachment.m_ImageView = swapchain->GetSwapchainImageView(imageIndex);
+		swapchainAttachment.m_ImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		swapchainAttachment.m_RenderAttachmentInfo = swapChainInfo;
+		swapchainAttachment.m_Memory = VK_NULL_HANDLE; // Not needed
+
 		VkImage swapchainImage = swapchain->GetSwapchainImage(imageIndex);
 		VkFormat swapchainFormat = swapchain->GetSwapchainFormat();
-		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainImage, swapchainFormat, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainAttachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
 
 		// Record dear imgui primitives into command buffer
 		vkCmdBeginRendering(m_CommandBuffers[m_FrameIndex], &renderInfo);
 		ImGui_ImplVulkan_RenderDrawData(main_draw_data, m_CommandBuffers[m_FrameIndex]);
 		vkCmdEndRendering(m_CommandBuffers[m_FrameIndex]);
 
-		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainImage, swapchainFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
+		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainAttachment, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
 	}
 
 	void CVulkanGraphicsEngine::AddModel(const std::string& modelpath)
@@ -750,12 +780,18 @@ namespace NVulkanEngine
 		modelManager->AddScaling(modelManager->GetCurrentModelIndex(), scaling);
 	}
 
+	bool CVulkanGraphicsEngine::IsRunning()
+	{
+		return m_IsRunning;
+	}
+
 	static auto s_LastTime = std::chrono::high_resolution_clock::now();
 
 	void CVulkanGraphicsEngine::DrawFrame()
 	{
 		if (glfwWindowShouldClose(m_Window))
 		{
+			m_IsRunning = false;
 			return;
 		}
 		glfwPollEvents();

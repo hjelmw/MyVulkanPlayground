@@ -5,7 +5,7 @@
 
 #include "imgui.h"
 
-#define SHADOWMAP_RESOLUTION 2048
+#define SHADOWMAP_RESOLUTION 1024
 
 namespace NVulkanEngine
 {
@@ -34,7 +34,7 @@ namespace NVulkanEngine
 
 	void CShadowPass::InitPass(CGraphicsContext* context)
 	{
-		s_ShadowAttachment = CreateAttachment(
+		s_ShadowAttachment = CreateRenderAttachment(
 			context,
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -143,6 +143,9 @@ namespace NVulkanEngine
 
 	void CShadowPass::Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer)
 	{
+		if (true)
+			return;
+
 		BeginRendering(context, commandBuffer, { s_ShadowAttachment });
 		UpdateShadowBuffers(context);
 

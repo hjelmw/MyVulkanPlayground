@@ -3,12 +3,14 @@
 #include <vulkan/vulkan.hpp>
 
 #include "GraphicsContext.hpp"
+#include "VulkanGraphicsEngineUtils.hpp"
 
 #include "Swapchain.hpp"
 
 #include <glm/glm.hpp>
 #include <array>
 
+// Remember to store in this order
 enum class ERenderAttachments : uint32_t
 {
 	Positions      = 0,
@@ -45,18 +47,6 @@ namespace NVulkanEngine
 			EAttachmentUsageCount = 3
 		};
 
-		// A draw pass attachment
-		struct SImageAttachment
-		{
-			EAttachmentType           m_Type;
-			EAttachmentUsage          m_Usage;
-			VkImage                   m_Image;
-			VkDeviceMemory            m_Memory;
-			VkImageView               m_ImageView;
-			VkFormat                  m_Format;
-			VkRenderingAttachmentInfo m_RenderAttachmentInfo;
-		};
-
 		// Creates a sampler with the provided parameters
 		VkSampler CreateSampler(
 			CGraphicsContext* context,
@@ -69,15 +59,6 @@ namespace NVulkanEngine
 			float                lodbias,
 			float                minLod,
 			float                maxLod);
-
-		// Creates a attachment with associated vulkan image & view
-		SImageAttachment CreateAttachment(
-			CGraphicsContext*       context,
-			VkFormat                format,
-			VkImageUsageFlags       usage,
-			VkImageLayout           imageLayout,
-			uint32_t                width,
-			uint32_t                height);
 
 		// Creates the descriptor pool from which descriptor sets can be allocated from
 		void AllocateDescriptorPool(
@@ -121,13 +102,13 @@ namespace NVulkanEngine
 			int32_t           texHeight, 
 			uint32_t          mipLevels);
 
-		SImageAttachment GetSwapchainAttachment(CGraphicsContext* context);
+		SRenderAttachment GetSwapchainAttachment(CGraphicsContext* context);
 
 		// Begin rendering with attachments
 		void BeginRendering(
 			CGraphicsContext*             context,
 			VkCommandBuffer               commandBuffer,
-			std::vector<SImageAttachment> attachmentInfos);
+			std::vector<SRenderAttachment> attachmentInfos);
 
 		void EndRendering(VkCommandBuffer commandBuffer);
 
@@ -141,7 +122,7 @@ namespace NVulkanEngine
 			uint32_t width, 
 			uint32_t height);
 
-		std::vector<SImageAttachment> m_Attachments = {};
+		std::vector<SRenderAttachment> m_Attachments = {};
 
 		VkDescriptorSetLayout        m_DescriptorSetLayout   = VK_NULL_HANDLE;
 		VkPipelineLayout             m_PipelineLayout        = VK_NULL_HANDLE;

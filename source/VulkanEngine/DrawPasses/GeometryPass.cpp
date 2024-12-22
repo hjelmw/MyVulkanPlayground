@@ -9,7 +9,6 @@
 #include "../InputManager.hpp"
 #include "../ModelManager.hpp"
 
-
 static float g_LightPosition[] = { 0.0f, 1000.0f, 30.0f };
 
 namespace NVulkanEngine
@@ -49,7 +48,7 @@ namespace NVulkanEngine
 		s_GeometryAttachments.resize(4);
 
 		/* Setup the attachments */
-		s_GeometryAttachments[(uint32_t)ERenderAttachments::Positions] = CreateAttachment(
+		s_GeometryAttachments[(uint32_t)ERenderAttachments::Positions] = CreateRenderAttachment(
 			context,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -57,7 +56,7 @@ namespace NVulkanEngine
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[(uint32_t)ERenderAttachments::Normals] = CreateAttachment(
+		s_GeometryAttachments[(uint32_t)ERenderAttachments::Normals] = CreateRenderAttachment(
 			context,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -65,7 +64,7 @@ namespace NVulkanEngine
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[(uint32_t)ERenderAttachments::Albedo] = CreateAttachment(
+		s_GeometryAttachments[(uint32_t)ERenderAttachments::Albedo] = CreateRenderAttachment(
 			context,
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -73,7 +72,7 @@ namespace NVulkanEngine
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[(uint32_t)ERenderAttachments::Depth] = CreateAttachment(
+		s_GeometryAttachments[(uint32_t)ERenderAttachments::Depth] = CreateRenderAttachment(
 			context,
 			FindDepthFormat(context->GetPhysicalDevice()),
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -153,9 +152,7 @@ namespace NVulkanEngine
 		//m_RotationDegrees = fmod(m_RotationDegrees + 2.0f * context->GetDeltaTime(), 360.0f);
 
 		glm::mat4 sphereMatrix = glm::identity<glm::mat4>();
-		//sphereMatrix = glm::rotate(sphereMatrix, m_RotationDegrees, glm::vec3(1.0f, 1.0f, 1.0f));
 		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(g_LightPosition[0], g_LightPosition[1], g_LightPosition[2]));
-		//sphereMatrix = glm::scale(sphereMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
 		s_SphereMatrix = sphereMatrix;
 
 		CCamera* camera = CInputManager::GetInstance()->GetCamera();
@@ -217,25 +214,27 @@ namespace NVulkanEngine
 
 	void CGeometryPass::CleanupPass(CGraphicsContext* context)
 	{
+		VkDevice device = context->GetLogicalDevice();
+
 		// Uniform buffer
-		vkDestroyBuffer(context->GetLogicalDevice(), m_GeometryBufferSphere, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_GeometryBufferMemorySphere, nullptr);
+		vkDestroyBuffer(device, m_GeometryBufferSphere, nullptr);
+		vkFreeMemory(device, m_GeometryBufferMemorySphere, nullptr);
 
 		// Descriptor pool and layout (don't need to destroy the sets since they are allocated from the pool)
-		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
-		vkDestroyDescriptorSetLayout(context->GetLogicalDevice(), m_DescriptorSetLayout, nullptr);
+		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
 
 		// Pipeline and layout
 		m_GeometryPipeline->Cleanup(context);
-		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
+		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
 
 		// Attachments
 		for (uint32_t i = 0; i < s_GeometryAttachments.size(); i++)
 		{
-			vkDestroyImageView(context->GetLogicalDevice(), s_GeometryAttachments[i].m_ImageView, nullptr);
+			vkDestroyImageView(device, s_GeometryAttachments[i].m_ImageView, nullptr);
 
-			vkDestroyImage(context->GetLogicalDevice(), s_GeometryAttachments[i].m_Image, nullptr);
-			vkFreeMemory(context->GetLogicalDevice(), s_GeometryAttachments[i].m_Memory, nullptr);
+			vkDestroyImage(device, s_GeometryAttachments[i].m_Image, nullptr);
+			vkFreeMemory(device, s_GeometryAttachments[i].m_Memory, nullptr);
 
 			s_GeometryAttachments[i].m_Format = VK_FORMAT_UNDEFINED;
 			s_GeometryAttachments[i].m_RenderAttachmentInfo = {};

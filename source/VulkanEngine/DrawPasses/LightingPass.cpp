@@ -7,7 +7,6 @@
 #include "ShadowPass.hpp"
 #include "../InputManager.hpp"
 
-
 static float g_LightRadius = 1500.0f;
 
 namespace NVulkanEngine
@@ -83,7 +82,7 @@ namespace NVulkanEngine
 	{
 		m_DeferredAttachments.resize((uint32_t)ERenderAttachments::Count);
 
-		m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor] = CreateAttachment(
+		m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor] = CreateRenderAttachment(
 			context,
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -127,7 +126,7 @@ namespace NVulkanEngine
 			vertexAttributeDescriptions,
 			colorAttachmentFormats,
 			depthFormat);
-
+			
 		/* Allocat sets for 5 sampled images (pos, normals, albedo, depth, shadowmap) and 1 uniform light buffer  */
 		AllocateDescriptorPool(context, g_MaxFramesInFlight, g_MaxFramesInFlight * 5, g_MaxFramesInFlight * 1);
 
@@ -190,27 +189,20 @@ namespace NVulkanEngine
 	{
 		UpdateLightBuffers(context);
 
-		VkImage  sceneColor = m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor].m_Image;
-		VkFormat sceneFormat = m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor].m_Format;
-
-		VkImage  positionsImage  = m_DeferredAttachments[(uint32_t)ERenderAttachments::Positions].m_Image;
-		VkFormat positionsFormat = m_DeferredAttachments[(uint32_t)ERenderAttachments::Positions].m_Format;
-		VkImage  normalsImage    = m_DeferredAttachments[(uint32_t)ERenderAttachments::Normals].m_Image;
-		VkFormat normalsFormat   = m_DeferredAttachments[(uint32_t)ERenderAttachments::Normals].m_Format;
-		VkImage  albedoImage     = m_DeferredAttachments[(uint32_t)ERenderAttachments::Albedo].m_Image;
-		VkFormat albedoFormat    = m_DeferredAttachments[(uint32_t)ERenderAttachments::Albedo].m_Format;
-		VkImage  depthImage      = m_DeferredAttachments[(uint32_t)ERenderAttachments::Depth].m_Image;
-		VkFormat depthFormat     = m_DeferredAttachments[(uint32_t)ERenderAttachments::Depth].m_Format;
-		VkImage  shadowImage     = m_DeferredAttachments[(uint32_t)ERenderAttachments::ShadowMap].m_Image;
-		VkFormat shadowFormat    = m_DeferredAttachments[(uint32_t)ERenderAttachments::ShadowMap].m_Format;
+		SRenderAttachment sceneColor         = m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor];
+		SRenderAttachment positionsAttachment = m_DeferredAttachments[(uint32_t)ERenderAttachments::Positions];
+		SRenderAttachment normalsAttachment   = m_DeferredAttachments[(uint32_t)ERenderAttachments::Normals];
+		SRenderAttachment albedoAttachment    = m_DeferredAttachments[(uint32_t)ERenderAttachments::Albedo];
+		SRenderAttachment depthAttachment     = m_DeferredAttachments[(uint32_t)ERenderAttachments::Depth];
+		SRenderAttachment shadowAttachment    = m_DeferredAttachments[(uint32_t)ERenderAttachments::ShadowMap];
 		
-		TransitionImageLayout(commandBuffer, positionsImage, positionsFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, normalsImage,   normalsFormat,   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, albedoImage,    albedoFormat,    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, depthImage,     depthFormat,     VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, shadowImage,    shadowFormat,    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, positionsAttachment, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, normalsAttachment,   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, albedoAttachment,    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, depthAttachment,     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, shadowAttachment,    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 
-		std::vector<SImageAttachment> sceneColorAttachment = { m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor] };
+		std::vector<SRenderAttachment> sceneColorAttachment = { m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor] };
 		BeginRendering(context, commandBuffer, sceneColorAttachment);
 
 		m_DeferredPipeline->Bind(commandBuffer);
@@ -222,11 +214,11 @@ namespace NVulkanEngine
 
 		EndRendering(commandBuffer);
 
-		TransitionImageLayout(commandBuffer, positionsImage, positionsFormat, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, normalsImage,   normalsFormat,   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, albedoImage,    albedoFormat,    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, depthImage,     depthFormat,     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, shadowImage,    shadowFormat,    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, positionsAttachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, normalsAttachment,   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, albedoAttachment,    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, depthAttachment,     VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, shadowAttachment,    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 	}
 
 	void CLightingPass::CleanupPass(CGraphicsContext* context)
@@ -235,17 +227,12 @@ namespace NVulkanEngine
 		vkDestroyBuffer(context->GetLogicalDevice(), m_DeferredLightBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory, nullptr);
 
-		// Attachments
+		vkDestroySampler(context->GetLogicalDevice(), m_DeferredSampler, nullptr);
+		vkDestroySampler(context->GetLogicalDevice(), m_ClampSampler, nullptr);
+
+		// Clear Attachments
 		for (uint32_t i = 0; i < m_DeferredAttachments.size(); i++)
 		{
-			vkDestroyImageView(context->GetLogicalDevice(), m_DeferredAttachments[i].m_ImageView, nullptr);
-
-			vkDestroyImage(context->GetLogicalDevice(), m_DeferredAttachments[i].m_Image, nullptr);
-			vkFreeMemory(context->GetLogicalDevice(), m_DeferredAttachments[i].m_Memory, nullptr);
-
-			vkDestroySampler(context->GetLogicalDevice(), m_DeferredSampler, nullptr);
-			vkDestroySampler(context->GetLogicalDevice(), m_ClampSampler, nullptr);
-
 			m_DeferredAttachments[i].m_Format = VK_FORMAT_UNDEFINED;
 			m_DeferredAttachments[i].m_RenderAttachmentInfo = {};
 		}

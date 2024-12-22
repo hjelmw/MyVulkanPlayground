@@ -3,6 +3,7 @@
 #include "LightingPass.hpp"
 
 #include "../InputManager.hpp"
+
 #include <imgui.h>
 
 //
@@ -15,9 +16,9 @@ static float     g_PlanetRadius = 6340e3;
 static float     g_AtmosphereScale = 0.015f; // Atmosphere radius is x% larger than planet radius
 // Scattering coefficients
 static constexpr glm::vec3 g_RayleighBetaScattering = glm::vec3(5.5e-6f, 13.0e-6f, 22.4e-6f);
-static constexpr glm::vec3 g_MieBetaScattering = glm::vec3(21e-6, 21e-6, 21e-6);
-static constexpr glm::vec3 g_AmbientBeta = glm::vec3(0.0f, 0.0f, 0.0f);
-static constexpr glm::vec3 g_AbsorptionBeta = glm::vec3(2.04e-5, 4.97e-5, 1.95e-6);
+static constexpr glm::vec3 g_MieBetaScattering      = glm::vec3(21e-6, 21e-6, 21e-6);
+static constexpr glm::vec3 g_AmbientBeta            = glm::vec3(0.0f, 0.0f, 0.0f);
+static constexpr glm::vec3 g_AbsorptionBeta         = glm::vec3(2.04e-5, 4.97e-5, 1.95e-6);
 
 // Height values, i.e up to what height does the scattering no longer have an effect
 static constexpr float g_RayleighMaxHeight   = 8e3f;
@@ -25,8 +26,7 @@ static constexpr float g_MieMaxHeight        = 1.2e3f;
 static constexpr float g_AbsorptionMaxHeight = 30e3f;
 static constexpr float g_AbsorptionFallof    = 4e3f;
 
-
-static float     g_ScatteringIntensity = 40.0f;
+static float     g_ScatteringIntensity   = 40.0f;
 static int       g_NumInscatteringPoints = 16;
 static int       g_NumOpticalDepthPoints = 8;
 
@@ -67,7 +67,7 @@ namespace NVulkanEngine
 		//
 		glm::uint32_t m_AllowMieScattering  = 0;
 		glm::float32  m_ScatteringIntensity = 0.0f;
-		glm::vec2     m_Pad0;
+		glm::vec2     m_Pad0                = glm::vec2(0xdeadbeef, 0xdeadbeef);
 	};
 
 	std::vector<VkDescriptorSetLayoutBinding> GetAtmosphericsBindings()
@@ -88,7 +88,7 @@ namespace NVulkanEngine
 		attributeDescriptions[1].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
 		attributeDescriptions[1].pImmutableSamplers = nullptr;
 
-		// 2: Fragment shader uniform buffer
+		// 2: Fragment shader uniform bufferz
 		attributeDescriptions[2].binding            = 2;
 		attributeDescriptions[2].descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		attributeDescriptions[2].descriptorCount    = 1;
@@ -152,7 +152,18 @@ namespace NVulkanEngine
 
 	void CAtmosphericsPass::CleanupPass(CGraphicsContext* context)
 	{
+		VkDevice device = context->GetLogicalDevice();
 
+		vkDestroyBuffer(device, m_AtmosphericsBuffer, nullptr);
+		vkFreeMemory(device, m_AtmosphericsBufferMemory, nullptr);
+
+		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
+
+		vkDestroySampler(device, m_AtmosphericsSampler, nullptr);
+
+		m_AtmosphericsPipeline->Cleanup(context);
+		delete m_AtmosphericsPipeline;
 	}
 
 	void CAtmosphericsPass::UpdateAtmosphericsBuffer(CGraphicsContext* context)
@@ -206,24 +217,15 @@ namespace NVulkanEngine
 
 		UpdateAtmosphericsBuffer(context);
 
-		SImageAttachment sceneColorAttachment = CLightingPass::GetSceneColorAttachment();
-		VkImage  sceneImage  = sceneColorAttachment.m_Image;
-		VkFormat sceneFormat = sceneColorAttachment.m_Format;
+		SRenderAttachment sceneColorAttachment = CLightingPass::GetSceneColorAttachment();
+		SRenderAttachment depthAttachment      = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Depth);
+		SRenderAttachment swapchainAttachment  = CDrawPass::GetSwapchainAttachment(context);
 
-		SImageAttachment depthAttachment = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Depth);
-		VkImage  depthImage  = depthAttachment.m_Image;
-		VkFormat depthFormat = depthAttachment.m_Format;
+		TransitionImageLayout(commandBuffer, swapchainAttachment,  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, sceneColorAttachment, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, depthAttachment,      VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, 1);
 
-		SImageAttachment swapchainAttachment = CDrawPass::GetSwapchainAttachment(context);
-		VkImage  swapchainImage = swapchainAttachment.m_Image;
-		VkFormat swapchainFormat = swapchainAttachment.m_Format;
-
-		TransitionImageLayout(commandBuffer, swapchainImage, swapchainFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-
-		TransitionImageLayout(commandBuffer, sceneImage, sceneFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, depthImage, depthFormat, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, 1);
-
-		std::vector<SImageAttachment> inscatteringAttachments = { swapchainAttachment };
+		std::vector<SRenderAttachment> inscatteringAttachments = { swapchainAttachment };
 		BeginRendering(context, commandBuffer, inscatteringAttachments);
 
 		m_AtmosphericsPipeline->Bind(commandBuffer);
@@ -245,10 +247,8 @@ namespace NVulkanEngine
 
 		EndRendering(commandBuffer);
 
-		TransitionImageLayout(commandBuffer, swapchainImage, swapchainFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
-
-		TransitionImageLayout(commandBuffer, sceneImage, swapchainFormat, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, depthImage, depthFormat,     VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,  VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, 1);
-
+		TransitionImageLayout(commandBuffer, swapchainAttachment,  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
+		TransitionImageLayout(commandBuffer, sceneColorAttachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, depthAttachment,      VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, 1);
 	}
 };

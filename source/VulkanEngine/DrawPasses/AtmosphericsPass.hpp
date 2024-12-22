@@ -24,8 +24,8 @@ namespace NVulkanEngine
 		std::vector<VkDescriptorSet> m_DescriptorSetsAtmospherics = { };
 
 		// Atmospherics Uniform Buffer
-		VkBuffer					  m_AtmosphericsBuffer       = VK_NULL_HANDLE;
-		VkDeviceMemory				  m_AtmosphericsBufferMemory = VK_NULL_HANDLE;
+		VkBuffer					m_AtmosphericsBuffer       = VK_NULL_HANDLE;
+		VkDeviceMemory				m_AtmosphericsBufferMemory = VK_NULL_HANDLE;
 
 		VkSampler                     m_AtmosphericsSampler      = VK_NULL_HANDLE;
 

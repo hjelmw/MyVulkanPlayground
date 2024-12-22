@@ -41,7 +41,7 @@ int main()
 
 	graphicsEngine.Initialize();
 
-	while (true)
+	while (graphicsEngine.IsRunning())
 	{
 		graphicsEngine.DrawFrame();
 	}

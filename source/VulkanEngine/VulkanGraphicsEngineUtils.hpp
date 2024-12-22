@@ -18,13 +18,24 @@
 namespace NVulkanEngine
 {
 	static const std::vector<const char*> g_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
-	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
+	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_EXT_SHADER_OBJECT_EXTENSION_NAME };
 
 #if defined(_DEBUG)
 	static const bool g_EnableValidationLayers = true;
 #else
 	static const bool g_EnableValidationLayers = false;
 #endif
+
+	struct SRenderAttachment
+	{
+		VkFormat                  m_Format = VK_FORMAT_UNDEFINED;
+		VkImage                   m_Image = VK_NULL_HANDLE;
+		VkImageView               m_ImageView = VK_NULL_HANDLE;
+		VkImageLayout             m_CurrentImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		VkImageUsageFlags         m_ImageUsage = VK_IMAGE_USAGE_FLAG_BITS_MAX_ENUM;
+		VkRenderingAttachmentInfo m_RenderAttachmentInfo = {};
+		VkDeviceMemory            m_Memory = VK_NULL_HANDLE;
+	};
 
 	static std::vector<const char*> GetRequiredInstanceExtensions()
 	{
@@ -487,27 +498,25 @@ namespace NVulkanEngine
 		VkImageView imageView;
 		if (vkCreateImageView(context->GetLogicalDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS)
 		{
-			throw std::runtime_error("failed to create texture image view!");
+			throw std::runtime_error("failed to create renderAttachment image view!");
 		}
 
 		return imageView;
 	}
 
 	static void TransitionImageLayout(
-		VkCommandBuffer   commandBuffer,
-		VkImage           image,
-		VkFormat          format,
-		VkImageLayout     oldLayout,
-		VkImageLayout     newLayout,
-		uint32_t          mipLevels)
+		VkCommandBuffer    commandBuffer,
+		SRenderAttachment& renderAttachment,
+		VkImageLayout      newLayout,
+		uint32_t           mipLevels)
 	{
 		VkImageMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.oldLayout = oldLayout;
+		barrier.oldLayout = renderAttachment.m_CurrentImageLayout;
 		barrier.newLayout = newLayout;
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = image;
+		barrier.image = renderAttachment.m_Image;
 		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		barrier.subresourceRange.baseMipLevel = 0;
 		barrier.subresourceRange.levelCount = mipLevels;
@@ -517,14 +526,15 @@ namespace NVulkanEngine
 		VkPipelineStageFlags sourceStage;
 		VkPipelineStageFlags destinationStage;
 
-		bool depthLayout = oldLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-			oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		bool depthLayout = renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+			renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		if (depthLayout)
 		{
 			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-			bool hasStencilComponent = format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+			bool hasStencilComponent = renderAttachment.m_Format == VK_FORMAT_D32_SFLOAT_S8_UINT 
+									|| renderAttachment.m_Format == VK_FORMAT_D24_UNORM_S8_UINT;
 
 			if (hasStencilComponent)
 			{
@@ -536,7 +546,7 @@ namespace NVulkanEngine
 			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		}
 
-		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+		if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -544,7 +554,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		{
 			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -552,7 +562,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -560,7 +570,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL))
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL))
 		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -568,7 +578,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
 		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -576,7 +586,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
 		{
 			barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 			barrier.dstAccessMask = 0;
@@ -584,7 +594,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 			destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
 		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -592,7 +602,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
 		{
 			barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
 			barrier.dstAccessMask = 0;
@@ -600,7 +610,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
@@ -608,7 +618,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		{
 			barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
@@ -616,7 +626,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 			destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
 		{
 			barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 			barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -624,7 +634,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		}
-		else if ((oldLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) 
+		else if ((renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 				&& (newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL))
 		{
 			barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -633,7 +643,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 		{
 			barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -641,7 +651,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		{
 			barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 			barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
@@ -649,8 +659,8 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
-		else if ((oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL || oldLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL)
-				&& (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL))
+		else if ((renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL || renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL)
+				&& (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL))
 		{
 			barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -664,6 +674,9 @@ namespace NVulkanEngine
 			throw std::invalid_argument("unsupported layout transition!");
 		}
 
+		renderAttachment.m_CurrentImageLayout = newLayout;
+		renderAttachment.m_RenderAttachmentInfo.imageLayout = newLayout;
+
 		vkCmdPipelineBarrier(
 			commandBuffer,
 			sourceStage,
@@ -676,11 +689,11 @@ namespace NVulkanEngine
 	}
 
 
-	// Same as above but also creates and consumes a new command buffer
-	static void SingleTimeTransitionImageLayout(CGraphicsContext* context, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
+	// Same as above but creates the renderattachment for you and also creates and consumes a new command buffer
+	static void SingleTimeTransitionImageLayout(CGraphicsContext* context, SRenderAttachment& renderAttachment, VkImageLayout newLayout, uint32_t mipLevels)
 	{
 		VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
-		TransitionImageLayout(commandBuffer, image, format, oldLayout, newLayout, mipLevels);
+		TransitionImageLayout(commandBuffer, renderAttachment, newLayout, mipLevels);
 		EndSingleTimeCommands(context, commandBuffer);
 	}
 
@@ -701,6 +714,69 @@ namespace NVulkanEngine
 		scissor.extent.width = viewportScissorDimensions.width;
 		scissor.extent.height = viewportScissorDimensions.height;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	}
+
+	static SRenderAttachment CreateRenderAttachment
+	(
+		CGraphicsContext* context,
+		VkFormat          format,
+		VkImageUsageFlags usage,
+		VkImageLayout     imageLayout,
+		uint32_t          width,
+		uint32_t          height
+	)
+	{
+		SRenderAttachment renderAttachment{};
+		renderAttachment.m_Format = format;
+		renderAttachment.m_ImageUsage = usage;
+		renderAttachment.m_Image = CreateImage(
+			context,
+			width,
+			height,
+			1,
+			VK_SAMPLE_COUNT_1_BIT,
+			format,
+			VK_IMAGE_TILING_OPTIMAL,
+			usage,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			renderAttachment.m_Memory);
+
+		VkClearValue clearValue{};
+		VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_NONE_KHR;
+
+		if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+		{
+			aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+			clearValue.color = { 0.0f, 0.0f, 0.0f, 0.0f };
+		}
+		else if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+		{
+			aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+			clearValue.depthStencil = { 1.0f, 0 };
+		}
+
+		renderAttachment.m_ImageView = CreateImageView(
+			context,
+			renderAttachment.m_Image,
+			format,
+			aspectFlags,
+			1);
+
+		VkRenderingAttachmentInfo renderInfo{};
+		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+		renderInfo.imageView = renderAttachment.m_ImageView;
+		renderInfo.imageLayout = imageLayout;
+		renderInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		renderInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		renderInfo.clearValue = clearValue;
+
+		renderAttachment.m_RenderAttachmentInfo = renderInfo;
+
+		SingleTimeTransitionImageLayout(context, renderAttachment, imageLayout, 1);
+
+		renderAttachment.m_CurrentImageLayout = imageLayout;
+
+		return renderAttachment;
 	}
 
 }

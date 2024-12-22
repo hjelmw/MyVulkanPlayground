@@ -181,17 +181,17 @@
     <CustomBuild Include="..\shaders\shadow.frag">
       <Filter>Shaders</Filter>
     </CustomBuild>
+    <CustomBuild Include="..\shaders\atmospherics.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\shaders\atmospherics.vert">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\vendor\imgui-docking\misc\debuggers\imgui.natvis" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\vendor\imgui-docking\misc\debuggers\imgui.natstepfilter" />
-    <None Include="..\shaders\atmospherics.fp">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="..\shaders\atmospherics.vp">
-      <Filter>Shaders</Filter>
-    </None>
   </ItemGroup>
 </Project>

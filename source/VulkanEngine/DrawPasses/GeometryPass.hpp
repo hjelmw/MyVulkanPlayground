@@ -21,14 +21,14 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
-		static SImageAttachment GetGBufferAttachment(ERenderAttachments index) { return s_GeometryAttachments[(uint32_t)index]; }
+		static SRenderAttachment GetGBufferAttachment(ERenderAttachments index) { return s_GeometryAttachments[(uint32_t)index]; }
 		static glm::mat4 GetSphereMatrix() { return s_SphereMatrix; };
 
 	private:
 		void UpdateGeometryBuffers(CGraphicsContext* context);
 
 		// Geometry pass image attachments (gbuffers) needs to be static since deferred lighting pass needs to sample them
-		inline static std::vector<SImageAttachment> s_GeometryAttachments;
+		inline static std::vector<SRenderAttachment> s_GeometryAttachments;
 
 		// Geometry buffers
 		VkBuffer					  m_GeometryBufferSphere        = VK_NULL_HANDLE;

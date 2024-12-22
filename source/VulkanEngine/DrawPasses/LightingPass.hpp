@@ -17,13 +17,13 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
-		static SImageAttachment GetSceneColorAttachment() { return m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor]; };
+		static SRenderAttachment GetSceneColorAttachment() { return m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor]; };
 
 	private:
 		void UpdateLightBuffers(CGraphicsContext* context);
 
 		// Deferred lighting pass image attachments
-		inline static std::vector<SImageAttachment> m_DeferredAttachments;
+		inline static std::vector<SRenderAttachment> m_DeferredAttachments;
 
 		std::vector<VkDescriptorSet> m_DescriptorSetsLighting = { VK_NULL_HANDLE };
 

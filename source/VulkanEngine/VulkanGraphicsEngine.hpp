@@ -10,10 +10,13 @@
 
 #include <GLFW/glfw3.h>
 
+#include "VulkanGraphicsEngineUtils.hpp"
+
 #include "ModelManager.hpp"
 
 #include "Swapchain.hpp"
 #include "DrawPass.hpp"
+#include "Pipeline.hpp"
 
 #include "GraphicsContext.hpp"
 
@@ -34,6 +37,7 @@ namespace NVulkanEngine
 		void SetModelScaling(float x, float y, float z);
 
 		void DrawFrame();
+		bool IsRunning();
 		void Cleanup();
 
 	private:
@@ -71,6 +75,7 @@ namespace NVulkanEngine
 		void     RecordDrawPasses(VkCommandBuffer commandBuffer);
 		void	 RenderImGuiDebug(uint32_t imageIndex);
 
+		bool m_IsRunning;
 
 		CGraphicsContext*	                m_Context                  = nullptr;
 
@@ -111,6 +116,8 @@ namespace NVulkanEngine
 		GLFWwindow*					        m_Window                   = nullptr;
 
 		VkDescriptorPool                    m_ImGuiDescriptorPool      = VK_NULL_HANDLE;
+
+		CPipeline*                          m_ImGuiPipeline            = VK_NULL_HANDLE;
 
 	};
 }

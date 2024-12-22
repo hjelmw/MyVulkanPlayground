@@ -18,7 +18,7 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
-		inline static SImageAttachment GetShadowMapAttachment() { return s_ShadowAttachment; }
+		inline static SRenderAttachment GetShadowMapAttachment() { return s_ShadowAttachment; }
 		static glm::mat4 GetLightMatrix() { return s_LightMatrix; };
 
 
@@ -32,7 +32,7 @@ namespace NVulkanEngine
 		VkDeviceMemory				  m_ShadowBufferMemory = VK_NULL_HANDLE;
 
 		// This is the shadow map. Used by deferred lighting pass
-		inline static SImageAttachment s_ShadowAttachment;
+		inline static SRenderAttachment s_ShadowAttachment;
 
 		static glm::mat4              s_LightMatrix;
 

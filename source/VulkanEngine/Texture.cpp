@@ -51,11 +51,28 @@ namespace NVulkanEngine
 			GenerateMipmaps(context, m_TextureImage, format, texWidth, texHeight, m_MipLevels);
 		}
 
-		SingleTimeTransitionImageLayout(context, m_TextureImage, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_MipLevels);
+		SRenderAttachment textureRenderAttachment{};
+		textureRenderAttachment.m_Format = format;
+		textureRenderAttachment.m_Image = m_TextureImage;
+		textureRenderAttachment.m_ImageView = m_TextureImageView;
+		textureRenderAttachment.m_ImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		textureRenderAttachment.m_Memory = VK_NULL_HANDLE; // Not needed
+
+		VkRenderingAttachmentInfo renderInfo{};
+		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+		renderInfo.imageView = VK_NULL_HANDLE; // Not created yet
+		renderInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		renderInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		renderInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+		std::vector<VkRenderingAttachmentInfo> renderAttachmentInfos = { renderInfo };
+		textureRenderAttachment.m_RenderAttachmentInfo = renderInfo;
+
+		SingleTimeTransitionImageLayout(context, textureRenderAttachment, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_MipLevels);
 
 		CopyBufferToImage(context, stagingBuffer, m_TextureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-		SingleTimeTransitionImageLayout(context, m_TextureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_MipLevels);
+		SingleTimeTransitionImageLayout(context, textureRenderAttachment, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_MipLevels);
 
 		vkDestroyBuffer(context->GetLogicalDevice(), stagingBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), stagingBufferMemory, nullptr);

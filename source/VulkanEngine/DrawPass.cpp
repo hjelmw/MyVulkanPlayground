@@ -47,72 +47,6 @@ namespace NVulkanEngine
 		return sampler;
 	}
 
-
-
-	CDrawPass::SImageAttachment CDrawPass::CreateAttachment
-	(
-		CGraphicsContext*       context,
-		VkFormat                format,
-		VkImageUsageFlags       usage,
-		VkImageLayout           imageLayout,
-		uint32_t                width,
-		uint32_t                height
-	)
-	{
-		CDrawPass::SImageAttachment attachment{};
-
-		attachment.m_Format = format;
-
-		attachment.m_Image = CreateImage(
-			context,
-			width,
-			height,
-			1,
-			VK_SAMPLE_COUNT_1_BIT,
-			format,
-			VK_IMAGE_TILING_OPTIMAL,
-			usage,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			attachment.m_Memory);
-
-		VkClearValue clearValue{};
-		VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_NONE_KHR;
-
-		if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-		{
-			attachment.m_Type = EColorAttachment;
-			aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-			clearValue.color = { 0.0f, 0.0f, 0.0f, 0.0f };
-		}
-		else if(usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-		{
-			attachment.m_Type           = EDepthAttachment;
-			aspectFlags                 = VK_IMAGE_ASPECT_DEPTH_BIT;
-			clearValue.depthStencil     = { 1.0f, 0 };
-		}
-
-		attachment.m_ImageView = CreateImageView(
-			context, 
-			attachment.m_Image, 
-			format,
-			aspectFlags,
-			1);
-
-		VkRenderingAttachmentInfo renderInfo{};
-		renderInfo.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		renderInfo.imageView   = attachment.m_ImageView;
-		renderInfo.imageLayout = imageLayout;
-		renderInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		renderInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
-		renderInfo.clearValue  = clearValue;
-		
-		attachment.m_RenderAttachmentInfo = renderInfo;
-
-		SingleTimeTransitionImageLayout(context, attachment.m_Image, attachment.m_Format, VK_IMAGE_LAYOUT_UNDEFINED, imageLayout, 1);
-
-		return attachment;
-	}
-
 	VkDescriptorBufferInfo CDrawPass::CreateDescriptorBufferInfo(VkBuffer uniformBuffer, uint32_t range)
 	{
 		VkDescriptorBufferInfo bufferInfo{};
@@ -310,16 +244,16 @@ namespace NVulkanEngine
 		EndSingleTimeCommands(context, commandBuffer);
 	}
 
-	CDrawPass::SImageAttachment CDrawPass::GetSwapchainAttachment(CGraphicsContext* context)
+	SRenderAttachment CDrawPass::GetSwapchainAttachment(CGraphicsContext* context)
 	{
 		CSwapchain* swapchain = CSwapchain::GetInstance();
 
-		SImageAttachment swapchainAttachment{};
-		swapchainAttachment.m_Type      = EAttachmentType::EColorAttachment;
-		swapchainAttachment.m_Format    = swapchain->GetSwapchainFormat();
-		swapchainAttachment.m_Image     = swapchain->GetSwapchainImage(context->GetSwapchainImageIndex());
-		swapchainAttachment.m_ImageView = swapchain->GetSwapchainImageView(context->GetSwapchainImageIndex());
-		swapchainAttachment.m_Memory    = VK_NULL_HANDLE; // Not needed
+		SRenderAttachment swapchainAttachment{};
+		swapchainAttachment.m_Format     = swapchain->GetSwapchainFormat();
+		swapchainAttachment.m_Image      = swapchain->GetSwapchainImage(context->GetSwapchainImageIndex());
+		swapchainAttachment.m_ImageView  = swapchain->GetSwapchainImageView(context->GetSwapchainImageIndex());
+		swapchainAttachment.m_ImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		swapchainAttachment.m_Memory     = VK_NULL_HANDLE; // Not needed
 
 		VkRenderingAttachmentInfo renderAttachmentInfo{};
 		renderAttachmentInfo.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
@@ -340,7 +274,7 @@ namespace NVulkanEngine
 	void CDrawPass::BeginRendering(
 		CGraphicsContext*             context,
 		VkCommandBuffer               commandBuffer,
-		std::vector<SImageAttachment> attachmentInfos
+		std::vector<SRenderAttachment> attachmentInfos
 	)
 	{
 		std::vector<VkRenderingAttachmentInfo> colorAttachmentInfos = {};
@@ -348,15 +282,14 @@ namespace NVulkanEngine
 		bool hasDepthAttachment = false;
 		for (uint32_t i = 0; i < attachmentInfos.size(); i++)
 		{
-			switch (attachmentInfos[i].m_Type)
+			if (attachmentInfos[i].m_ImageUsage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 			{
-			case EColorAttachment:
 				colorAttachmentInfos.push_back(attachmentInfos[i].m_RenderAttachmentInfo);
-				break;
-			case EDepthAttachment:
+			}
+			if (attachmentInfos[i].m_ImageUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+			{
 				depthAttachmentInfo = attachmentInfos[i].m_RenderAttachmentInfo;
 				hasDepthAttachment = true;
-				break;
 			}
 		}
 
