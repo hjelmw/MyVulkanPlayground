@@ -1,8 +1,7 @@
 #version 450
 
-layout (binding = 0) uniform sampler2D SceneColor;
-layout (binding = 1) uniform sampler2D GBufferDepth;
-layout (binding = 2) uniform UBO
+layout (binding = 0) uniform sampler2D GBufferDepth;
+layout (binding = 1) uniform UBO
 {
 	vec3  m_PlanetCameraPosition;
 	float m_CameraNear;
@@ -105,7 +104,7 @@ vec3 CalculateOpticalDepth(vec3 rayOrigin, vec3 rayDirection, float rayLength)
 	return opticalDepth; 
 }
 
-vec3 CalculateScatteredLight(vec3 rayOrigin, vec3 rayDirection, vec3 originalColor)
+vec4 CalculateScatteredLight(vec3 rayOrigin, vec3 rayDirection)
 {
 	vec3 inscatterStartPoint = rayOrigin - SAtmosphericsConstants.m_PlanetCenter;
 
@@ -118,7 +117,7 @@ vec3 CalculateScatteredLight(vec3 rayOrigin, vec3 rayDirection, vec3 originalCol
 
 	// Early out if ray did not hit anything
 	if(distThroughAtmosphere == 0.0f || distToAtmosphere > distThroughAtmosphere)
-		return originalColor;
+		return vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	const float stepSize = (distThroughAtmosphere - distToAtmosphere) / float(SAtmosphericsConstants.m_NumInScatteringPoints);
 
@@ -170,7 +169,7 @@ vec3 CalculateScatteredLight(vec3 rayOrigin, vec3 rayDirection, vec3 originalCol
 	vec3 rayleighTerm = rayleighPhase * rayleighBeta * rayleighDensity;
 	vec3 mieTerm = miePhase * mieBeta * mieDensity;
 
-	vec3 finalInscatteredLight = (rayleighTerm + mieTerm) * SAtmosphericsConstants.m_ScatteringIntensity + originalColor * opacity;
+	vec4 finalInscatteredLight = vec4((rayleighTerm + mieTerm) * SAtmosphericsConstants.m_ScatteringIntensity, opacity);
 
 	return 1.0f - exp(-finalInscatteredLight);
 }
@@ -178,17 +177,16 @@ vec3 CalculateScatteredLight(vec3 rayOrigin, vec3 rayDirection, vec3 originalCol
 void main()
 {
 	float depth = texture(GBufferDepth, inUV).r;
-	vec4  color = texture(SceneColor,   inUV);
 
 	if(depth != 1.0f)
 	{
-		outFragColor = color;
+		outFragColor = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 		return;
 	}
 
 	vec3  rayOrigin = SAtmosphericsConstants.m_PlanetCameraPosition;
 	vec3  rayDirection = normalize(inCameraRayDir);
-	vec3 light = CalculateScatteredLight(rayOrigin, rayDirection, color.rgb);
+	vec4 light = CalculateScatteredLight(rayOrigin, rayDirection);
 
-	outFragColor = vec4(light, 0.0f);
+	outFragColor = light;
 }
