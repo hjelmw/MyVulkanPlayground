@@ -18,8 +18,12 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
+		static inline SRenderAttachment GetAtmosphericsAttachment() { return s_AtmosphericsAttachment; };
 	private:
 		void UpdateAtmosphericsBuffer(CGraphicsContext* context);
+
+		// Contains the sky box
+		static inline SRenderAttachment s_AtmosphericsAttachment;
 
 		std::vector<VkDescriptorSet> m_DescriptorSetsAtmospherics = { };
 
@@ -28,6 +32,7 @@ namespace NVulkanEngine
 		VkDeviceMemory				m_AtmosphericsBufferMemory = VK_NULL_HANDLE;
 
 		VkSampler                     m_AtmosphericsSampler      = VK_NULL_HANDLE;
+
 
 		// Pipeline
 		CPipeline* m_AtmosphericsPipeline = nullptr;

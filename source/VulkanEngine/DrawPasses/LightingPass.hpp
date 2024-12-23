@@ -17,13 +17,14 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
-		static SRenderAttachment GetSceneColorAttachment() { return m_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor]; };
+		static SRenderAttachment GetSceneColorAttachment() { return s_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor]; };
+		VkDescriptorSet GetImGuiSceneColorDescriptorSet() { return m_ImGuiSceneColorDescriptorSet; };
 
 	private:
 		void UpdateLightBuffers(CGraphicsContext* context);
 
 		// Deferred lighting pass image attachments
-		inline static std::vector<SRenderAttachment> m_DeferredAttachments;
+		inline static std::vector<SRenderAttachment> s_DeferredAttachments;
 
 		std::vector<VkDescriptorSet> m_DescriptorSetsLighting = { VK_NULL_HANDLE };
 
@@ -33,6 +34,8 @@ namespace NVulkanEngine
 
 		VkSampler					  m_DeferredSampler = VK_NULL_HANDLE;
 		VkSampler					  m_ClampSampler    = VK_NULL_HANDLE;
+
+		VkDescriptorSet m_ImGuiSceneColorDescriptorSet = VK_NULL_HANDLE;
 
 		// Pipeline
 		CPipeline* m_DeferredPipeline = nullptr;

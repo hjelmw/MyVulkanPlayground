@@ -444,15 +444,15 @@ namespace NVulkanEngine
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
 
-		VkPhysicalDeviceRobustness2FeaturesEXT nullDescriptorFeature{};
-		nullDescriptorFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
-		nullDescriptorFeature.nullDescriptor = VK_TRUE;
+		VkPhysicalDeviceRobustness2FeaturesEXT vulkanRobustnessFeatures{};
+		vulkanRobustnessFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+		vulkanRobustnessFeatures.nullDescriptor = VK_TRUE;
 
 		VkPhysicalDeviceVulkan13Features vulkan13Features{};
 		vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 		vulkan13Features.dynamicRendering = VK_TRUE;
 		vulkan13Features.robustImageAccess = VK_TRUE;
-		vulkan13Features.pNext = &nullDescriptorFeature;
+		vulkan13Features.pNext = &vulkanRobustnessFeatures;
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		deviceFeatures.robustBufferAccess = VK_TRUE;
@@ -590,11 +590,11 @@ namespace NVulkanEngine
 		pipeline_rendering_create_info.pColorAttachmentFormats = &swapchain_format;
 
 		ImGui_ImplVulkan_InitInfo init_info{};
-		init_info.Instance                    = m_Context->GetVulkanInstance();
-		init_info.PhysicalDevice              = m_Context->GetPhysicalDevice();
-		init_info.Device                      = m_Context->GetLogicalDevice();
+		init_info.Instance                    = m_VulkanInstance;
+		init_info.PhysicalDevice              = m_PhysicalDevice;
+		init_info.Device                      = m_VulkanDevice;
 		init_info.QueueFamily                 = m_QueueFamilies.m_GraphicsFamily.value();
-		init_info.Queue                       = m_Context->GetGraphicsQueue();
+		init_info.Queue                       = m_GraphicsQueue;
 		init_info.PipelineCache               = VK_NULL_HANDLE;
 		init_info.DescriptorPool              = m_ImGuiDescriptorPool;
 		init_info.PipelineRenderingCreateInfo = pipeline_rendering_create_info;
@@ -659,8 +659,8 @@ namespace NVulkanEngine
 		// Also Specifies order of execution
 		m_DrawPasses.push_back(new CGeometryPass());
 		m_DrawPasses.push_back(new CShadowPass());
-		m_DrawPasses.push_back(new CLightingPass());
 		m_DrawPasses.push_back(new CAtmosphericsPass());
+		m_DrawPasses.push_back(new CLightingPass());
 
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
@@ -689,10 +689,10 @@ namespace NVulkanEngine
 
 		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 		ImGui::Begin("Viewport");
+		VkDescriptorSet sceneColorDescriptor = reinterpret_cast<CLightingPass*>(m_DrawPasses[3])->GetImGuiSceneColorDescriptorSet();
+		ImGui::Image((ImTextureID)sceneColorDescriptor, ImGui::GetContentRegionAvail());
 		ImGui::End();
 		ImGui::Begin("Textures");
-		static int test;
-		ImGui::InputInt("Search", &test);
 		ImGui::End();
 		ImGui::Render();
 		ImDrawData* main_draw_data = ImGui::GetDrawData();

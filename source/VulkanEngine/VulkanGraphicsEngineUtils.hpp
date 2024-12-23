@@ -18,7 +18,7 @@
 namespace NVulkanEngine
 {
 	static const std::vector<const char*> g_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
-	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_EXT_SHADER_OBJECT_EXTENSION_NAME };
+	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME };
 
 #if defined(_DEBUG)
 	static const bool g_EnableValidationLayers = true;
@@ -28,13 +28,13 @@ namespace NVulkanEngine
 
 	struct SRenderAttachment
 	{
-		VkFormat                  m_Format = VK_FORMAT_UNDEFINED;
-		VkImage                   m_Image = VK_NULL_HANDLE;
-		VkImageView               m_ImageView = VK_NULL_HANDLE;
-		VkImageLayout             m_CurrentImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		VkImageUsageFlags         m_ImageUsage = VK_IMAGE_USAGE_FLAG_BITS_MAX_ENUM;
+		VkFormat                  m_Format               = VK_FORMAT_UNDEFINED;
+		VkImage                   m_Image                = VK_NULL_HANDLE;
+		VkImageView               m_ImageView            = VK_NULL_HANDLE;
+		VkImageLayout             m_CurrentImageLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
+		VkImageUsageFlags         m_ImageUsage           = VK_IMAGE_USAGE_FLAG_BITS_MAX_ENUM;
 		VkRenderingAttachmentInfo m_RenderAttachmentInfo = {};
-		VkDeviceMemory            m_Memory = VK_NULL_HANDLE;
+		VkDeviceMemory            m_Memory               = VK_NULL_HANDLE;
 	};
 
 	static std::vector<const char*> GetRequiredInstanceExtensions()
@@ -546,7 +546,15 @@ namespace NVulkanEngine
 			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		}
 
-		if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+		if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_GENERAL)
+		{
+			barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		}
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -562,7 +570,7 @@ namespace NVulkanEngine
 			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
-		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		else if (renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_UNDEFINED && (newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL))
 		{
 			barrier.srcAccessMask = 0;
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;

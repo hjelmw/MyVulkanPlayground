@@ -72,39 +72,40 @@ namespace NVulkanEngine
 
 	std::vector<VkDescriptorSetLayoutBinding> GetAtmosphericsBindings()
 	{
-		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(3);
+		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(2);
 
-		// 0: Fragment shader scene color
+		// 1: Fragment shader depth
 		attributeDescriptions[0].binding            = 0;
 		attributeDescriptions[0].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		attributeDescriptions[0].descriptorCount    = 1;
 		attributeDescriptions[0].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
 		attributeDescriptions[0].pImmutableSamplers = nullptr;
 
-		// 1: Fragment shader depth
+		// 2: Fragment shader uniform bufferz
 		attributeDescriptions[1].binding            = 1;
-		attributeDescriptions[1].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		attributeDescriptions[1].descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		attributeDescriptions[1].descriptorCount    = 1;
 		attributeDescriptions[1].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
 		attributeDescriptions[1].pImmutableSamplers = nullptr;
-
-		// 2: Fragment shader uniform bufferz
-		attributeDescriptions[2].binding            = 2;
-		attributeDescriptions[2].descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		attributeDescriptions[2].descriptorCount    = 1;
-		attributeDescriptions[2].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
-		attributeDescriptions[2].pImmutableSamplers = nullptr;
 
 		return attributeDescriptions;
 	}
 
 	void CAtmosphericsPass::InitPass(CGraphicsContext* context)
 	{
+		s_AtmosphericsAttachment = CreateRenderAttachment(
+			context,
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			context->GetRenderResolution().width,
+			context->GetRenderResolution().height);
+
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetAtmosphericsBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription = {};
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = {};
 
-		const std::vector<VkFormat> colorAttachmentFormats = { CSwapchain::GetInstance()->GetSwapchainFormat() };
+		const std::vector<VkFormat> sceneColor = { s_AtmosphericsAttachment.m_Format };
 		const VkFormat depthFormat = VK_FORMAT_UNDEFINED;
 
 		m_AtmosphericsPipeline = new CPipeline(EGraphicsPipeline);
@@ -119,7 +120,7 @@ namespace NVulkanEngine
 			descriptorSetLayoutBindings,
 			vertexBindingDescription,
 			vertexAttributeDescriptions,
-			colorAttachmentFormats,
+			sceneColor,
 			depthFormat);
 
 		m_AtmosphericsBuffer = CreateBuffer(
@@ -133,7 +134,6 @@ namespace NVulkanEngine
 
 		m_AtmosphericsSampler = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_NEAREST, VK_FILTER_NEAREST, 0.0f, 0.0f, 1.0f);
 
-		VkDescriptorImageInfo  descriptorSceneColor = CreateDescriptorImageInfo(m_AtmosphericsSampler, CLightingPass::GetSceneColorAttachment().m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		VkDescriptorImageInfo  descriptorDepth      = CreateDescriptorImageInfo(m_AtmosphericsSampler, CGeometryPass::GetGBufferAttachment(ERenderAttachments::Depth).m_ImageView, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
 		VkDescriptorBufferInfo descriptorUniform    = CreateDescriptorBufferInfo(m_AtmosphericsBuffer, sizeof(SAtmosphericsFragmentConstants));
 
@@ -141,10 +141,9 @@ namespace NVulkanEngine
 
 		const std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 		{
-			CreateWriteDescriptorImage(context,  m_DescriptorSetsAtmospherics.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  0, &descriptorSceneColor),
-			CreateWriteDescriptorImage(context,  m_DescriptorSetsAtmospherics.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  1, &descriptorDepth),
+			CreateWriteDescriptorImage(context,  m_DescriptorSetsAtmospherics.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  0, &descriptorDepth),
 
-			CreateWriteDescriptorBuffer(context, m_DescriptorSetsAtmospherics.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, &descriptorUniform)
+			CreateWriteDescriptorBuffer(context, m_DescriptorSetsAtmospherics.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &descriptorUniform)
 		};
 
 		UpdateDescriptorSets(context, m_DescriptorSetsAtmospherics, writeDescriptorSets);
@@ -219,13 +218,10 @@ namespace NVulkanEngine
 
 		SRenderAttachment sceneColorAttachment = CLightingPass::GetSceneColorAttachment();
 		SRenderAttachment depthAttachment      = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Depth);
-		SRenderAttachment swapchainAttachment  = CDrawPass::GetSwapchainAttachment(context);
 
-		TransitionImageLayout(commandBuffer, swapchainAttachment,  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, sceneColorAttachment, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, depthAttachment,      VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, depthAttachment, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, 1);
 
-		std::vector<SRenderAttachment> inscatteringAttachments = { swapchainAttachment };
+		std::vector<SRenderAttachment> inscatteringAttachments = { s_AtmosphericsAttachment };
 		BeginRendering(context, commandBuffer, inscatteringAttachments);
 
 		m_AtmosphericsPipeline->Bind(commandBuffer);
@@ -247,8 +243,6 @@ namespace NVulkanEngine
 
 		EndRendering(commandBuffer);
 
-		TransitionImageLayout(commandBuffer, swapchainAttachment,  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
-		TransitionImageLayout(commandBuffer, sceneColorAttachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, depthAttachment,      VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, 1);
+		TransitionImageLayout(commandBuffer, depthAttachment, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, 1);
 	}
 };
