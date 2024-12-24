@@ -19,24 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\source\Main.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Camera.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\Device.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPass.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawPasses\DrawPass.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\GeometryPass.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\LightingPass.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawPasses\Pipeline.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\ShadowPass.cpp" />
     <ClCompile Include="..\source\VulkanEngine\GraphicsContext.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\InputManager.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\Main.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\Model.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\ModelManager.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\Pipeline.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\Managers\InputManager.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\Managers\Model.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\Managers\ModelManager.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\Managers\Texture.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Swapchain.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\Texture.cpp" />
     <ClCompile Include="..\source\VulkanEngine\VulkanGraphicsEngine.cpp" />
     <ClCompile Include="..\vendor\imgui-docking\backends\imgui_impl_glfw.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -62,19 +58,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\VulkanEngine\Camera.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\Device.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPass.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawPasses\DrawPass.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\GeometryPass.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\LightingPass.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawPasses\Pipeline.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\ShadowPass.hpp" />
     <ClInclude Include="..\source\VulkanEngine\GraphicsContext.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\InputManager.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\Model.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\ModelManager.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\Pipeline.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\Managers\InputManager.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\Managers\Model.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\Managers\ModelManager.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\Managers\Texture.hpp" />
     <ClInclude Include="..\source\VulkanEngine\Swapchain.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\Texture.hpp" />
     <ClInclude Include="..\source\VulkanEngine\VulkanGraphicsEngine.hpp" />
     <ClInclude Include="..\source\VulkanEngine\VulkanGraphicsEngineUtils.hpp" />
     <ClInclude Include="..\vendor\imgui-docking\backends\imgui_impl_glfw.h" />
@@ -280,10 +275,11 @@ copy $(OutDir)\%(Identity).spv $(SolutionDir)shaders</Command>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\include;$(SolutionDir)vendor\tinyobjloader-2.0;$(SolutionDir)vendor\stbi_image-2.27;$(SolutionDir)vendor\glfw-3.4.bin.WIN64\include;$(SolutionDir)vendor\imgui-docking;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\include;$(SolutionDir)vendor\tinyobjloader-2.0;$(SolutionDir)vendor\stbi_image-2.27;$(SolutionDir)vendor\glfw-3.4.bin.WIN64\include;$(SolutionDir)vendor\imgui-docking;$(SolutionDir)source\VulkanEngine\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>false</ShowIncludes>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
+      <AdditionalUsingDirectories>%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

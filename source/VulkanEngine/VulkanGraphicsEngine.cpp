@@ -1,17 +1,16 @@
 #include "VulkanGraphicsEngine.hpp"
 #include "VulkanGraphicsEngineUtils.hpp"
 
-#include "DrawPasses/GeometryPass.hpp"
-#include "DrawPasses/LightingPass.hpp"
-#include "DrawPasses/AtmosphericsPass.hpp"
-#include "DrawPasses/ShadowPass.hpp"
+#include <DrawPasses/GeometryPass.hpp>
+#include <DrawPasses/LightingPass.hpp>
+#include <DrawPasses/AtmosphericsPass.hpp>
+#include <DrawPasses/ShadowPass.hpp>
 
+#include <Managers/InputManager.hpp>
 
-#include "InputManager.hpp"
-
-#include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_vulkan.h"
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
 
 #include <cstdlib>
 #include <vector>
@@ -190,15 +189,6 @@ namespace NVulkanEngine
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-#if defined(_DEBUG)
-		//std::cout << "\tAvailable device extensions:\n\t \t[";
-		//for (const auto& deviceExtension : availableExtensions) 
-		//{
-		//	std::cout << deviceExtension.extensionName << ", ";
-		//}
-		//std::cout << "]" << std::endl;
-#endif // _DEBUG
 
 		for (const auto& extension : availableExtensions)
 		{

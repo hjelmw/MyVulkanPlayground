@@ -13,13 +13,14 @@
 // Remember to store in this order
 enum class ERenderAttachments : uint32_t
 {
-	Positions      = 0,
-	Normals        = 1,
-	Albedo         = 2,
-	Depth          = 3,
-	ShadowMap      = 4,
-	SceneColor     = 5,
-	Count          = 6
+	Positions          = 0,
+	Normals            = 1,
+	Albedo             = 2,
+	Depth              = 3,
+	ShadowMap          = 4,
+	SceneColor         = 5,
+	AtmosphericsSkyBox = 6,
+	Count              = 7
 };
 
 

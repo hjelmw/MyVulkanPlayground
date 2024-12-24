@@ -2,9 +2,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include "../DrawPass.hpp"
-#include "../Pipeline.hpp"
-#include "../Model.hpp"
+#include <DrawPasses/DrawPass.hpp>
+#include <DrawPasses/Pipeline.hpp>
+#include <Managers/Model.hpp>
 
 namespace NVulkanEngine
 {

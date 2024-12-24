@@ -25,6 +25,12 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{54d24e3d-db98-4f81-9c6c-e8be1456d542}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Managers">
+      <UniqueIdentifier>{b5f0c427-da28-4258-a2cb-df45cd2a3c85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Managers">
+      <UniqueIdentifier>{af6f00e4-1e9f-4451-b2e5-420024cb53c9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\GeometryPass.cpp">
@@ -39,34 +45,10 @@
     <ClCompile Include="..\source\VulkanEngine\VulkanGraphicsEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\ModelManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\Model.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\Pipeline.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\Texture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\Swapchain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\InputManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\GraphicsContext.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\Device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\Camera.cpp">
@@ -96,6 +78,27 @@
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.cpp">
       <Filter>Source Files\DrawPasses</Filter>
     </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\Managers\InputManager.cpp">
+      <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\Managers\Model.cpp">
+      <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\Managers\ModelManager.cpp">
+      <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\Managers\Texture.cpp">
+      <Filter>Source Files\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawPasses\DrawPass.cpp">
+      <Filter>Source Files\DrawPasses</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawPasses\Pipeline.cpp">
+      <Filter>Source Files\DrawPasses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\GeometryPass.hpp">
@@ -113,34 +116,13 @@
     <ClInclude Include="..\source\VulkanEngine\VulkanGraphicsEngineUtils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\Model.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPass.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\ModelManager.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\Texture.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\Swapchain.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\Pipeline.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\InputManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\GraphicsContext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\Camera.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\Device.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\vendor\imgui-docking\imgui.h">
@@ -159,6 +141,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.hpp">
+      <Filter>Header Files\DrawPasses</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\Managers\InputManager.hpp">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\Managers\Model.hpp">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\Managers\ModelManager.hpp">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\Managers\Texture.hpp">
+      <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawPasses\DrawPass.hpp">
+      <Filter>Header Files\DrawPasses</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawPasses\Pipeline.hpp">
       <Filter>Header Files\DrawPasses</Filter>
     </ClInclude>
   </ItemGroup>

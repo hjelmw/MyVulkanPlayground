@@ -10,13 +10,11 @@
 
 #include <GLFW/glfw3.h>
 
-#include "VulkanGraphicsEngineUtils.hpp"
-
-#include "ModelManager.hpp"
-
-#include "Swapchain.hpp"
-#include "DrawPass.hpp"
-#include "Pipeline.hpp"
+#include <VulkanGraphicsEngineUtils.hpp>
+#include <Managers/ModelManager.hpp>
+#include <DrawPasses/DrawPass.hpp>
+#include <DrawPasses/Pipeline.hpp>
+#include <Swapchain.hpp>
 
 #include "GraphicsContext.hpp"
 

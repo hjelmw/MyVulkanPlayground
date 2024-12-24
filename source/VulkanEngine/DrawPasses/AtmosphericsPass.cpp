@@ -1,8 +1,9 @@
 #include "AtmosphericsPass.hpp"
-#include "GeometryPass.hpp"
-#include "LightingPass.hpp"
 
-#include "../InputManager.hpp"
+#include <DrawPasses/GeometryPass.hpp>
+#include <DrawPasses/LightingPass.hpp>
+
+#include <Managers/InputManager.hpp>
 
 #include <imgui.h>
 

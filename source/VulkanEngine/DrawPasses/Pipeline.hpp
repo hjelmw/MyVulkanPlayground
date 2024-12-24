@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include "GraphicsContext.hpp"
+#include <GraphicsContext.hpp>
 
 #include <array>
 #include <string>

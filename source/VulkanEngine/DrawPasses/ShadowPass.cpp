@@ -1,9 +1,10 @@
 #include "ShadowPass.hpp"
 #include "GeometryPass.hpp"
-#include "../ModelManager.hpp"
-#include "../InputManager.hpp"
 
-#include "imgui.h"
+#include <Managers/InputManager.hpp>
+#include <Managers/ModelManager.hpp>
+
+#include <imgui.h>
 
 #define SHADOWMAP_RESOLUTION 1024
 

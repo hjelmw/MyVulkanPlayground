@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GraphicsContext.hpp"
-#include "VulkanGraphicsEngineUtils.hpp"
-#include "Texture.hpp"
+#include <GraphicsContext.hpp>
+#include <VulkanGraphicsEngineUtils.hpp>
+#include <Managers/Texture.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>

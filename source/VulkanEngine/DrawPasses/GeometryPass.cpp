@@ -6,8 +6,8 @@
 #define M_PI 3.1415f
 #endif
 
-#include "../InputManager.hpp"
-#include "../ModelManager.hpp"
+#include <Managers/InputManager.hpp>
+#include <Managers/ModelManager.hpp>
 
 static float g_LightPosition[] = { 0.0f, 1000.0f, 30.0f };
 

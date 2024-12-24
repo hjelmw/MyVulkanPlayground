@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanGraphicsEngineUtils.hpp"
+#include <VulkanGraphicsEngineUtils.hpp>
 
 namespace NVulkanEngine
 {
