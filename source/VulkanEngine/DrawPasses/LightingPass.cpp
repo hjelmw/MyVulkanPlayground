@@ -150,7 +150,7 @@ namespace NVulkanEngine
 		VkDescriptorImageInfo  descriptorAlbedo       = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[2].m_ImageView, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
 		VkDescriptorImageInfo  descriptorDepth        = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[3].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		VkDescriptorImageInfo  descriptorShadow       = CreateDescriptorImageInfo(m_ClampSampler,    s_DeferredAttachments[4].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorAtmospherics = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[5].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorAtmospherics = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[6].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		m_DeferredLightBuffer = CreateBuffer(
 			context,
