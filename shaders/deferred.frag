@@ -7,6 +7,7 @@ layout (binding = 1) uniform sampler2D GBufferNormals;
 layout (binding = 2) uniform sampler2D GBufferAlbedo;
 layout (binding = 3) uniform sampler2D GBufferDepth;
 layout (binding = 4) uniform sampler2D ShadowMapBuffer;
+layout (binding = 5) uniform sampler2D AtmosphericsBuffer;
 
 // Per Light data
 struct SLight
@@ -19,7 +20,7 @@ struct SLight
 };
 
 // Deferred lighting uniform buffer constants
-layout (binding = 5) uniform UBO
+layout (binding = 6) uniform UBO
 {
 	SLight m_Lights[NUM_LIGHTS];
 	vec3   m_ViewPos;
@@ -49,16 +50,18 @@ float CalculateShadow(vec4 fragPosLightSpace)
 void main()
 {
 	// Get G-Buffer values
-	vec3  position  = texture(GBufferPositions, inUV).rgb;
-	float metalness = texture(GBufferPositions, inUV).a;
-	vec3  albedo    = texture(GBufferAlbedo,    inUV).rgb;
-	float fresnel   = texture(GBufferAlbedo,    inUV).a;
-	vec3  normal    = texture(GBufferNormals,   inUV).rgb;
-	float roughness = texture(GBufferNormals,   inUV).a;
-	float depth     = texture(GBufferDepth,     inUV).r;
+	vec3  position     = texture(GBufferPositions, inUV).rgb;
+	float metalness    = texture(GBufferPositions, inUV).a;
+	vec3  albedo       = texture(GBufferAlbedo,    inUV).rgb;
+	float fresnel      = texture(GBufferAlbedo,    inUV).a;
+	vec3  normal       = texture(GBufferNormals,   inUV).rgb;
+	float roughness    = texture(GBufferNormals,   inUV).a;
+	float depth        = texture(GBufferDepth,     inUV).r;
+
+	vec4  atmospherics = texture(AtmosphericsBuffer, inUV);
 
 	if(depth == 1.0f)
-		discard;
+		outFragColor = atmospherics;
 	
 	vec3 viewPos   = SDeferredLightingConstants.m_ViewPos;
 	vec3 fragColor = vec3(0.0f, 0.0f ,0.0f);
