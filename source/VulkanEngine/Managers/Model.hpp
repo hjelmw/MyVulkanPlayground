@@ -182,7 +182,7 @@ namespace NVulkanEngine
 		void               Bind(VkCommandBuffer commandBuffer, SMesh mesh);
 
 		// Cleanup model and meshes
-		void               CleanupModel(CGraphicsContext* context);
+		void               Cleanup(CGraphicsContext* context);
 	private:
 		std::string            m_ModelFilepath      = {};
 		std::string            m_MaterialFilepath   = {};

@@ -400,7 +400,7 @@ namespace NVulkanEngine
 		vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, indexOfssets, VK_INDEX_TYPE_UINT32);
 	}
 
-	void CModel::CleanupModel(CGraphicsContext* context)
+	void CModel::Cleanup(CGraphicsContext* context)
 	{
 		vkDestroyBuffer(context->GetLogicalDevice(), m_VertexBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_VertexBufferMemory, nullptr);
