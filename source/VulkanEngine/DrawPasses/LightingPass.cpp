@@ -88,32 +88,20 @@ namespace NVulkanEngine
 		return attributeDescriptions;
 	}
 
-	void CLightingPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)
+	void CLightingPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		s_DeferredAttachments.resize((uint32_t)ERenderAttachments::Count);
+		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
 
-		s_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor] = CreateRenderAttachment(
+		SRenderAttachment sceneColorAttachment = attachmentManager->AddAttachment(
 			context,
+			"Scene Color",
+			EAttachmentIndices::SceneColor,
+			context->GetLinearClampSampler(),
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			context->GetRenderResolution().width,
-			context->GetRenderResolution().height);
-
-		s_DeferredAttachments[0] = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Positions);
-		s_DeferredAttachments[1] = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Normals);
-		s_DeferredAttachments[2] = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Albedo);
-		s_DeferredAttachments[3] = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Depth);
-		s_DeferredAttachments[4] = CShadowPass::GetShadowMapAttachment();
-		s_DeferredAttachments[6] = CAtmosphericsPass::GetAtmosphericsAttachment();
-
-		// Don't clear contents on BeginRendering()
-		s_DeferredAttachments[0].m_RenderAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-		s_DeferredAttachments[1].m_RenderAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-		s_DeferredAttachments[2].m_RenderAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-		s_DeferredAttachments[3].m_RenderAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-		s_DeferredAttachments[4].m_RenderAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-		s_DeferredAttachments[6].m_RenderAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+			g_DisplayWidth,
+			g_DisplayHeight);
 
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetLightingBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = {};
@@ -121,9 +109,9 @@ namespace NVulkanEngine
 
 		const std::vector<VkFormat> colorAttachmentFormats =
 		{
-			s_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor].m_Format
+			sceneColorAttachment.m_Format
 		};
-		const VkFormat depthFormat = s_DeferredAttachments[(uint32_t)ERenderAttachments::Depth].m_Format;
+		const VkFormat depthFormat = attachmentManager->GetAttachment(EAttachmentIndices::Depth).m_Format;
 
 		m_DeferredPipeline = new CPipeline(EGraphicsPipeline);
 		m_DeferredPipeline->SetVertexShader("shaders/deferred.vert.spv");
@@ -142,15 +130,13 @@ namespace NVulkanEngine
 		/* Allocat sets for 6 sampled images (pos, normals, albedo, depth, shadowmap, atmospherics) and 1 uniform light buffer  */
 		AllocateDescriptorPool(context, g_MaxFramesInFlight, g_MaxFramesInFlight * 6, g_MaxFramesInFlight * 1);
 
-		m_DeferredSampler = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,       VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_NEAREST, VK_FILTER_NEAREST, 0.0f, 0.0f, 1.0f);
-		m_ClampSampler    = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_LINEAR,  VK_FILTER_LINEAR, 0.0f, 0.0f, 1.0f);
 
-		VkDescriptorImageInfo  descriptorPositions    = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[0].m_ImageView, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorNormals      = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[1].m_ImageView, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorAlbedo       = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[2].m_ImageView, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorDepth        = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[3].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorShadow       = CreateDescriptorImageInfo(m_ClampSampler,    s_DeferredAttachments[4].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorAtmospherics = CreateDescriptorImageInfo(m_DeferredSampler, s_DeferredAttachments[6].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorPositions    = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::Positions).m_ImageView,          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorNormals      = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::Normals).m_ImageView,            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorAlbedo       = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::Albedo).m_ImageView,             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorDepth        = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::Depth).m_ImageView,              VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorShadow       = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::ShadowMap).m_ImageView,          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorAtmospherics = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox).m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		m_DeferredLightBuffer = CreateBuffer(
 			context,
@@ -176,11 +162,9 @@ namespace NVulkanEngine
 		};
 
 		UpdateDescriptorSets(context, m_DescriptorSetsLighting, writeDescriptorSets);
-
-		m_ImGuiSceneColorDescriptorSet = ImGui_ImplVulkan_AddTexture(m_DeferredSampler, s_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
-	void CLightingPass::UpdateLightBuffers(CGraphicsContext* context, const SGraphicsManagers& managers)
+	void CLightingPass::UpdateLightBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		SDeferredLightingUniformBuffer deferredLightingUbo{};
 		deferredLightingUbo.m_Lights[0].m_LightColor    = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -190,7 +174,7 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_Lights[0].m_LightIntensity = 100.0f;
 		deferredLightingUbo.m_Lights[0].m_LightMatrix = CShadowPass::GetLightMatrix();
 
-		CCamera* camera = managers.m_InputManager->GetCamera();
+		CCamera* camera = managers->m_InputManager->GetCamera();
 		deferredLightingUbo.m_ViewPos = camera->GetPosition();
 
 		deferredLightingUbo.m_Pad1 = 0.0f;
@@ -201,25 +185,19 @@ namespace NVulkanEngine
 		vkUnmapMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory);
 	}
 
-	void CLightingPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer)
+	void CLightingPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		UpdateLightBuffers(context, managers);
 
-		SRenderAttachment positionsAttachment    = s_DeferredAttachments[(uint32_t)ERenderAttachments::Positions];
-		SRenderAttachment normalsAttachment      = s_DeferredAttachments[(uint32_t)ERenderAttachments::Normals];
-		SRenderAttachment albedoAttachment       = s_DeferredAttachments[(uint32_t)ERenderAttachments::Albedo];
-		SRenderAttachment depthAttachment        = s_DeferredAttachments[(uint32_t)ERenderAttachments::Depth];
-		SRenderAttachment shadowAttachment       = s_DeferredAttachments[(uint32_t)ERenderAttachments::ShadowMap];
-		SRenderAttachment sceneColorAttachment   = s_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor];
-		SRenderAttachment atmosphericsAttachment = s_DeferredAttachments[(uint32_t)ERenderAttachments::AtmosphericsSkyBox];
+		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
+		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Positions,          VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Normals,            VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Albedo,             VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Depth,              VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::ShadowMap,          VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::AtmosphericsSkyBox, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		TransitionImageLayout(commandBuffer, positionsAttachment,    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, normalsAttachment,      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, albedoAttachment,       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, depthAttachment,        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, shadowAttachment,       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, atmosphericsAttachment, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, sceneColorAttachment,   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+		SRenderAttachment sceneColorAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		std::vector<SRenderAttachment> sceneColorAttachments = { sceneColorAttachment };
 		BeginRendering(context, commandBuffer, sceneColorAttachments);
@@ -232,15 +210,6 @@ namespace NVulkanEngine
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
 		EndRendering(commandBuffer);
-
-		TransitionImageLayout(commandBuffer, positionsAttachment,    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, normalsAttachment,      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, albedoAttachment,       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, depthAttachment,        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, shadowAttachment,       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, atmosphericsAttachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
-		TransitionImageLayout(commandBuffer, sceneColorAttachment,   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-
 	}
 
 	void CLightingPass::CleanupPass(CGraphicsContext* context)
@@ -248,20 +217,8 @@ namespace NVulkanEngine
 		// Uniform buffer
 		vkDestroyBuffer(context->GetLogicalDevice(), m_DeferredLightBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory, nullptr);
-
-		vkDestroySampler(context->GetLogicalDevice(), m_DeferredSampler, nullptr);
-		vkDestroySampler(context->GetLogicalDevice(), m_ClampSampler, nullptr);
 		
 		m_DeferredPipeline->Cleanup(context);
 		delete m_DeferredPipeline;
-
-		// Clear Attachments
-		for (uint32_t i = 0; i < s_DeferredAttachments.size(); i++)
-		{
-			s_DeferredAttachments[i].m_Format = VK_FORMAT_UNDEFINED;
-			s_DeferredAttachments[i].m_RenderAttachmentInfo = {};
-		}
 	}
-
-
 }

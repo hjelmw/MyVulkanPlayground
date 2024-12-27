@@ -43,37 +43,46 @@ namespace NVulkanEngine
 		return attributeDescriptions;
 	}
 
-	void CGeometryPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)
+	void CGeometryPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		s_GeometryAttachments.resize(4);
-
-		/* Setup the attachments */
-		s_GeometryAttachments[(uint32_t)ERenderAttachments::Positions] = CreateRenderAttachment(
+		SRenderAttachment positionsAttachment = managers->m_AttachmentManager->AddAttachment(
 			context,
+			"GBuffer - Positions",
+			EAttachmentIndices::Positions,
+			context->GetLinearClampSampler(),
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[(uint32_t)ERenderAttachments::Normals] = CreateRenderAttachment(
+		SRenderAttachment normalsAttachment = managers->m_AttachmentManager->AddAttachment(
 			context,
+			"GBuffer - Normals",
+			EAttachmentIndices::Normals,
+			context->GetLinearClampSampler(),
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[(uint32_t)ERenderAttachments::Albedo] = CreateRenderAttachment(
+		SRenderAttachment albedoAttachment = managers->m_AttachmentManager->AddAttachment(
 			context,
+			"GBuffer - Albedo",
+			EAttachmentIndices::Albedo,
+			context->GetLinearClampSampler(),
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			context->GetRenderResolution().width,
 			context->GetRenderResolution().height);
 
-		s_GeometryAttachments[(uint32_t)ERenderAttachments::Depth] = CreateRenderAttachment(
+		SRenderAttachment depthAttachment = managers->m_AttachmentManager->AddAttachment(
 			context,
+			"GBuffer - Depth",
+			EAttachmentIndices::Depth,
+			context->GetLinearClampSampler(),
 			FindDepthFormat(context->GetPhysicalDevice()),
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
@@ -85,13 +94,8 @@ namespace NVulkanEngine
 		const VkVertexInputBindingDescription                vertexBindingDescription    = SVertex::GetVertexBindingDescription();
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetModelVertexInputAttributes();
 
-		const std::vector<VkFormat> colorAttachmentFormats =
-		{
-			s_GeometryAttachments[(uint32_t)ERenderAttachments::Positions].m_Format,
-			s_GeometryAttachments[(uint32_t)ERenderAttachments::Normals].m_Format,
-			s_GeometryAttachments[(uint32_t)ERenderAttachments::Albedo].m_Format,
-		};
-		const VkFormat depthFormat = s_GeometryAttachments[(uint32_t)ERenderAttachments::Depth].m_Format;
+		const std::vector<VkFormat> colorAttachmentFormats = { positionsAttachment.m_Format, normalsAttachment.m_Format, albedoAttachment.m_Format };
+		const VkFormat depthFormat = depthAttachment.m_Format;
 
 		m_GeometryPipeline = new CPipeline(EGraphicsPipeline);
 		m_GeometryPipeline->SetVertexShader("shaders/geometry.vert.spv");
@@ -107,25 +111,13 @@ namespace NVulkanEngine
 			vertexAttributeDescriptions,
 			colorAttachmentFormats,
 			depthFormat);
-		
-		m_GeometrySampler = CreateSampler(
-			context,
-			VK_SAMPLER_ADDRESS_MODE_REPEAT,
-			VK_SAMPLER_ADDRESS_MODE_REPEAT,
-			VK_SAMPLER_ADDRESS_MODE_REPEAT,
-			VK_SAMPLER_MIPMAP_MODE_LINEAR, 
-			VK_FILTER_LINEAR,
-			VK_FILTER_LINEAR,
-			0.0f,
-			0.0f,
-			1.0f);
 
 		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, managers.m_Modelmanager->GetNumModels() * 2, managers.m_Modelmanager->GetNumModels() * 2, managers.m_Modelmanager->GetNumModels() * 2);
+		AllocateDescriptorPool(context, managers->m_Modelmanager->GetNumModels() * 2, managers->m_Modelmanager->GetNumModels() * 2, managers->m_Modelmanager->GetNumModels() * 2);
 
-		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = managers.m_Modelmanager->GetModel(i);
+			CModel* model = managers->m_Modelmanager->GetModel(i);
 
 			SDescriptorSets& modelDescriptorRef = model->GetDescriptorSetsRef();
 
@@ -133,7 +125,7 @@ namespace NVulkanEngine
 			model->CreateGeometryMemoryBuffer(context, (VkDeviceSize)sizeof(SGeometryUniformBuffer));
 
 			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(model->GetGeometryMemoryBuffer().m_Buffer, sizeof(SGeometryUniformBuffer));
-			VkDescriptorImageInfo descriptorTexture = CreateDescriptorImageInfo(m_GeometrySampler, model->UsesModelTexture() ? model->GetModelTexture()->GetTextureImageView() : VK_NULL_HANDLE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			VkDescriptorImageInfo descriptorTexture = CreateDescriptorImageInfo(context->GetLinearClampSampler(), model->UsesModelTexture() ? model->GetModelTexture()->GetTextureImageView() : VK_NULL_HANDLE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 			modelDescriptorRef.m_WriteDescriptors =
 			{
@@ -145,19 +137,19 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CGeometryPass::UpdateGeometryBuffers(CGraphicsContext* context, const SGraphicsManagers& managers)
+	void CGeometryPass::UpdateGeometryBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		//m_RotationDegrees = fmod(m_RotationDegrees + 2.0f * context->GetDeltaTime(), 360.0f);
 
 		glm::mat4 sphereMatrix = glm::identity<glm::mat4>();
-		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(g_LightPosition[0], g_LightPosition[1], g_LightPosition[2]));
+		sphereMatrix = glm::translate(sphereMatrix, m_LightPosition);
 		s_SphereMatrix = sphereMatrix;
 
-		CCamera* camera = managers.m_InputManager->GetCamera();
+		CCamera* camera = managers->m_InputManager->GetCamera();
 
-		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = managers.m_Modelmanager->GetModel(i);
+			CModel* model = managers->m_Modelmanager->GetModel(i);
 
 			SGeometryUniformBuffer uboModel{};
 			uboModel.m_ModelMat      = model->GetTransform();
@@ -171,21 +163,25 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CGeometryPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer)
+	void CGeometryPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
-		ImGui::Begin("Geometry Pass");
-		ImGui::SliderFloat3("Light Position", g_LightPosition, -500.0f, 500.0f);
-		ImGui::End();
+		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
 
-		BeginRendering(context, commandBuffer, s_GeometryAttachments);
+		SRenderAttachment positionsAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Positions, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderAttachment normalsAttachment   = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Normals,   VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderAttachment albedoAttachment    = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Albedo,    VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderAttachment depthAttachment     = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Depth,     VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+		
+		std::vector<SRenderAttachment> renderAttachments = { positionsAttachment, normalsAttachment, albedoAttachment, depthAttachment };
+		
+		BeginRendering(context, commandBuffer, renderAttachments);
 		UpdateGeometryBuffers(context, managers);
 
 		m_GeometryPipeline->Bind(commandBuffer);
 
-
-		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = managers.m_Modelmanager->GetModel(i);
+			CModel* model = managers->m_Modelmanager->GetModel(i);
 
 			VkDescriptorSet modelDescriptor = model->GetDescriptorSetsRef().m_DescriptorSets[context->GetFrameIndex()];
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &modelDescriptor, 0, nullptr);
@@ -211,10 +207,6 @@ namespace NVulkanEngine
 	{
 		VkDevice device = context->GetLogicalDevice();
 
-		// Uniform buffer
-		vkDestroyBuffer(device, m_GeometryBufferSphere, nullptr);
-		vkFreeMemory(device, m_GeometryBufferMemorySphere, nullptr);
-
 		// Descriptor pool and layout (don't need to destroy the sets since they are allocated from the pool)
 		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
 		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
@@ -222,17 +214,5 @@ namespace NVulkanEngine
 		// Pipeline and layout
 		m_GeometryPipeline->Cleanup(context);
 		vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
-
-		// Attachments
-		for (uint32_t i = 0; i < s_GeometryAttachments.size(); i++)
-		{
-			vkDestroyImageView(device, s_GeometryAttachments[i].m_ImageView, nullptr);
-
-			vkDestroyImage(device, s_GeometryAttachments[i].m_Image, nullptr);
-			vkFreeMemory(device, s_GeometryAttachments[i].m_Memory, nullptr);
-
-			s_GeometryAttachments[i].m_Format = VK_FORMAT_UNDEFINED;
-			s_GeometryAttachments[i].m_RenderAttachmentInfo = {};
-		}
 	}
 };

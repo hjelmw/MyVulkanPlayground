@@ -5,47 +5,9 @@
 namespace NVulkanEngine
 {
 	/* Implemented by derived class */
-	void CDrawPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers) { }
-	void CDrawPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer) { }
+	void CDrawPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers) { }
+	void CDrawPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
 	void CDrawPass::CleanupPass(CGraphicsContext* context) { }
-
-	VkSampler CDrawPass::CreateSampler(
-		CGraphicsContext*    context,
-		VkSamplerAddressMode samplerModeU,
-		VkSamplerAddressMode samplerModeV,
-		VkSamplerAddressMode samplerModeW,
-		VkSamplerMipmapMode  samplerMipmapMode,
-		VkFilter             minFilter,
-		VkFilter             magFilter,
-		float                lodbias,
-		float                minLod,
-		float                maxLod
-		)
-	{
-		VkSamplerCreateInfo samplerInfo{};
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.minFilter = minFilter;
-		samplerInfo.magFilter = magFilter;
-		samplerInfo.mipmapMode = samplerMipmapMode;
-		samplerInfo.addressModeU = samplerModeU;
-		samplerInfo.addressModeV = samplerModeV;
-		samplerInfo.addressModeW = samplerModeW;
-		samplerInfo.mipLodBias = lodbias;
-		samplerInfo.maxAnisotropy = 1.0f;
-		samplerInfo.minLod = minLod;
-		samplerInfo.maxLod = maxLod;
-		samplerInfo.unnormalizedCoordinates = VK_FALSE;
-
-		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-
-		VkSampler sampler = VK_NULL_HANDLE;
-		if (vkCreateSampler(context->GetLogicalDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create sampler for geometry render pass!");
-		}
-
-		return sampler;
-	}
 
 	VkDescriptorBufferInfo CDrawPass::CreateDescriptorBufferInfo(VkBuffer uniformBuffer, uint32_t range)
 	{

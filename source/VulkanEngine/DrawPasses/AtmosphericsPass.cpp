@@ -92,10 +92,13 @@ namespace NVulkanEngine
 		return attributeDescriptions;
 	}
 
-	void CAtmosphericsPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)
+	void CAtmosphericsPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		s_AtmosphericsAttachment = CreateRenderAttachment(
+		SRenderAttachment atmosphericsAttachment = managers->m_AttachmentManager->AddAttachment(
 			context,
+			"Atmospherics SkyBox",
+			EAttachmentIndices::AtmosphericsSkyBox,
+			context->GetLinearClampSampler(),
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -106,7 +109,7 @@ namespace NVulkanEngine
 		const VkVertexInputBindingDescription                vertexBindingDescription = {};
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = {};
 
-		const std::vector<VkFormat> sceneColor = { s_AtmosphericsAttachment.m_Format };
+		const std::vector<VkFormat> sceneColor = { atmosphericsAttachment.m_Format };
 		const VkFormat depthFormat = VK_FORMAT_UNDEFINED;
 
 		m_AtmosphericsPipeline = new CPipeline(EGraphicsPipeline);
@@ -133,10 +136,10 @@ namespace NVulkanEngine
 
 		AllocateDescriptorPool(context, g_MaxFramesInFlight, g_MaxFramesInFlight * 2, g_MaxFramesInFlight * 1);
 
-		m_AtmosphericsSampler = CreateSampler(context, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_FILTER_NEAREST, VK_FILTER_NEAREST, 0.0f, 0.0f, 1.0f);
+		SRenderAttachment depthAttachment = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth);
 
-		VkDescriptorImageInfo  descriptorDepth      = CreateDescriptorImageInfo(m_AtmosphericsSampler, CGeometryPass::GetGBufferAttachment(ERenderAttachments::Depth).m_ImageView, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		VkDescriptorBufferInfo descriptorUniform    = CreateDescriptorBufferInfo(m_AtmosphericsBuffer, sizeof(SAtmosphericsFragmentConstants));
+		VkDescriptorImageInfo  descriptorDepth   = CreateDescriptorImageInfo(context->GetLinearClampSampler(), depthAttachment.m_ImageView, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(m_AtmosphericsBuffer, sizeof(SAtmosphericsFragmentConstants));
 
 		m_DescriptorSetsAtmospherics = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
 
@@ -160,15 +163,13 @@ namespace NVulkanEngine
 		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
 		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
 
-		vkDestroySampler(device, m_AtmosphericsSampler, nullptr);
-
 		m_AtmosphericsPipeline->Cleanup(context);
 		delete m_AtmosphericsPipeline;
 	}
 
-	void CAtmosphericsPass::UpdateAtmosphericsBuffer(CGraphicsContext* context, const SGraphicsManagers& managers)
+	void CAtmosphericsPass::UpdateAtmosphericsBuffer(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		CCamera* camera = managers.m_InputManager->GetCamera();
+		CCamera* camera = managers->m_InputManager->GetCamera();
 		float cameraNear = camera->GetNear();
 		float cameraFar = camera->GetFar();
 
@@ -197,7 +198,6 @@ namespace NVulkanEngine
 		atmosphericsUbo.m_AllowMieScattering     = true;
 		atmosphericsUbo.m_ScatteringIntensity    = g_ScatteringIntensity;
 
-
 		void* data;
 		vkMapMemory(context->GetLogicalDevice(), m_AtmosphericsBufferMemory, 0, sizeof(SAtmosphericsFragmentConstants), 0, &data);
 		memcpy(data, &atmosphericsUbo, sizeof(SAtmosphericsFragmentConstants));
@@ -205,8 +205,9 @@ namespace NVulkanEngine
 	}
 
 
-	void CAtmosphericsPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer)
+	void CAtmosphericsPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
+
 		ImGui::Begin("Atmospherics Pass");
 		ImGui::SliderFloat("Atmosphere Radius", &g_AtmosphereScale, 0.0f, 1.0f);
 		ImGui::SliderFloat("Planet Radius", &g_PlanetRadius, 0.0f, 6000.0f);
@@ -217,19 +218,18 @@ namespace NVulkanEngine
 
 		UpdateAtmosphericsBuffer(context, managers);
 
-		SRenderAttachment sceneColorAttachment = CLightingPass::GetSceneColorAttachment();
-		SRenderAttachment depthAttachment      = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Depth);
+		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
+		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Depth, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		SRenderAttachment atmosphericsAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::AtmosphericsSkyBox, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-		TransitionImageLayout(commandBuffer, depthAttachment, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, 1);
-
-		std::vector<SRenderAttachment> inscatteringAttachments = { s_AtmosphericsAttachment };
+		std::vector<SRenderAttachment> inscatteringAttachments = { atmosphericsAttachment };
 		BeginRendering(context, commandBuffer, inscatteringAttachments);
 
 		m_AtmosphericsPipeline->Bind(commandBuffer);
 
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSetsAtmospherics[context->GetFrameIndex()], 0, nullptr);
 
-		CCamera* camera = managers.m_InputManager->GetCamera();
+		CCamera* camera = managers->m_InputManager->GetCamera();
 
 		glm::mat4 viewMatrix = camera->GetLookAtMatrix();
 		viewMatrix[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -243,7 +243,5 @@ namespace NVulkanEngine
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
 		EndRendering(commandBuffer);
-
-		TransitionImageLayout(commandBuffer, depthAttachment, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, 1);
 	}
 };

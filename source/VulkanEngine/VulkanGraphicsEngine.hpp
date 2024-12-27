@@ -59,6 +59,7 @@ namespace NVulkanEngine
 		void CreateCommandPool();
 		void CreateCommandBuffers();
 		void CreateSyncObjects();
+		void CreateSamplers();
 
 		// Create scene
 		void CreateModels();
@@ -87,11 +88,12 @@ namespace NVulkanEngine
 		CGraphicsContext*	                m_Context                  = nullptr;
 
 		// Draw passes specifies render order
-		std::vector<CDrawPass*>             m_DrawPasses               = {};
+		std::array<CDrawPass*, (uint32_t)EDrawPasses::Count>             m_DrawPasses               = {};
 
 		// Managers
-		CInputManager* m_InputManager = nullptr;
-		CModelManager* m_ModelManager = nullptr;
+		CInputManager*      m_InputManager      = nullptr;
+		CModelManager*      m_ModelManager      = nullptr;
+		CAttachmentManager* m_AttachmentManager = nullptr;
 
 		/* Vulkan Primitives */
 		// Device
@@ -108,6 +110,8 @@ namespace NVulkanEngine
 		// CommandBuffer
 		VkCommandPool                       m_CommandPool              = VK_NULL_HANDLE;
 		std::vector<VkCommandBuffer>        m_CommandBuffers           = {};
+
+		VkSampler                           m_LinearClamp              = VK_NULL_HANDLE;
 
 		// Swapchain extent
 		VkExtent2D					        m_RenderResolution         = { 0, 0 };

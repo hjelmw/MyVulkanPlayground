@@ -18,17 +18,19 @@ namespace NVulkanEngine
 		VkCommandPool    commandPool,
 		VkQueue          graphicsQueue,
 		VkQueue          presentQueue,
+		VkSampler        sampler,
 		VkExtent2D       renderResolution)
 	{
-		m_VulkanInstance   = instance;
-		m_VulkanSurface    = surface;
-		m_GLFWWindow       = window;
-		m_PhysicalDevice   = physicalDevice;
-		m_VulkanDevice     = device;
-		m_CommandPool      = commandPool;
-		m_GraphicsQueue    = graphicsQueue;
-		m_PresentQueue     = presentQueue;
-		m_RenderResolution = renderResolution;
+		m_VulkanInstance     = instance;
+		m_VulkanSurface      = surface;
+		m_GLFWWindow         = window;
+		m_PhysicalDevice     = physicalDevice;
+		m_VulkanDevice       = device;
+		m_CommandPool        = commandPool;
+		m_GraphicsQueue      = graphicsQueue;
+		m_PresentQueue       = presentQueue;
+		m_LinearClampSampler = sampler;
+		m_RenderResolution   = renderResolution;
 	}
 
 	void CGraphicsContext::SetDeltaTime(float deltaTime) 

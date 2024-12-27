@@ -25,6 +25,7 @@ namespace NVulkanEngine
 			VkCommandPool    commandPool,
 			VkQueue          graphicsQueue,
 			VkQueue          presentQueue,
+			VkSampler        sampler,
 			VkExtent2D       renderResolution);
 
 		const VkInstance       GetVulkanInstance()      { return m_VulkanInstance; }
@@ -35,6 +36,7 @@ namespace NVulkanEngine
 		const VkCommandPool    GetCommandPool()         { return m_CommandPool; }
 		const VkQueue          GetGraphicsQueue()       { return m_GraphicsQueue; }
 		const VkQueue          GetPresentQueue()        { return m_PresentQueue; }
+		const VkSampler        GetLinearClampSampler()  { return m_LinearClampSampler; }
 		const VkExtent2D       GetRenderResolution()    { return m_RenderResolution; }
 		const float            GetDeltaTime()           { return m_DeltaTime; }
 		const uint32_t         GetFrameIndex()          { return m_FrameIndex; }
@@ -54,6 +56,7 @@ namespace NVulkanEngine
 		VkCommandPool     m_CommandPool                    = VK_NULL_HANDLE;
 		VkQueue           m_GraphicsQueue                  = VK_NULL_HANDLE;
 		VkQueue           m_PresentQueue                   = VK_NULL_HANDLE;
+		VkSampler         m_LinearClampSampler             = VK_NULL_HANDLE;
 		VkExtent2D        m_RenderResolution               = { 0,0 };
 		float             m_DeltaTime                      = 0.0f;
 		uint32_t          m_FrameIndex                     = 0;

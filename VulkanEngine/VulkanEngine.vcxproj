@@ -28,6 +28,7 @@
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\Pipeline.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\ShadowPass.cpp" />
     <ClCompile Include="..\source\VulkanEngine\GraphicsContext.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\Managers\AttachmentManager.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Managers\InputManager.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Managers\Model.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Managers\ModelManager.cpp" />
@@ -65,6 +66,7 @@
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\Pipeline.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\ShadowPass.hpp" />
     <ClInclude Include="..\source\VulkanEngine\GraphicsContext.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\Managers\AttachmentManager.hpp" />
     <ClInclude Include="..\source\VulkanEngine\Managers\InputManager.hpp" />
     <ClInclude Include="..\source\VulkanEngine\Managers\Model.hpp" />
     <ClInclude Include="..\source\VulkanEngine\Managers\ModelManager.hpp" />

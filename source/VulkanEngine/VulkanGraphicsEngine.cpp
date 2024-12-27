@@ -77,6 +77,7 @@ namespace NVulkanEngine
 		CreateCommandPool();
 		CreateCommandBuffers();
 		CreateSyncObjects();
+		CreateSamplers();
 	}
 
 	void CVulkanGraphicsEngine::CreateScene()
@@ -97,8 +98,6 @@ namespace NVulkanEngine
 		CleanupVulkan();
 		CleanupWindow();
 	}
-
-
 
 	void CVulkanGraphicsEngine::InitWindow()
 	{
@@ -142,6 +141,7 @@ namespace NVulkanEngine
 	{
 		m_InputManager = new CInputManager();
 		m_ModelManager = new CModelManager();
+		m_AttachmentManager = new CAttachmentManager();
 
 		// For mouse and keyboard callbacks
 		glfwSetWindowUserPointer(m_Window, m_InputManager);
@@ -165,9 +165,11 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::CleanupManagers()
 	{
 		m_ModelManager->Cleanup(m_Context);
+		m_AttachmentManager->Cleanup(m_Context);
 
 		delete m_InputManager;
 		delete m_ModelManager;
+		delete m_AttachmentManager;
 	};
 
 	void CVulkanGraphicsEngine::CleanupSwapchain()
@@ -185,6 +187,8 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CleanupVulkan()
 	{
+		vkDestroySampler(m_VulkanDevice, m_LinearClamp, nullptr);
+
 		for (size_t i = 0; i < g_MaxFramesInFlight; i++)
 		{
 			vkDestroySemaphore(m_VulkanDevice, m_ImageAvailableSemaphores[i], nullptr);
@@ -578,6 +582,29 @@ namespace NVulkanEngine
 		}
 	}
 
+	void CVulkanGraphicsEngine::CreateSamplers()
+	{
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.minFilter               = VK_FILTER_LINEAR;
+		samplerInfo.magFilter               = VK_FILTER_LINEAR;
+		samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		samplerInfo.mipLodBias              = 0.0f;
+		samplerInfo.maxAnisotropy           = 1.0f;
+		samplerInfo.minLod                  = 0.0f;
+		samplerInfo.maxLod                  = 1.0f;
+		samplerInfo.borderColor             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+		if (vkCreateSampler(m_VulkanDevice, &samplerInfo, nullptr, &m_LinearClamp) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create sampler for geometry render pass!");
+		}
+	}
+
 	void CVulkanGraphicsEngine::InitImGui()
 	{
 		// Setup Dear ImGui context
@@ -592,16 +619,16 @@ namespace NVulkanEngine
 
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = 2;
+		poolSizes[0].descriptorCount = (uint32_t)EAttachmentIndices::Count * 2;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = CSwapchain::GetInstance()->GetMinImageCount() + 1;
+		poolSizes[1].descriptorCount = (uint32_t)EAttachmentIndices::Count * CSwapchain::GetInstance()->GetMinImageCount() + 1;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 		poolInfo.poolSizeCount = (uint32_t)poolSizes.size();
 		poolInfo.pPoolSizes    = poolSizes.data();
-		poolInfo.maxSets       = 4;
+		poolInfo.maxSets       = (uint32_t)EAttachmentIndices::Count * 2;
 
 		if (vkCreateDescriptorPool(m_Context->GetLogicalDevice(), &poolInfo, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
 		{
@@ -633,8 +660,6 @@ namespace NVulkanEngine
 		init_info.Allocator                   = nullptr; // For now. Add to enable validation layer debugging?
 		init_info.CheckVkResultFn             = check_vk_result; // For now
 		ImGui_ImplVulkan_Init(&init_info);
-
-		//m_ImGuiPipeline = new CPipeline(EGraphicsPipeline);
 	}
 
 	void CVulkanGraphicsEngine::CreateGraphicsContext()
@@ -649,6 +674,7 @@ namespace NVulkanEngine
 			m_CommandPool,
 			m_GraphicsQueue,
 			m_PresentQueue,
+			m_LinearClamp,
 			m_RenderResolution);
 	}
 
@@ -673,25 +699,23 @@ namespace NVulkanEngine
 		}
 	}
 
-
-
 	void CVulkanGraphicsEngine::InitDrawPasses()
 	{
-		// Also Specifies order of execution
-		m_DrawPasses.push_back(new CGeometryPass());
-		m_DrawPasses.push_back(new CShadowPass());
-		m_DrawPasses.push_back(new CAtmosphericsPass());
-		m_DrawPasses.push_back(new CLightingPass());
+		m_DrawPasses[(uint32_t)EDrawPasses::Geometry]     = new CGeometryPass();
+		m_DrawPasses[(uint32_t)EDrawPasses::Shadows]      = new CShadowPass();
+		m_DrawPasses[(uint32_t)EDrawPasses::Atmospherics] = new CAtmosphericsPass();
+		m_DrawPasses[(uint32_t)EDrawPasses::Lighting]     = new CLightingPass();
 
 		SGraphicsManagers managers{};
-		managers.m_InputManager = m_InputManager;
-		managers.m_Modelmanager = m_ModelManager;
+		managers.m_InputManager      = m_InputManager;
+		managers.m_Modelmanager      = m_ModelManager;
+		managers.m_AttachmentManager = m_AttachmentManager;
 
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
 			CDrawPass* drawPass = m_DrawPasses[i];
 			if (drawPass)
-				drawPass->InitPass(m_Context, managers);
+				drawPass->InitPass(m_Context, &managers);
 		}
 	}
 
@@ -712,14 +736,15 @@ namespace NVulkanEngine
 		context.m_SwapchainImageIndex = m_Context->GetSwapchainImageIndex();
 
 		SGraphicsManagers managers{};
-		managers.m_InputManager = m_InputManager;
-		managers.m_Modelmanager = m_ModelManager;
+		managers.m_InputManager      = m_InputManager;
+		managers.m_Modelmanager      = m_ModelManager;
+		managers.m_AttachmentManager = m_AttachmentManager;
 
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
 			CDrawPass* drawPass = m_DrawPasses[i];
 			if (drawPass)
-				drawPass->Draw(m_Context, managers, commandBuffer);
+				drawPass->Draw(m_Context, &managers, commandBuffer);
 		}
 	}
 
@@ -729,13 +754,19 @@ namespace NVulkanEngine
 
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-
 		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 		ImGui::Begin("Viewport");
-		VkDescriptorSet sceneColorDescriptor = reinterpret_cast<CLightingPass*>(m_DrawPasses[3])->GetImGuiSceneColorDescriptorSet();
+		VkDescriptorSet sceneColorDescriptor = m_AttachmentManager->TransitionAttachment(m_CommandBuffers[m_FrameIndex], EAttachmentIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
 		ImGui::Image((ImTextureID)sceneColorDescriptor, ImGui::GetContentRegionAvail());
 		ImGui::End();
 		ImGui::Begin("Textures");
+		for (uint32_t i = 0; i < m_AttachmentManager->GetAttachments().size(); i++)
+		{
+			ImGui::Text(m_AttachmentManager->GetAttachment((EAttachmentIndices)i).m_DebugName);
+			ImGui::NewLine();
+		}
+		VkDescriptorSet gbufferNormalsDescriptor = m_AttachmentManager->TransitionAttachment(m_CommandBuffers[m_FrameIndex], EAttachmentIndices::Normals, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
+		ImGui::Image(gbufferNormalsDescriptor, ImVec2(200, 200));
 		ImGui::End();
 		ImGui::Render();
 		ImDrawData* main_draw_data = ImGui::GetDrawData();

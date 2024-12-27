@@ -9,6 +9,7 @@
 
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>
+#include <Managers/AttachmentManager.hpp>
 
 #include <glm/glm.hpp>
 #include <array>
@@ -26,8 +27,19 @@ enum class ERenderAttachments : uint32_t
 	Count              = 7
 };
 
+		
+
 namespace NVulkanEngine
 {
+	enum class EDrawPasses : uint32_t
+	{
+		Geometry     = 0,
+		Shadows      = 1,
+		Atmospherics = 2,
+		Lighting     = 3,
+		Count
+	};
+
 	struct SGraphicsContext
 	{
 		VkInstance        m_VulkanInstance      = VK_NULL_HANDLE;
@@ -46,45 +58,20 @@ namespace NVulkanEngine
 
 	struct SGraphicsManagers
 	{
-		CInputManager* m_InputManager = nullptr;
-		CModelManager* m_Modelmanager = nullptr;
+		CInputManager*      m_InputManager      = nullptr;
+		CModelManager*      m_Modelmanager      = nullptr;
+		CAttachmentManager* m_AttachmentManager = nullptr;
+
 	};
 
 	class CDrawPass
 	{
 	public:
-		virtual void InitPass(CGraphicsContext* context, const SGraphicsManagers& managers);
-		virtual void Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer);
+		virtual void InitPass(CGraphicsContext* context, SGraphicsManagers* managers);
+		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer);
 		virtual void CleanupPass(CGraphicsContext* context);
 
 	protected:
-		enum EAttachmentType
-		{
-			EColorAttachment = 0,
-			EDepthAttachment = 1,
-			EAttachmentCount = 2 
-		};
-		enum EAttachmentUsage
-		{
-			EReadAttachment      = 0,
-			EWriteAttachment     = 1,
-			EReadWriteAttachment = 2,
-			EAttachmentUsageCount = 3
-		};
-
-		// Creates a sampler with the provided parameters
-		VkSampler CreateSampler(
-			CGraphicsContext* context,
-			VkSamplerAddressMode samplerModeU,
-			VkSamplerAddressMode samplerModeV,
-			VkSamplerAddressMode samplerModeW,
-			VkSamplerMipmapMode  samplerMipmapMode,
-			VkFilter             minFilter,
-			VkFilter             magFilter,
-			float                lodbias,
-			float                minLod,
-			float                maxLod);
-
 		// Creates the descriptor pool from which descriptor sets can be allocated from
 		void AllocateDescriptorPool(
 			CGraphicsContext* context,

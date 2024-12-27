@@ -28,13 +28,15 @@ namespace NVulkanEngine
 
 	struct SRenderAttachment
 	{
+		char                      m_DebugName[64]        = "No Debug Name";
 		VkFormat                  m_Format               = VK_FORMAT_UNDEFINED;
 		VkImage                   m_Image                = VK_NULL_HANDLE;
 		VkImageView               m_ImageView            = VK_NULL_HANDLE;
-		VkImageLayout             m_CurrentImageLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
 		VkImageUsageFlags         m_ImageUsage           = VK_IMAGE_USAGE_FLAG_BITS_MAX_ENUM;
-		VkRenderingAttachmentInfo m_RenderAttachmentInfo = {};
+		VkImageLayout             m_CurrentImageLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
 		VkDeviceMemory            m_Memory               = VK_NULL_HANDLE;
+		VkDescriptorSet           m_ImguiDescriptor      = VK_NULL_HANDLE;
+		VkRenderingAttachmentInfo m_RenderAttachmentInfo = {};
 	};
 
 	static std::vector<const char*> GetRequiredInstanceExtensions()
@@ -787,4 +789,41 @@ namespace NVulkanEngine
 		return renderAttachment;
 	}
 
+	static VkSampler CreateSampler(
+		CGraphicsContext* context,
+		VkSamplerAddressMode samplerModeU,
+		VkSamplerAddressMode samplerModeV,
+		VkSamplerAddressMode samplerModeW,
+		VkSamplerMipmapMode  samplerMipmapMode,
+		VkFilter             minFilter,
+		VkFilter             magFilter,
+		float                lodbias,
+		float                minLod,
+		float                maxLod
+	)
+	{
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.minFilter = minFilter;
+		samplerInfo.magFilter = magFilter;
+		samplerInfo.mipmapMode = samplerMipmapMode;
+		samplerInfo.addressModeU = samplerModeU;
+		samplerInfo.addressModeV = samplerModeV;
+		samplerInfo.addressModeW = samplerModeW;
+		samplerInfo.mipLodBias = lodbias;
+		samplerInfo.maxAnisotropy = 1.0f;
+		samplerInfo.minLod = minLod;
+		samplerInfo.maxLod = maxLod;
+		samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+		VkSampler sampler = VK_NULL_HANDLE;
+		if (vkCreateSampler(context->GetLogicalDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create sampler for geometry render pass!");
+		}
+
+		return sampler;
+	}
 }

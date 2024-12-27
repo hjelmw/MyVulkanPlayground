@@ -33,10 +33,15 @@ namespace NVulkanEngine
 		return attributeDescriptions;
 	}
 
-	void CShadowPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)
+	void CShadowPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		s_ShadowAttachment = CreateRenderAttachment(
+		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
+
+		SRenderAttachment shadowmapAttachment = attachmentManager->AddAttachment(
 			context,
+			"Shadow Map",
+			EAttachmentIndices::ShadowMap,
+			context->GetLinearClampSampler(),
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -48,7 +53,7 @@ namespace NVulkanEngine
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetShadowVertexInputAttributes();
 
 		const std::vector<VkFormat> colorAttachmentFormats = {};
-		const VkFormat depthFormat = s_ShadowAttachment.m_Format;
+		const VkFormat shadowmapFormat = shadowmapAttachment.m_Format;
 
 		m_ShadowPipeline = new CPipeline(EGraphicsPipeline);
 		m_ShadowPipeline->SetVertexShader("shaders/shadow.vert.spv");
@@ -62,16 +67,16 @@ namespace NVulkanEngine
 			vertexBindingDescription,
 			vertexAttributeDescriptions,
 			{},
-			depthFormat);
+			shadowmapFormat);
 
 		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, managers.m_Modelmanager->GetNumModels() * 2, 0, managers.m_Modelmanager->GetNumModels() * 2);
+		AllocateDescriptorPool(context, managers->m_Modelmanager->GetNumModels() * 2, 0, managers->m_Modelmanager->GetNumModels() * 2);
 
-		m_DescriptorSetsShadow.resize(managers.m_Modelmanager->GetNumModels());
+		m_DescriptorSetsShadow.resize(managers->m_Modelmanager->GetNumModels());
 
-		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = managers.m_Modelmanager->GetModel(i);
+			CModel* model = managers->m_Modelmanager->GetModel(i);
 
 			m_DescriptorSetsShadow[i].m_DescriptorSets = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
 			model->CreateShadowMemoryBuffer(context, (VkDeviceSize)sizeof(SShadowUniformBuffer));
@@ -87,12 +92,12 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CShadowPass::UpdateShadowBuffers(CGraphicsContext* context, const SGraphicsManagers& managers)
+	void CShadowPass::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 
-		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = managers.m_Modelmanager->GetModel(i);
+			CModel* model = managers->m_Modelmanager->GetModel(i);
 
 			glm::vec3 lightPosition  = CGeometryPass::GetSphereMatrix()[3];
 			glm::vec3 lightDirection = normalize(-lightPosition);
@@ -139,19 +144,22 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CShadowPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer)
+	void CShadowPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
+		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
+		SRenderAttachment shadowmapAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
 		if (true)
 			return;
 
-		BeginRendering(context, commandBuffer, { s_ShadowAttachment });
+		BeginRendering(context, commandBuffer, { shadowmapAttachment });
 		UpdateShadowBuffers(context, managers);
 
 		m_ShadowPipeline->Bind(commandBuffer);
 
-		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = managers.m_Modelmanager->GetModel(i);
+			CModel* model = managers->m_Modelmanager->GetModel(i);
 
 			VkDescriptorSet shadowDescriptor = m_DescriptorSetsShadow[i].m_DescriptorSets[context->GetFrameIndex() % 2];
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &shadowDescriptor, 0, nullptr);
