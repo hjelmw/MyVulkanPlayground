@@ -58,11 +58,14 @@ void main()
 	float roughness    = texture(GBufferNormals,   inUV).a;
 	float depth        = texture(GBufferDepth,     inUV).r;
 
-	vec4  atmospherics = texture(AtmosphericsBuffer, inUV);
-
+	// Early out for skybox
 	if(depth == 1.0f)
-		outFragColor = atmospherics;
-	
+	{
+		vec4 atmosphericsColor = texture(AtmosphericsBuffer, inUV);
+		outFragColor = vec4(atmosphericsColor.rgb, 1.0f);
+		return;
+	}
+
 	vec3 viewPos   = SDeferredLightingConstants.m_ViewPos;
 	vec3 fragColor = vec3(0.0f, 0.0f ,0.0f);
 
@@ -115,8 +118,6 @@ void main()
 		
 
 	}
-
-
 
 	outFragColor = vec4(fragColor, 1.0f);
 
