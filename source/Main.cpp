@@ -24,6 +24,7 @@ void SetupScene(NVulkanEngine::CVulkanGraphicsEngine& graphicsEngine)
 	graphicsEngine.SetModelTexture("assets/statue.jpg");
 	graphicsEngine.SetModelPosition(0.0f, 150.0f, 200.0f);
 	graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
+	graphicsEngine.CreateScene();
 }
 
 int main()
@@ -34,8 +35,6 @@ int main()
 
 	graphicsEngine.Initialize();
 	SetupScene(graphicsEngine);
-	graphicsEngine.CreateScene();
-
 	while (graphicsEngine.IsRunning())
 	{
 		graphicsEngine.DrawFrame();
