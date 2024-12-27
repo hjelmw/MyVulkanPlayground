@@ -23,12 +23,11 @@ namespace NVulkanEngine
 		VkImageLayout imGuiImageLayout = attachment.m_CurrentImageLayout;
 		if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
 		{
-			imGuiImageLayout = attachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ? VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL : attachment.m_CurrentImageLayout;
-			imGuiImageLayout = attachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ? VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL : imGuiImageLayout;
+			imGuiImageLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
 		}
 		else if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 		{
-			imGuiImageLayout = attachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ? VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL : attachment.m_CurrentImageLayout;
+			imGuiImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		}
 
 		attachment.m_ImguiDescriptor  = ImGui_ImplVulkan_AddTexture(sampler, attachment.m_ImageView, imGuiImageLayout);

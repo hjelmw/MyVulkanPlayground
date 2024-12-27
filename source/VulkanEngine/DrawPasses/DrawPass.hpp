@@ -12,7 +12,6 @@
 #include <Managers/AttachmentManager.hpp>
 
 #include <glm/glm.hpp>
-#include <array>	
 
 namespace NVulkanEngine
 {

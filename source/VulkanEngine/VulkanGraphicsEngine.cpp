@@ -765,8 +765,11 @@ namespace NVulkanEngine
 			ImGui::Text(m_AttachmentManager->GetAttachment((EAttachmentIndices)i).m_DebugName);
 			ImGui::NewLine();
 		}
-		VkDescriptorSet gbufferNormalsDescriptor = m_AttachmentManager->TransitionAttachment(m_CommandBuffers[m_FrameIndex], EAttachmentIndices::Normals, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
-		ImGui::Image(gbufferNormalsDescriptor, ImVec2(200, 200));
+		VkDescriptorSet gbufferNormalsDescriptor = m_AttachmentManager->GetAttachment(EAttachmentIndices::Normals).m_ImguiDescriptor;
+		VkDescriptorSet atmosphericsDescriptor = m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox).m_ImguiDescriptor;
+
+		ImGui::Image(gbufferNormalsDescriptor, ImVec2(360, 240));
+		ImGui::Image(atmosphericsDescriptor, ImVec2(360, 240));
 		ImGui::End();
 		ImGui::Render();
 		ImDrawData* main_draw_data = ImGui::GetDrawData();
