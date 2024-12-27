@@ -7,6 +7,7 @@
 #include <DrawPasses/ShadowPass.hpp>
 
 #include <Managers/InputManager.hpp>
+#include <Managers/ModelManager.hpp>
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -60,10 +61,27 @@ namespace NVulkanEngine
 		InitWindow();
 		InitVulkan();
 		CreateGraphicsContext();
-		InitCamera();
 		InitSwapchain();
-		CreateModels();
+		InitManagers();
+		InitCamera();
 		InitImGui();
+	}
+
+	void CVulkanGraphicsEngine::InitVulkan()
+	{
+		CreateVulkanInstance();
+		SetupDebugMessenger();
+		CreateVulkanSurface();
+		SelectPhysicalDevice();
+		CreateLogicalDevice();
+		CreateCommandPool();
+		CreateCommandBuffers();
+		CreateSyncObjects();
+	}
+
+	void CVulkanGraphicsEngine::CreateScene()
+	{
+		CreateModels();
 		InitDrawPasses();
 
 		m_IsRunning = true;
@@ -79,6 +97,8 @@ namespace NVulkanEngine
 		CleanupVulkan();
 		CleanupWindow();
 	}
+
+
 
 	void CVulkanGraphicsEngine::InitWindow()
 	{
@@ -97,20 +117,20 @@ namespace NVulkanEngine
 		m_RenderResolution.width  = g_DisplayWidth;
 		m_RenderResolution.height = g_DisplayHeight;
 
-		glfwSetKeyCallback(m_Window,         ProcessKeyboardInputs);
-		glfwSetMouseButtonCallback(m_Window, ProcessMouseInputs);
-	}
+		GLFWkeyfun keyboardCallback = ([](GLFWwindow* window, int key, int scancode, int action, int mods)
+		{
+			CInputManager& modelManager = *static_cast<CInputManager*>(glfwGetWindowUserPointer(window));
+			modelManager.ProcessKeyboardInputs(window, key, scancode, action, mods);
+		});
 
-	void CVulkanGraphicsEngine::InitVulkan()
-	{
-		CreateVulkanInstance();
-		SetupDebugMessenger();
-		CreateVulkanSurface();
-		SelectPhysicalDevice();
-		CreateLogicalDevice();
-		CreateCommandPool();
-		CreateCommandBuffers();
-		CreateSyncObjects();
+		GLFWmousebuttonfun mouseCallback = ([](GLFWwindow* window, int button, int action, int mods)
+		{
+			CInputManager& modelManager = *static_cast<CInputManager*>(glfwGetWindowUserPointer(window));
+			modelManager.ProcessMouseInput(window, button, action, mods);
+		});
+
+		glfwSetKeyCallback(m_Window, keyboardCallback);
+		glfwSetMouseButtonCallback(m_Window, mouseCallback);
 	}
 
 	void CVulkanGraphicsEngine::InitSwapchain()
@@ -118,10 +138,18 @@ namespace NVulkanEngine
 		CSwapchain::GetInstance()->CreateSwapchain(m_Context);
 	}
 
+	void CVulkanGraphicsEngine::InitManagers()
+	{
+		m_InputManager = new CInputManager();
+		m_ModelManager = new CModelManager();
+
+		// For mouse and keyboard callbacks
+		glfwSetWindowUserPointer(m_Window, m_InputManager);
+	}
+
 	void CVulkanGraphicsEngine::InitCamera()
 	{
-		CInputManager* inputManager = CInputManager::GetInstance();
-		CCamera* camera = inputManager->GetCamera();
+		CCamera* camera = m_InputManager->GetCamera();
 		
 		glm::vec3 cameraOriginPosition = glm::vec3(-300.0f, 250, -7.0f); // Arbitrary camera start position
 		glm::vec3 cameraViewDirection  = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -133,6 +161,14 @@ namespace NVulkanEngine
 
 		camera->UpdateCamera(m_Context);
 	}
+
+	void CVulkanGraphicsEngine::CleanupManagers()
+	{
+		m_ModelManager->Cleanup(m_Context);
+
+		delete m_InputManager;
+		delete m_ModelManager;
+	};
 
 	void CVulkanGraphicsEngine::CleanupSwapchain()
 	{
@@ -614,20 +650,15 @@ namespace NVulkanEngine
 			m_GraphicsQueue,
 			m_PresentQueue,
 			m_RenderResolution);
-
-		CModelManager* modelManager = CModelManager::GetInstance();
-		modelManager->SetGraphicsContext(m_Context);
 	}
 
 	void CVulkanGraphicsEngine::CreateModels()
 	{
-		CModelManager* modelManager = CModelManager::GetInstance();
+		m_ModelManager->AllocateModelDescriptorPool(m_Context);
 
-		modelManager->AllocateModelDescriptorPool();
-
-		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < m_ModelManager->GetNumModels(); i++)
 		{
-			CModel* model = modelManager->GetModel(i);
+			CModel* model = m_ModelManager->GetModel(i);
 
 			if (model->UsesModelTexture())
 			{
@@ -642,31 +673,53 @@ namespace NVulkanEngine
 		}
 	}
 
+
+
 	void CVulkanGraphicsEngine::InitDrawPasses()
 	{
-		m_DrawPasses;
-
 		// Also Specifies order of execution
 		m_DrawPasses.push_back(new CGeometryPass());
 		m_DrawPasses.push_back(new CShadowPass());
 		m_DrawPasses.push_back(new CAtmosphericsPass());
 		m_DrawPasses.push_back(new CLightingPass());
 
+		SGraphicsManagers managers{};
+		managers.m_InputManager = m_InputManager;
+		managers.m_Modelmanager = m_ModelManager;
+
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
 			CDrawPass* drawPass = m_DrawPasses[i];
 			if (drawPass)
-				drawPass->InitPass(m_Context);
+				drawPass->InitPass(m_Context, managers);
 		}
 	}
 
 	void CVulkanGraphicsEngine::RecordDrawPasses(VkCommandBuffer commandBuffer)
 	{
+		SGraphicsContext context{};
+		context.m_VulkanInstance      = m_Context->GetVulkanInstance();
+		context.m_VulkanSurface       = m_Context->GetVulkanSurface();
+		context.m_VulkanDevice        = m_Context->GetLogicalDevice();
+		context.m_PhysicalDevice      = m_Context->GetPhysicalDevice();
+		context.m_CommandPool         = m_Context->GetCommandPool();
+		context.m_GraphicsQueue       = m_Context->GetGraphicsQueue();
+		context.m_PresentQueue        = m_Context->GetPresentQueue();
+		context.m_GLFWWindow          = m_Context->GetGLFWWindow();
+		context.m_RenderResolution    = m_Context->GetRenderResolution();
+		context.m_DeltaTime           = m_Context->GetDeltaTime();
+		context.m_FrameIndex          = m_Context->GetFrameIndex();
+		context.m_SwapchainImageIndex = m_Context->GetSwapchainImageIndex();
+
+		SGraphicsManagers managers{};
+		managers.m_InputManager = m_InputManager;
+		managers.m_Modelmanager = m_ModelManager;
+
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
 			CDrawPass* drawPass = m_DrawPasses[i];
 			if (drawPass)
-				drawPass->Draw(m_Context, commandBuffer);
+				drawPass->Draw(m_Context, managers, commandBuffer);
 		}
 	}
 
@@ -730,44 +783,34 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::AddModel(const std::string& modelpath)
 	{
-		CModelManager* modelManager = CModelManager::GetInstance();
-
-		modelManager->AddModel(modelpath);
+		m_ModelManager->AddModel(modelpath);
 	}
 
 	void CVulkanGraphicsEngine::SetModelTexture(const std::string& texturePath)
 	{
-		CModelManager* modelManager = CModelManager::GetInstance();
-
-		modelManager->AddTexturePath(modelManager->GetCurrentModelIndex(), texturePath);
+		m_ModelManager->AddTexturePath(m_ModelManager->GetCurrentModelIndex(), texturePath);
 	}
 
 
 	void CVulkanGraphicsEngine::SetModelPosition(float x, float y, float z)
 	{
-		CModelManager* modelManager = CModelManager::GetInstance();
-
 		glm::vec3 translation = glm::vec3(x, y, z);
 
-		modelManager->AddPosition(modelManager->GetCurrentModelIndex(), translation);
+		m_ModelManager->AddPosition(m_ModelManager->GetCurrentModelIndex(), translation);
 	}
 
 	void CVulkanGraphicsEngine::SetModelRotation(float x, float y, float z)
 	{
-		CModelManager* modelManager = CModelManager::GetInstance();
-
 		glm::vec3 rotation = glm::vec3(x, y, z);
 
-		modelManager->AddRotation(modelManager->GetCurrentModelIndex(), rotation);
+		m_ModelManager->AddRotation(m_ModelManager->GetCurrentModelIndex(), rotation);
 	}
 
 	void CVulkanGraphicsEngine::SetModelScaling(float x, float y, float z)
 	{
-		CModelManager* modelManager = CModelManager::GetInstance();
-
 		glm::vec3 scaling = glm::vec3(x, y, z);
 
-		modelManager->AddScaling(modelManager->GetCurrentModelIndex(), scaling);
+		m_ModelManager->AddScaling(m_ModelManager->GetCurrentModelIndex(), scaling);
 	}
 
 	bool CVulkanGraphicsEngine::IsRunning()
@@ -798,10 +841,8 @@ namespace NVulkanEngine
 		m_Context->SetDeltaTime(deltatIme);
 		m_Context->SetSwapchainImageIndex(imageIndex);
 
-		CInputManager* inputManager = CInputManager::GetInstance();
-
 		// Update camera matrix based on user input
-		inputManager->UpdateCameraTransforms(m_Context, deltatIme);
+		m_InputManager->UpdateCameraTransforms(m_Context, deltatIme);
 
 		// Only reset the fence if we are clear to submit work
 		vkResetFences(m_VulkanDevice, 1, &m_InFlightFences[m_FrameIndex]);

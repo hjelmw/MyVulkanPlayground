@@ -14,13 +14,13 @@ namespace NVulkanEngine
 		CAtmosphericsPass() = default;
 		~CAtmosphericsPass() = default;
 
-		virtual void InitPass(CGraphicsContext* context)  override;
-		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
+		virtual void InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)  override;
+		virtual void Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
 		static inline SRenderAttachment GetAtmosphericsAttachment() { return s_AtmosphericsAttachment; };
 	private:
-		void UpdateAtmosphericsBuffer(CGraphicsContext* context);
+		void UpdateAtmosphericsBuffer(CGraphicsContext* context, const SGraphicsManagers& managers);
 
 		// Contains the sky box
 		static inline SRenderAttachment s_AtmosphericsAttachment;

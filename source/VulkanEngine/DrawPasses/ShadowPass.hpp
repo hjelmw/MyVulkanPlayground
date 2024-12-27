@@ -14,8 +14,8 @@ namespace NVulkanEngine
 		CShadowPass() = default;
 		~CShadowPass() = default;
 
-		virtual void InitPass(CGraphicsContext* context)  override;
-		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
+		virtual void InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)  override;
+		virtual void Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
 		inline static SRenderAttachment GetShadowMapAttachment() { return s_ShadowAttachment; }
@@ -23,7 +23,7 @@ namespace NVulkanEngine
 
 
 	private:
-		void UpdateShadowBuffers(CGraphicsContext* context);
+		void UpdateShadowBuffers(CGraphicsContext* context, const SGraphicsManagers& managers);
 
 		std::vector<SDescriptorSets> m_DescriptorSetsShadow = { };
 

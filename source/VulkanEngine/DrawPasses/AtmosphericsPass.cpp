@@ -92,7 +92,7 @@ namespace NVulkanEngine
 		return attributeDescriptions;
 	}
 
-	void CAtmosphericsPass::InitPass(CGraphicsContext* context)
+	void CAtmosphericsPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)
 	{
 		s_AtmosphericsAttachment = CreateRenderAttachment(
 			context,
@@ -166,9 +166,9 @@ namespace NVulkanEngine
 		delete m_AtmosphericsPipeline;
 	}
 
-	void CAtmosphericsPass::UpdateAtmosphericsBuffer(CGraphicsContext* context)
+	void CAtmosphericsPass::UpdateAtmosphericsBuffer(CGraphicsContext* context, const SGraphicsManagers& managers)
 	{
-		CCamera* camera = CInputManager::GetInstance()->GetCamera();
+		CCamera* camera = managers.m_InputManager->GetCamera();
 		float cameraNear = camera->GetNear();
 		float cameraFar = camera->GetFar();
 
@@ -205,7 +205,7 @@ namespace NVulkanEngine
 	}
 
 
-	void CAtmosphericsPass::Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer)
+	void CAtmosphericsPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer)
 	{
 		ImGui::Begin("Atmospherics Pass");
 		ImGui::SliderFloat("Atmosphere Radius", &g_AtmosphereScale, 0.0f, 1.0f);
@@ -215,7 +215,7 @@ namespace NVulkanEngine
 		ImGui::SliderFloat("Scattering Intensity", &g_ScatteringIntensity, 0.0f, 1000.0f);
 		ImGui::End();
 
-		UpdateAtmosphericsBuffer(context);
+		UpdateAtmosphericsBuffer(context, managers);
 
 		SRenderAttachment sceneColorAttachment = CLightingPass::GetSceneColorAttachment();
 		SRenderAttachment depthAttachment      = CGeometryPass::GetGBufferAttachment(ERenderAttachments::Depth);
@@ -229,7 +229,7 @@ namespace NVulkanEngine
 
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSetsAtmospherics[context->GetFrameIndex()], 0, nullptr);
 
-		CCamera* camera = CInputManager::GetInstance()->GetCamera();
+		CCamera* camera = managers.m_InputManager->GetCamera();
 
 		glm::mat4 viewMatrix = camera->GetLookAtMatrix();
 		viewMatrix[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);

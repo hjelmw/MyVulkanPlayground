@@ -1,11 +1,7 @@
 #include "VulkanGraphicsEngine.hpp"
 
-int main()
+void SetupScene(NVulkanEngine::CVulkanGraphicsEngine& graphicsEngine)
 {
-	using namespace NVulkanEngine;
-
-	CVulkanGraphicsEngine graphicsEngine;
-
 	graphicsEngine.AddModel("assets/box.obj");
 	graphicsEngine.SetModelTexture("assets/statue.jpg");
 	graphicsEngine.SetModelPosition(0.0f, 60.0f, -200.0f);
@@ -28,18 +24,17 @@ int main()
 	graphicsEngine.SetModelTexture("assets/statue.jpg");
 	graphicsEngine.SetModelPosition(0.0f, 150.0f, 200.0f);
 	graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
+}
 
-	//graphicsEngine.AddModel("assets/NewShip.obj");
-	//graphicsEngine.SetModelPosition(200.0f, 0, 0.0f);
-	//graphicsEngine.SetModelRotation(0.0f, 45.0f, 0.0f);
-	//graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
-	//graphicsEngine.AddModel("assets/LandingPad.obj");
-	//graphicsEngine.SetModelPosition(200.0f, -150.0f, 0.0f);
-	//graphicsEngine.SetModelRotation(0.0f, 180.0f, 0.0f);
-	//graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
+int main()
+{
+	using namespace NVulkanEngine;
 
+	CVulkanGraphicsEngine graphicsEngine;
 
 	graphicsEngine.Initialize();
+	SetupScene(graphicsEngine);
+	graphicsEngine.CreateScene();
 
 	while (graphicsEngine.IsRunning())
 	{

@@ -43,7 +43,7 @@ namespace NVulkanEngine
 		return attributeDescriptions;
 	}
 
-	void CGeometryPass::InitPass(CGraphicsContext* context)
+	void CGeometryPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)
 	{
 		s_GeometryAttachments.resize(4);
 
@@ -120,14 +120,12 @@ namespace NVulkanEngine
 			0.0f,
 			1.0f);
 
-		CModelManager* modelManager = CModelManager::GetInstance();
-
 		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, modelManager->GetNumModels() * 2, modelManager->GetNumModels() * 2, modelManager->GetNumModels() * 2);
+		AllocateDescriptorPool(context, managers.m_Modelmanager->GetNumModels() * 2, managers.m_Modelmanager->GetNumModels() * 2, managers.m_Modelmanager->GetNumModels() * 2);
 
-		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = modelManager->GetModel(i);
+			CModel* model = managers.m_Modelmanager->GetModel(i);
 
 			SDescriptorSets& modelDescriptorRef = model->GetDescriptorSetsRef();
 
@@ -147,7 +145,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CGeometryPass::UpdateGeometryBuffers(CGraphicsContext* context)
+	void CGeometryPass::UpdateGeometryBuffers(CGraphicsContext* context, const SGraphicsManagers& managers)
 	{
 		//m_RotationDegrees = fmod(m_RotationDegrees + 2.0f * context->GetDeltaTime(), 360.0f);
 
@@ -155,13 +153,11 @@ namespace NVulkanEngine
 		sphereMatrix = glm::translate(sphereMatrix, glm::vec3(g_LightPosition[0], g_LightPosition[1], g_LightPosition[2]));
 		s_SphereMatrix = sphereMatrix;
 
-		CCamera* camera = CInputManager::GetInstance()->GetCamera();
+		CCamera* camera = managers.m_InputManager->GetCamera();
 
-		CModelManager* modelManager = CModelManager::GetInstance();
-
-		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = modelManager->GetModel(i);
+			CModel* model = managers.m_Modelmanager->GetModel(i);
 
 			SGeometryUniformBuffer uboModel{};
 			uboModel.m_ModelMat      = model->GetTransform();
@@ -175,22 +171,21 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CGeometryPass::Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer)
+	void CGeometryPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer)
 	{
 		ImGui::Begin("Geometry Pass");
 		ImGui::SliderFloat3("Light Position", g_LightPosition, -500.0f, 500.0f);
 		ImGui::End();
 
 		BeginRendering(context, commandBuffer, s_GeometryAttachments);
-		UpdateGeometryBuffers(context);
+		UpdateGeometryBuffers(context, managers);
 
 		m_GeometryPipeline->Bind(commandBuffer);
 
 
-		CModelManager* modelManager = CModelManager::GetInstance();
-		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = modelManager->GetModel(i);
+			CModel* model = managers.m_Modelmanager->GetModel(i);
 
 			VkDescriptorSet modelDescriptor = model->GetDescriptorSetsRef().m_DescriptorSets[context->GetFrameIndex()];
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &modelDescriptor, 0, nullptr);

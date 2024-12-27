@@ -13,15 +13,15 @@ namespace NVulkanEngine
 		CLightingPass() = default;
 		~CLightingPass() = default;
 
-		virtual void InitPass(CGraphicsContext* context)  override;
-		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) override;
+		virtual void InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)  override;
+		virtual void Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
 		static SRenderAttachment GetSceneColorAttachment() { return s_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor]; };
 		VkDescriptorSet GetImGuiSceneColorDescriptorSet() { return m_ImGuiSceneColorDescriptorSet; };
 
 	private:
-		void UpdateLightBuffers(CGraphicsContext* context);
+		void UpdateLightBuffers(CGraphicsContext* context, const SGraphicsManagers& managers);
 
 		// Deferred lighting pass image attachments
 		inline static std::vector<SRenderAttachment> s_DeferredAttachments;

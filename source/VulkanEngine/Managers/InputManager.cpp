@@ -4,40 +4,7 @@
 
 namespace NVulkanEngine
 {
-	CInputManager* CInputManager::s_InputManagerInstance = nullptr;
-
-	CInputManager::CInputManager()
-	{
-		ResetInputs();
-	}
-
-	void CInputManager::ResetInputs()
-	{
-		// Reset all keyboard input
-		m_KeyStatus.m_Esc = m_KeyStatus.m_Shift = m_KeyStatus.m_Forward = m_KeyStatus.m_Backward = m_KeyStatus.m_Left = m_KeyStatus.m_Right = m_KeyStatus.m_Up = m_KeyStatus.m_Down = false;
-
-		// Reset mouse input
-		m_MouseStatus.m_RightButton = false;
-		m_MouseStatus.m_FirstTimePressed = true;
-		m_MouseStatus.m_MouseX = m_MouseStatus.m_MouseY = 0;
-
-		// Reset camera rotation
-		m_CameraTransforms.m_PlanetCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-		m_CameraTransforms.m_Pitch = 0.0f;
-		m_CameraTransforms.m_Yaw = -90.0f;
-	}
-
-	CInputManager* CInputManager::GetInstance()
-	{
-		if (!s_InputManagerInstance)
-		{
-			s_InputManagerInstance = new CInputManager();
-		}
-
-		return s_InputManagerInstance;
-	}
-
-	void CInputManager::ProcessKeyboardInputsImpl(GLFWwindow* window, int key, int scancode, int action, int mods)
+	void CInputManager::ProcessKeyboardInputs(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		if (action == GLFW_PRESS)
 		{
@@ -101,7 +68,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CInputManager::ProcessMouseInputImpl(GLFWwindow* window, int button, int action, int mods)
+	void CInputManager::ProcessMouseInput(GLFWwindow* window, int button, int action, int mods)
 	{
 		if (action == GLFW_PRESS)
 		{

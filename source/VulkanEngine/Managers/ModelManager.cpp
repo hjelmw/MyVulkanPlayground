@@ -4,27 +4,6 @@
 
 namespace NVulkanEngine
 {
-	CModelManager* CModelManager::s_ModelManagerInstance = nullptr;
-
-	CModelManager::CModelManager()
-	{
-	}
-
-	CModelManager* CModelManager::GetInstance()
-	{
-		if (!s_ModelManagerInstance)
-		{
-			s_ModelManagerInstance = new CModelManager();
-		}
-
-		return s_ModelManagerInstance;
-	}
-
-	void CModelManager::SetGraphicsContext(CGraphicsContext* context)
-	{
-		m_Context = context;
-	}
-
 	void CModelManager::AddModel(const std::string& modelFilepath)
 	{
 		CModel* model = new CModel();
@@ -87,17 +66,17 @@ namespace NVulkanEngine
 		return (uint32_t)m_Models.size();
 	}
 
-	void CModelManager::AllocateModelDescriptorPool()
+	void CModelManager::AllocateModelDescriptorPool(CGraphicsContext* context)
 	{
 		/* Allocate 2 sets per frame in flight per model consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(m_Context, m_DescriptorPool, (uint32_t) m_Models.size() * 2, 1, 1);
+		AllocateDescriptorPool(context, m_DescriptorPool, (uint32_t) m_Models.size() * 2, 1, 1);
 	}
 
-	//void CModelManager::Cleanup()
-	//{
-	//	for (int i = 0; i < m_Models.size(); i++)
-	//	{
-	//		m_Models[i]->Cleanup()
-	//	}
-	//}
+	void CModelManager::Cleanup(CGraphicsContext* context)
+	{
+		for (int i = 0; i < m_Models.size(); i++)
+		{
+			m_Models[i]->Cleanup(context);
+		}
+	}
 }

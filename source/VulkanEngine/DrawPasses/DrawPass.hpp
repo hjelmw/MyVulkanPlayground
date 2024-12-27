@@ -2,10 +2,13 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "GraphicsContext.hpp"
-#include "VulkanGraphicsEngineUtils.hpp"
+#include <GraphicsContext.hpp>
+#include <VulkanGraphicsEngineUtils.hpp>
 
-#include "Swapchain.hpp"
+#include <Swapchain.hpp>
+
+#include <Managers/InputManager.hpp>
+#include <Managers/ModelManager.hpp>
 
 #include <glm/glm.hpp>
 #include <array>
@@ -23,14 +26,35 @@ enum class ERenderAttachments : uint32_t
 	Count              = 7
 };
 
-
 namespace NVulkanEngine
 {
+	struct SGraphicsContext
+	{
+		VkInstance        m_VulkanInstance      = VK_NULL_HANDLE;
+		VkSurfaceKHR      m_VulkanSurface       = VK_NULL_HANDLE;
+		VkDevice          m_VulkanDevice        = VK_NULL_HANDLE;
+		VkPhysicalDevice  m_PhysicalDevice      = VK_NULL_HANDLE;
+		VkCommandPool     m_CommandPool         = VK_NULL_HANDLE;
+		VkQueue           m_GraphicsQueue       = VK_NULL_HANDLE;
+		VkQueue           m_PresentQueue        = VK_NULL_HANDLE;
+		GLFWwindow*       m_GLFWWindow          = nullptr;
+		VkExtent2D        m_RenderResolution    = { 0,0 };
+		float             m_DeltaTime           = 0.0f;
+		uint32_t          m_FrameIndex          = 0;
+		uint32_t          m_SwapchainImageIndex = 0;
+	};
+
+	struct SGraphicsManagers
+	{
+		CInputManager* m_InputManager = nullptr;
+		CModelManager* m_Modelmanager = nullptr;
+	};
+
 	class CDrawPass
 	{
 	public:
-		virtual void InitPass(CGraphicsContext* context);
-		virtual void Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer);
+		virtual void InitPass(CGraphicsContext* context, const SGraphicsManagers& managers);
+		virtual void Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer);
 		virtual void CleanupPass(CGraphicsContext* context);
 
 	protected:

@@ -33,7 +33,7 @@ namespace NVulkanEngine
 		return attributeDescriptions;
 	}
 
-	void CShadowPass::InitPass(CGraphicsContext* context)
+	void CShadowPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)
 	{
 		s_ShadowAttachment = CreateRenderAttachment(
 			context,
@@ -64,16 +64,14 @@ namespace NVulkanEngine
 			{},
 			depthFormat);
 
-		CModelManager* modelManager = CModelManager::GetInstance();
-
 		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, modelManager->GetNumModels() * 2, 0, modelManager->GetNumModels() * 2);
+		AllocateDescriptorPool(context, managers.m_Modelmanager->GetNumModels() * 2, 0, managers.m_Modelmanager->GetNumModels() * 2);
 
-		m_DescriptorSetsShadow.resize(modelManager->GetNumModels());
+		m_DescriptorSetsShadow.resize(managers.m_Modelmanager->GetNumModels());
 
-		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = modelManager->GetModel(i);
+			CModel* model = managers.m_Modelmanager->GetModel(i);
 
 			m_DescriptorSetsShadow[i].m_DescriptorSets = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
 			model->CreateShadowMemoryBuffer(context, (VkDeviceSize)sizeof(SShadowUniformBuffer));
@@ -89,13 +87,12 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CShadowPass::UpdateShadowBuffers(CGraphicsContext* context)
+	void CShadowPass::UpdateShadowBuffers(CGraphicsContext* context, const SGraphicsManagers& managers)
 	{
-		CModelManager* modelManager = CModelManager::GetInstance();
 
-		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = modelManager->GetModel(i);
+			CModel* model = managers.m_Modelmanager->GetModel(i);
 
 			glm::vec3 lightPosition  = CGeometryPass::GetSphereMatrix()[3];
 			glm::vec3 lightDirection = normalize(-lightPosition);
@@ -142,20 +139,19 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CShadowPass::Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer)
+	void CShadowPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer)
 	{
 		if (true)
 			return;
 
 		BeginRendering(context, commandBuffer, { s_ShadowAttachment });
-		UpdateShadowBuffers(context);
+		UpdateShadowBuffers(context, managers);
 
 		m_ShadowPipeline->Bind(commandBuffer);
 
-		CModelManager* modelManager = CModelManager::GetInstance();
-		for (uint32_t i = 0; i < modelManager->GetNumModels(); i++)
+		for (uint32_t i = 0; i < managers.m_Modelmanager->GetNumModels(); i++)
 		{
-			CModel* model = modelManager->GetModel(i);
+			CModel* model = managers.m_Modelmanager->GetModel(i);
 
 			VkDescriptorSet shadowDescriptor = m_DescriptorSetsShadow[i].m_DescriptorSets[context->GetFrameIndex() % 2];
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &shadowDescriptor, 0, nullptr);
@@ -173,6 +169,11 @@ namespace NVulkanEngine
 
 	void CShadowPass::CleanupPass(CGraphicsContext* context)
 	{
+		// Uniform buffer
+		vkDestroyBuffer(context->GetLogicalDevice(), m_ShadowBuffer, nullptr);
+		vkFreeMemory(context->GetLogicalDevice(), m_ShadowBufferMemory, nullptr);
 
+		m_ShadowPipeline->Cleanup(context);
+		delete m_ShadowPipeline;
 	}
 };

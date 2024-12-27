@@ -88,7 +88,7 @@ namespace NVulkanEngine
 		return attributeDescriptions;
 	}
 
-	void CLightingPass::InitPass(CGraphicsContext* context)
+	void CLightingPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers)
 	{
 		s_DeferredAttachments.resize((uint32_t)ERenderAttachments::Count);
 
@@ -180,7 +180,7 @@ namespace NVulkanEngine
 		m_ImGuiSceneColorDescriptorSet = ImGui_ImplVulkan_AddTexture(m_DeferredSampler, s_DeferredAttachments[(uint32_t)ERenderAttachments::SceneColor].m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
-	void CLightingPass::UpdateLightBuffers(CGraphicsContext* context)
+	void CLightingPass::UpdateLightBuffers(CGraphicsContext* context, const SGraphicsManagers& managers)
 	{
 		SDeferredLightingUniformBuffer deferredLightingUbo{};
 		deferredLightingUbo.m_Lights[0].m_LightColor    = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -190,7 +190,7 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_Lights[0].m_LightIntensity = 100.0f;
 		deferredLightingUbo.m_Lights[0].m_LightMatrix = CShadowPass::GetLightMatrix();
 
-		CCamera* camera = CInputManager::GetInstance()->GetCamera();
+		CCamera* camera = managers.m_InputManager->GetCamera();
 		deferredLightingUbo.m_ViewPos = camera->GetPosition();
 
 		deferredLightingUbo.m_Pad1 = 0.0f;
@@ -201,9 +201,9 @@ namespace NVulkanEngine
 		vkUnmapMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory);
 	}
 
-	void CLightingPass::Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer)
+	void CLightingPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer)
 	{
-		UpdateLightBuffers(context);
+		UpdateLightBuffers(context, managers);
 
 		SRenderAttachment positionsAttachment    = s_DeferredAttachments[(uint32_t)ERenderAttachments::Positions];
 		SRenderAttachment normalsAttachment      = s_DeferredAttachments[(uint32_t)ERenderAttachments::Normals];
@@ -251,6 +251,9 @@ namespace NVulkanEngine
 
 		vkDestroySampler(context->GetLogicalDevice(), m_DeferredSampler, nullptr);
 		vkDestroySampler(context->GetLogicalDevice(), m_ClampSampler, nullptr);
+		
+		m_DeferredPipeline->Cleanup(context);
+		delete m_DeferredPipeline;
 
 		// Clear Attachments
 		for (uint32_t i = 0; i < s_DeferredAttachments.size(); i++)

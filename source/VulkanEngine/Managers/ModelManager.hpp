@@ -14,34 +14,27 @@ namespace NVulkanEngine
 	class CModelManager
 	{
 	public:
-		static CModelManager* GetInstance();
-		~CModelManager();
-
-		void SetGraphicsContext(CGraphicsContext* graphicsContext);
+		CModelManager()  = default;
+		~CModelManager() = default;
 
 		void AddModel(const std::string& modelFilepath);
 		void AddPosition(uint32_t index, glm::vec3 position);
 		void AddRotation(uint32_t index, glm::vec3 rotation);
 		void AddScaling(uint32_t index,  glm::vec3 scaling);
 		void AddTexturePath(uint32_t index, const std::string& textureFilepath);
+		void Cleanup(CGraphicsContext* context);
 
 		uint32_t GetCurrentModelIndex();
 		CModel*  GetModel(uint32_t index);
 
 		const uint32_t GetNumModels();
 
-
-		void AllocateModelDescriptorPool();
+		void AllocateModelDescriptorPool(CGraphicsContext* context);
 		VkDescriptorPool GetModelDescriptorPool() { return m_DescriptorPool; };
 
 	private:
-		CModelManager();
-		static CModelManager* s_ModelManagerInstance;
-
-		int m_CurrentModelIndex = -1;
 		std::vector<CModel*> m_Models{};
-
-		CGraphicsContext* m_Context{};
+		int m_CurrentModelIndex = -1;
 
 		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
 	};

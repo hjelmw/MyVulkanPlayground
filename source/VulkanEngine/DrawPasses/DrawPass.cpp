@@ -5,8 +5,8 @@
 namespace NVulkanEngine
 {
 	/* Implemented by derived class */
-	void CDrawPass::InitPass(CGraphicsContext* context)    { }
-	void CDrawPass::Draw(CGraphicsContext* context, VkCommandBuffer commandBuffer) { }
+	void CDrawPass::InitPass(CGraphicsContext* context, const SGraphicsManagers& managers) { }
+	void CDrawPass::Draw(CGraphicsContext* context, const SGraphicsManagers& managers, VkCommandBuffer commandBuffer) { }
 	void CDrawPass::CleanupPass(CGraphicsContext* context) { }
 
 	VkSampler CDrawPass::CreateSampler(

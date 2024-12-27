@@ -11,12 +11,14 @@
 #include <GLFW/glfw3.h>
 
 #include <VulkanGraphicsEngineUtils.hpp>
-#include <Managers/ModelManager.hpp>
 #include <DrawPasses/DrawPass.hpp>
 #include <DrawPasses/Pipeline.hpp>
 #include <Swapchain.hpp>
 
 #include "GraphicsContext.hpp"
+
+class CModelManager;
+class CInputManager;
 
 namespace NVulkanEngine
 {
@@ -33,21 +35,22 @@ namespace NVulkanEngine
 		void SetModelPosition(float x, float y, float z);
 		void SetModelRotation(float x, float y, float z);
 		void SetModelScaling(float x, float y, float z);
+		void CreateScene();
 
 		void DrawFrame();
 		bool IsRunning();
 		void Cleanup();
 
 	private:
+		// Initialize
 		void InitWindow();
 		void InitVulkan();
 		void InitImGui();
 		void InitSwapchain();
 		void InitCamera();
 		void CreateGraphicsContext();
-		void InitDrawPasses();
-		void CreateModels();
 
+		// Vulkan init
 		void CreateVulkanInstance();
 		void SetupDebugMessenger();
 		void CreateVulkanSurface();
@@ -57,6 +60,12 @@ namespace NVulkanEngine
 		void CreateCommandBuffers();
 		void CreateSyncObjects();
 
+		// Create scene
+		void CreateModels();
+		void InitDrawPasses();
+		void InitManagers();
+
+		void CleanupManagers();
 		void CleanupSwapchain();
 		void CleanupDrawPasses();
 		void CleanupVulkan();
@@ -80,7 +89,9 @@ namespace NVulkanEngine
 		// Draw passes specifies render order
 		std::vector<CDrawPass*>             m_DrawPasses               = {};
 
-		CModelManager*                      m_ModelManager             = {};
+		// Managers
+		CInputManager* m_InputManager = nullptr;
+		CModelManager* m_ModelManager = nullptr;
 
 		/* Vulkan Primitives */
 		// Device
@@ -116,6 +127,8 @@ namespace NVulkanEngine
 		VkDescriptorPool                    m_ImGuiDescriptorPool      = VK_NULL_HANDLE;
 
 		CPipeline*                          m_ImGuiPipeline            = VK_NULL_HANDLE;
+
+
 
 	};
 }
