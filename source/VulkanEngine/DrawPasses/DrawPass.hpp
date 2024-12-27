@@ -12,22 +12,7 @@
 #include <Managers/AttachmentManager.hpp>
 
 #include <glm/glm.hpp>
-#include <array>
-
-// Remember to store in this order
-enum class ERenderAttachments : uint32_t
-{
-	Positions          = 0,
-	Normals            = 1,
-	Albedo             = 2,
-	Depth              = 3,
-	ShadowMap          = 4,
-	SceneColor         = 5,
-	AtmosphericsSkyBox = 6,
-	Count              = 7
-};
-
-		
+#include <array>	
 
 namespace NVulkanEngine
 {
@@ -133,8 +118,6 @@ namespace NVulkanEngine
 			VkImage image, 
 			uint32_t width, 
 			uint32_t height);
-
-		std::vector<SRenderAttachment> m_Attachments = {};
 
 		VkDescriptorSetLayout        m_DescriptorSetLayout   = VK_NULL_HANDLE;
 		VkPipelineLayout             m_PipelineLayout        = VK_NULL_HANDLE;
