@@ -829,29 +829,58 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CVulkanGraphicsEngine::RenderImGuiDebug(uint32_t imageIndex)
+	void CVulkanGraphicsEngine::DoImGuiViewport()
 	{
-		CSwapchain* swapchain = CSwapchain::GetInstance();
-
-		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
 		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 		ImGui::Begin("Viewport");
 		VkDescriptorSet sceneColorDescriptor = m_AttachmentManager->TransitionAttachment(m_CommandBuffers[m_FrameIndex], EAttachmentIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
 		ImGui::Image((ImTextureID)sceneColorDescriptor, ImGui::GetContentRegionAvail());
 		ImGui::End();
 		ImGui::Begin("Textures");
-		for (uint32_t i = 0; i < m_AttachmentManager->GetAttachments().size(); i++)
-		{
-			ImGui::Text(m_AttachmentManager->GetAttachment((EAttachmentIndices)i).m_DebugName);
-			ImGui::NewLine();
-		}
-		VkDescriptorSet gbufferNormalsDescriptor = m_AttachmentManager->GetAttachment(EAttachmentIndices::Normals).m_ImguiDescriptor;
-		VkDescriptorSet atmosphericsDescriptor = m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox).m_ImguiDescriptor;
 
-		ImGui::Image(gbufferNormalsDescriptor, ImVec2(360, 240));
-		ImGui::Image(atmosphericsDescriptor, ImVec2(360, 240));
+		static bool selected[(uint32_t)EAttachmentIndices::Count] = {};
+		static int selectedId = -1;
+
+		if (ImGui::CollapsingHeader("List", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			static char inputText[64] = "";
+			ImGui::InputText("Filter", inputText, 64);
+			for (uint32_t i = 0; i < m_AttachmentManager->GetAttachments().size(); i++)
+			{
+				SRenderAttachment attachment = m_AttachmentManager->GetAttachment((EAttachmentIndices)i);
+
+				ImGui::Selectable(attachment.m_DebugName, &selected[i]);
+				if (selected[i])
+					selectedId = i;
+			}
+		}
+		if (ImGui::CollapsingHeader("Selected", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			if (selectedId == -1)
+				ImGui::Text("No Texture selected. Select one from the list above to inspect!");
+			else
+			{
+				SRenderAttachment attachment = m_AttachmentManager->GetAttachment((EAttachmentIndices)selectedId);
+				ImGui::Text("Name: %s", attachment.m_DebugName);
+				ImGui::Image(attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.0f));
+				if (ImGui::Button("Remove Selection"))
+				{
+					selected[selectedId] = false;
+					selectedId = -1;
+				}
+
+			}
+		}
+
 		ImGui::End();
+	}
+
+	void CVulkanGraphicsEngine::RenderImGuiDrawData(uint32_t imageIndex)
+	{
+		CSwapchain* swapchain = CSwapchain::GetInstance();
+
+		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
 		ImGui::Render();
 		ImDrawData* main_draw_data = ImGui::GetDrawData();
 		const bool main_is_minimized = (main_draw_data->DisplaySize.x <= 0.0f || main_draw_data->DisplaySize.y <= 0.0f);
@@ -983,7 +1012,8 @@ namespace NVulkanEngine
 
 		RecordDrawPasses(m_CommandBuffers[m_FrameIndex]);
 
-		RenderImGuiDebug(imageIndex);
+		DoImGuiViewport();
+		RenderImGuiDrawData(imageIndex);
 
 		if (vkEndCommandBuffer(m_CommandBuffers[m_FrameIndex]) != VK_SUCCESS)
 		{

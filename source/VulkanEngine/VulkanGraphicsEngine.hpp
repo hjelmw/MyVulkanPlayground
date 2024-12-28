@@ -82,7 +82,8 @@ namespace NVulkanEngine
 		VkResult DestroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
 		void     RecordDrawPasses(VkCommandBuffer commandBuffer);
-		void	 RenderImGuiDebug(uint32_t imageIndex);
+		void	 RenderImGuiDrawData(uint32_t imageIndex);
+		void     DoImGuiViewport();
 
 		bool m_IsRunning;
 
