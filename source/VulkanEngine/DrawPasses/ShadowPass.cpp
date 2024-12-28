@@ -35,25 +35,12 @@ namespace NVulkanEngine
 
 	void CShadowPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
-
-		SRenderAttachment shadowmapAttachment = attachmentManager->AddAttachment(
-			context,
-			"Shadow Map",
-			EAttachmentIndices::ShadowMap,
-			context->GetLinearClampSampler(),
-			VK_FORMAT_D32_SFLOAT,
-			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			(uint32_t)SHADOWMAP_RESOLUTION,
-			(uint32_t)SHADOWMAP_RESOLUTION);
-
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetShadowBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = SVertex::GetVertexBindingDescription();
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetShadowVertexInputAttributes();
 
 		const std::vector<VkFormat> colorAttachmentFormats = {};
-		const VkFormat shadowmapFormat = shadowmapAttachment.m_Format;
+		const VkFormat shadowmapFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::ShadowMap).m_Format;
 
 		m_ShadowPipeline = new CPipeline(EGraphicsPipeline);
 		m_ShadowPipeline->SetVertexShader("shaders/shadow.vert.spv");

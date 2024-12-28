@@ -83,6 +83,7 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::CreateScene()
 	{
 		CreateModels();
+		CreateAttachments();
 		InitDrawPasses();
 
 		m_IsRunning = true;
@@ -603,6 +604,86 @@ namespace NVulkanEngine
 		{
 			throw std::runtime_error("failed to create sampler for geometry render pass!");
 		}
+	}
+
+	void CVulkanGraphicsEngine::CreateAttachments()
+	{
+		m_AttachmentManager->AddAttachment(
+			m_Context,
+			"GBuffer - Positions",
+			EAttachmentIndices::Positions,
+			m_LinearClamp,
+			VK_FORMAT_R16G16B16A16_SFLOAT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			m_Context->GetRenderResolution().width,
+			m_Context->GetRenderResolution().height);
+
+		m_AttachmentManager->AddAttachment(
+			m_Context,
+			"GBuffer - Normals",
+			EAttachmentIndices::Normals,
+			m_LinearClamp,
+			VK_FORMAT_R16G16B16A16_SFLOAT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			m_Context->GetRenderResolution().width,
+			m_Context->GetRenderResolution().height);
+
+		m_AttachmentManager->AddAttachment(
+			m_Context,
+			"GBuffer - Albedo",
+			EAttachmentIndices::Albedo, 
+			m_LinearClamp,
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			m_Context->GetRenderResolution().width,
+			m_Context->GetRenderResolution().height);
+
+		m_AttachmentManager->AddAttachment(
+			m_Context,
+			"GBuffer - Depth",
+			EAttachmentIndices::Depth,
+			m_LinearClamp,
+			FindDepthFormat(m_Context->GetPhysicalDevice()),
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+			m_Context->GetRenderResolution().width,
+			m_Context->GetRenderResolution().height);
+
+		m_AttachmentManager->AddAttachment(
+			m_Context,
+			"Shadow Map",
+			EAttachmentIndices::ShadowMap,
+			m_LinearClamp,
+			VK_FORMAT_D32_SFLOAT,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			(uint32_t)1024,
+			(uint32_t)1024);
+
+		m_AttachmentManager->AddAttachment(
+			m_Context,
+			"Atmospherics SkyBox",
+			EAttachmentIndices::AtmosphericsSkyBox,
+			m_LinearClamp,
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			m_Context->GetRenderResolution().width,
+			m_Context->GetRenderResolution().height);
+
+		m_AttachmentManager->AddAttachment(
+			m_Context,
+			"Scene Color",
+			EAttachmentIndices::SceneColor,
+			m_LinearClamp,
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			m_Context->GetRenderResolution().width,
+			m_Context->GetRenderResolution().height);
 	}
 
 	void CVulkanGraphicsEngine::InitImGui()

@@ -94,22 +94,12 @@ namespace NVulkanEngine
 
 	void CAtmosphericsPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		SRenderAttachment atmosphericsAttachment = managers->m_AttachmentManager->AddAttachment(
-			context,
-			"Atmospherics SkyBox",
-			EAttachmentIndices::AtmosphericsSkyBox,
-			context->GetLinearClampSampler(),
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			context->GetRenderResolution().width,
-			context->GetRenderResolution().height);
-
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetAtmosphericsBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription = {};
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = {};
 
-		const std::vector<VkFormat> sceneColor = { atmosphericsAttachment.m_Format };
+		const VkFormat atmosphericsFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox).m_Format;
+		const std::vector<VkFormat> atmosphericsFormats = { atmosphericsFormat };
 		const VkFormat depthFormat = VK_FORMAT_UNDEFINED;
 
 		m_AtmosphericsPipeline = new CPipeline(EGraphicsPipeline);
@@ -124,8 +114,8 @@ namespace NVulkanEngine
 			descriptorSetLayoutBindings,
 			vertexBindingDescription,
 			vertexAttributeDescriptions,
-			sceneColor,
-			depthFormat);
+			atmosphericsFormats,
+			VK_FORMAT_UNDEFINED);
 
 		m_AtmosphericsBuffer = CreateBuffer(
 			context,

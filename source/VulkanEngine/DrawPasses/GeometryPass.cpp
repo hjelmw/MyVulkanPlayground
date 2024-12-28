@@ -45,57 +45,17 @@ namespace NVulkanEngine
 
 	void CGeometryPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		SRenderAttachment positionsAttachment = managers->m_AttachmentManager->AddAttachment(
-			context,
-			"GBuffer - Positions",
-			EAttachmentIndices::Positions,
-			context->GetLinearClampSampler(),
-			VK_FORMAT_R16G16B16A16_SFLOAT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			context->GetRenderResolution().width,
-			context->GetRenderResolution().height);
-
-		SRenderAttachment normalsAttachment = managers->m_AttachmentManager->AddAttachment(
-			context,
-			"GBuffer - Normals",
-			EAttachmentIndices::Normals,
-			context->GetLinearClampSampler(),
-			VK_FORMAT_R16G16B16A16_SFLOAT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			context->GetRenderResolution().width,
-			context->GetRenderResolution().height);
-
-		SRenderAttachment albedoAttachment = managers->m_AttachmentManager->AddAttachment(
-			context,
-			"GBuffer - Albedo",
-			EAttachmentIndices::Albedo,
-			context->GetLinearClampSampler(),
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			context->GetRenderResolution().width,
-			context->GetRenderResolution().height);
-
-		SRenderAttachment depthAttachment = managers->m_AttachmentManager->AddAttachment(
-			context,
-			"GBuffer - Depth",
-			EAttachmentIndices::Depth,
-			context->GetLinearClampSampler(),
-			FindDepthFormat(context->GetPhysicalDevice()),
-			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-			context->GetRenderResolution().width,
-			context->GetRenderResolution().height);
-
 		/* Setup descriptor bindings, vertex binding and vertex attributes */
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetDescriptorSetLayoutBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = SVertex::GetVertexBindingDescription();
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetModelVertexInputAttributes();
 
-		const std::vector<VkFormat> colorAttachmentFormats = { positionsAttachment.m_Format, normalsAttachment.m_Format, albedoAttachment.m_Format };
-		const VkFormat depthFormat = depthAttachment.m_Format;
+		VkFormat positionsFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Positions).m_Format;
+		VkFormat normalsFormat   = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Normals).m_Format;
+		VkFormat albedoFormat    = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Albedo).m_Format;
+		VkFormat depthFormat     = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth).m_Format;
+
+		const std::vector<VkFormat> colorAttachmentFormats = { positionsFormat, normalsFormat, albedoFormat };
 
 		m_GeometryPipeline = new CPipeline(EGraphicsPipeline);
 		m_GeometryPipeline->SetVertexShader("shaders/geometry.vert.spv");

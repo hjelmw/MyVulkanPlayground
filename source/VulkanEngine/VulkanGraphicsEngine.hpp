@@ -60,6 +60,7 @@ namespace NVulkanEngine
 		void CreateCommandBuffers();
 		void CreateSyncObjects();
 		void CreateSamplers();
+		void CreateAttachments();
 
 		// Create scene
 		void CreateModels();

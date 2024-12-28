@@ -90,28 +90,16 @@ namespace NVulkanEngine
 
 	void CLightingPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
-
-		SRenderAttachment sceneColorAttachment = attachmentManager->AddAttachment(
-			context,
-			"Scene Color",
-			EAttachmentIndices::SceneColor,
-			context->GetLinearClampSampler(),
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			g_DisplayWidth,
-			g_DisplayHeight);
-
 		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetLightingBindings();
 		const VkVertexInputBindingDescription                vertexBindingDescription    = {};
 		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = {};
 
-		const std::vector<VkFormat> colorAttachmentFormats =
+		const VkFormat sceneColorAttachmentFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::SceneColor).m_Format;
+		const std::vector<VkFormat> sceneColorttachmentFormats =
 		{
-			sceneColorAttachment.m_Format
+			sceneColorAttachmentFormat
 		};
-		const VkFormat depthFormat = attachmentManager->GetAttachment(EAttachmentIndices::Depth).m_Format;
+		const VkFormat depthFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth).m_Format;
 
 		m_DeferredPipeline = new CPipeline(EGraphicsPipeline);
 		m_DeferredPipeline->SetVertexShader("shaders/deferred.vert.spv");
@@ -124,19 +112,18 @@ namespace NVulkanEngine
 			descriptorSetLayoutBindings,
 			vertexBindingDescription,
 			vertexAttributeDescriptions,
-			colorAttachmentFormats,
+			sceneColorttachmentFormats,
 			depthFormat);
 			
 		/* Allocat sets for 6 sampled images (pos, normals, albedo, depth, shadowmap, atmospherics) and 1 uniform light buffer  */
 		AllocateDescriptorPool(context, g_MaxFramesInFlight, g_MaxFramesInFlight * 6, g_MaxFramesInFlight * 1);
 
-
-		VkDescriptorImageInfo  descriptorPositions    = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::Positions).m_ImageView,          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorNormals      = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::Normals).m_ImageView,            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorAlbedo       = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::Albedo).m_ImageView,             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorDepth        = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::Depth).m_ImageView,              VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorShadow       = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::ShadowMap).m_ImageView,          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		VkDescriptorImageInfo  descriptorAtmospherics = CreateDescriptorImageInfo(context->GetLinearClampSampler(), attachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox).m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorPositions    = CreateDescriptorImageInfo(context->GetLinearClampSampler(), managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Positions).m_ImageView,          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorNormals      = CreateDescriptorImageInfo(context->GetLinearClampSampler(), managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Normals).m_ImageView,            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorAlbedo       = CreateDescriptorImageInfo(context->GetLinearClampSampler(), managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Albedo).m_ImageView,             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorDepth        = CreateDescriptorImageInfo(context->GetLinearClampSampler(), managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth).m_ImageView,              VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorShadow       = CreateDescriptorImageInfo(context->GetLinearClampSampler(), managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::ShadowMap).m_ImageView,          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorImageInfo  descriptorAtmospherics = CreateDescriptorImageInfo(context->GetLinearClampSampler(), managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox).m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		m_DeferredLightBuffer = CreateBuffer(
 			context,
