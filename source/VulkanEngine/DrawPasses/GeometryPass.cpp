@@ -85,7 +85,7 @@ namespace NVulkanEngine
 			model->CreateGeometryMemoryBuffer(context, (VkDeviceSize)sizeof(SGeometryUniformBuffer));
 
 			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(model->GetGeometryMemoryBuffer().m_Buffer, sizeof(SGeometryUniformBuffer));
-			VkDescriptorImageInfo descriptorTexture = CreateDescriptorImageInfo(context->GetLinearClampSampler(), model->UsesModelTexture() ? model->GetModelTexture()->GetTextureImageView() : VK_NULL_HANDLE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+			VkDescriptorImageInfo descriptorTexture = CreateDescriptorImageInfo(context->GetLinearRepeatSampler(), model->UsesModelTexture() ? model->GetModelTexture()->GetTextureImageView() : VK_NULL_HANDLE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 			modelDescriptorRef.m_WriteDescriptors =
 			{

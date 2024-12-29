@@ -30,7 +30,7 @@ namespace NVulkanEngine
 		CPipeline*					  m_GeometryPipeline    = nullptr;
 		
 		float                         m_RotationDegrees = 0.0f;
-		glm::vec3                     m_LightPosition   = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3                     m_LightPosition   = glm::vec3(0.0f, 1000.0f, 0.0f);
 
 		static glm::mat4              s_SphereMatrix;
 	} ;

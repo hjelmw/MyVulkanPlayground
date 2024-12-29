@@ -189,6 +189,7 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::CleanupVulkan()
 	{
 		vkDestroySampler(m_VulkanDevice, m_LinearClamp, nullptr);
+		vkDestroySampler(m_VulkanDevice, m_LinearRepeat, nullptr);
 
 		for (size_t i = 0; i < g_MaxFramesInFlight; i++)
 		{
@@ -599,11 +600,19 @@ namespace NVulkanEngine
 		samplerInfo.maxLod                  = 1.0f;
 		samplerInfo.borderColor             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 		samplerInfo.unnormalizedCoordinates = VK_FALSE;
-
 		if (vkCreateSampler(m_VulkanDevice, &samplerInfo, nullptr, &m_LinearClamp) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create sampler for geometry render pass!");
 		}
+
+		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		if (vkCreateSampler(m_VulkanDevice, &samplerInfo, nullptr, &m_LinearRepeat) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create sampler for geometry render pass!");
+		}
+
 	}
 
 	void CVulkanGraphicsEngine::CreateAttachments()
@@ -756,6 +765,7 @@ namespace NVulkanEngine
 			m_GraphicsQueue,
 			m_PresentQueue,
 			m_LinearClamp,
+			m_LinearRepeat,
 			m_RenderResolution);
 	}
 

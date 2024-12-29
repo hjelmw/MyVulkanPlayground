@@ -114,6 +114,7 @@ namespace NVulkanEngine
 		std::vector<VkCommandBuffer>        m_CommandBuffers           = {};
 
 		VkSampler                           m_LinearClamp              = VK_NULL_HANDLE;
+		VkSampler                           m_LinearRepeat             = VK_NULL_HANDLE;
 
 		// Swapchain extent
 		VkExtent2D					        m_RenderResolution         = { 0, 0 };
