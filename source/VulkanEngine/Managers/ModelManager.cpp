@@ -74,6 +74,8 @@ namespace NVulkanEngine
 
 	void CModelManager::Cleanup(CGraphicsContext* context)
 	{
+		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
+
 		for (int i = 0; i < m_Models.size(); i++)
 		{
 			m_Models[i]->Cleanup(context);

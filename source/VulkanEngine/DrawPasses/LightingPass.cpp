@@ -201,10 +201,14 @@ namespace NVulkanEngine
 
 	void CLightingPass::CleanupPass(CGraphicsContext* context)
 	{
-		// Uniform buffer
+		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(context->GetLogicalDevice(), m_DescriptorSetLayout, nullptr);
+
 		vkDestroyBuffer(context->GetLogicalDevice(), m_DeferredLightBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory, nullptr);
-		
+
+		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
+
 		m_DeferredPipeline->Cleanup(context);
 		delete m_DeferredPipeline;
 	}

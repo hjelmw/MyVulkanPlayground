@@ -67,7 +67,7 @@ namespace NVulkanEngine
 
 	void CAttachmentManager::Cleanup(CGraphicsContext* context)
 	{
-		for (uint32_t i = 0; m_RenderAttachments.size(); i++)
+		for (uint32_t i = 0; i < m_RenderAttachments.size(); i++)
 		{
 			vkDestroyImageView(context->GetLogicalDevice(), m_RenderAttachments[i].m_ImageView, nullptr);
 			vkDestroyImage(context->GetLogicalDevice(), m_RenderAttachments[i].m_Image, nullptr);

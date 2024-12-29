@@ -95,6 +95,7 @@ namespace NVulkanEngine
 
 		CleanupSwapchain();
 		CleanupDrawPasses();
+		CleanupManagers();
 		CleanupImGui();
 		CleanupVulkan();
 		CleanupWindow();
@@ -188,6 +189,8 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CleanupVulkan()
 	{
+		vkDestroyDescriptorPool(m_VulkanDevice, m_ImGuiDescriptorPool, nullptr);
+
 		vkDestroySampler(m_VulkanDevice, m_LinearClamp, nullptr);
 		vkDestroySampler(m_VulkanDevice, m_LinearRepeat, nullptr);
 

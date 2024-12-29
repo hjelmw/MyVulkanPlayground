@@ -164,9 +164,13 @@ namespace NVulkanEngine
 
 	void CShadowPass::CleanupPass(CGraphicsContext* context)
 	{
-		// Uniform buffer
+		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(context->GetLogicalDevice(), m_DescriptorSetLayout, nullptr);
+
 		vkDestroyBuffer(context->GetLogicalDevice(), m_ShadowBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_ShadowBufferMemory, nullptr);
+
+		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
 
 		m_ShadowPipeline->Cleanup(context);
 		delete m_ShadowPipeline;

@@ -407,5 +407,14 @@ namespace NVulkanEngine
 
 		vkDestroyBuffer(context->GetLogicalDevice(), m_IndexBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_IndexBufferMemory, nullptr);
+
+		vkDestroyBuffer(context->GetLogicalDevice(), m_GeometryBuffer.m_Buffer, nullptr);
+		vkFreeMemory(context->GetLogicalDevice(), m_GeometryBuffer.m_Memory, nullptr);
+
+		vkDestroyBuffer(context->GetLogicalDevice(), m_ShadowBuffer.m_Buffer, nullptr);
+		vkFreeMemory(context->GetLogicalDevice(), m_ShadowBuffer.m_Memory, nullptr);
+
+		if(m_ModelTexture)
+			m_ModelTexture->DestroyTexture(context);
 	}
 }

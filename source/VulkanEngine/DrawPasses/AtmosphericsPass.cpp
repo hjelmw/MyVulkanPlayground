@@ -143,20 +143,6 @@ namespace NVulkanEngine
 		UpdateDescriptorSets(context, m_DescriptorSetsAtmospherics, writeDescriptorSets);
 	}
 
-	void CAtmosphericsPass::CleanupPass(CGraphicsContext* context)
-	{
-		VkDevice device = context->GetLogicalDevice();
-
-		vkDestroyBuffer(device, m_AtmosphericsBuffer, nullptr);
-		vkFreeMemory(device, m_AtmosphericsBufferMemory, nullptr);
-
-		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
-		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
-
-		m_AtmosphericsPipeline->Cleanup(context);
-		delete m_AtmosphericsPipeline;
-	}
-
 	void CAtmosphericsPass::UpdateAtmosphericsBuffer(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		CCamera* camera = managers->m_InputManager->GetCamera();
@@ -234,4 +220,21 @@ namespace NVulkanEngine
 
 		EndRendering(commandBuffer);
 	}
+
+	void CAtmosphericsPass::CleanupPass(CGraphicsContext* context)
+	{
+		VkDevice device = context->GetLogicalDevice();
+
+		vkDestroyBuffer(device, m_AtmosphericsBuffer, nullptr);
+		vkFreeMemory(device, m_AtmosphericsBufferMemory, nullptr);
+
+		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
+
+		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
+
+		m_AtmosphericsPipeline->Cleanup(context);
+		delete m_AtmosphericsPipeline;
+	}
+
 };
