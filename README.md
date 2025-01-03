@@ -5,7 +5,7 @@ This repository contains the code and assets for my hobby graphics engine where 
 # Features
 In this project I have implemented several systems meant for simplifying interaction with the [Graphics Pipeline](https://en.wikipedia.org/wiki/Graphics_pipeline) and exposed them to a base class called CDrawPass. 
 
-There are managers for handling keyboard/mouse inputs, resource state tracking, pipeline helpers & shader binding tables as well as a rudimentary model rendering system. The base class is overridable and has two functions: InitPass and DrawPass. InitPass is called once on startup while DrawPass runs once per frame. 
+There are helpers for handling keyboard/mouse inputs, resource state tracking, pipeline management & shader binding tables as well as a rudimentary model rendering system. The base class is overridable and has two functions: InitPass and DrawPass. InitPass is called once on startup while DrawPass runs once per frame. The entire viewport is additionally rendered through ImGui and you can inspect all textures in real time.
 
 You can have a look under [source/VulkanEngine/DrawPasses/](https://github.com/hjelmw/MyVulkanPlayground/tree/main/source/VulkanEngine/DrawPasses
 ) to see what rendering techniques have currently been implemented. Some sample code can be found below
