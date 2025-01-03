@@ -1,10 +1,5 @@
 #include "AtmosphericsPass.hpp"
 
-#include <DrawPasses/GeometryPass.hpp>
-#include <DrawPasses/LightingPass.hpp>
-
-#include <Managers/InputManager.hpp>
-
 #include <imgui.h>
 
 //
@@ -39,15 +34,15 @@ namespace NVulkanEngine
 		//
 		glm::mat4 m_ProjMat = glm::identity<glm::mat4>();
 		//
-		float m_CameraFar = 0.0f;
+		float m_CameraFar   = 0.0f;
 	};
 	struct SAtmosphericsFragmentConstants
 	{
-		glm::vec3    m_PlanetCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_CameraNear           = 0.0f;
+		glm::vec3    m_PlanetCameraPosition   = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_CameraNear             = 0.0f;
 		//
-		glm::vec3    m_PlanetCenter = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_CameraFar    = 0.0f;
+		glm::vec3    m_PlanetCenter           = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_CameraFar              = 0.0f;
 		//
 		glm::vec3     m_PlanetToSunDir        = glm::vec3(0.0f, 0.0f, 0.0f);
 		glm::uint32_t m_NumInScatteringPoints = 0;
@@ -57,93 +52,43 @@ namespace NVulkanEngine
 		glm::float32  m_AtmosphereRadius      = 0.0f;
 		glm::float32  m_AbsorptionFallof      = 0.0f;
 		//
-		glm::vec3    m_AbsorptionBeta        = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_AbsorptionHeight      = 0.0f;
+		glm::vec3    m_AbsorptionBeta         = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_AbsorptionHeight       = 0.0f;
 		//
 		glm::vec3    m_RayleighBetaScattering = glm::vec3(0.0f, 0.0f, 0.0f);
 		glm::float32 m_RayleighHeight         = 0.0f;
 		//
-		glm::vec3    m_MieBetaScattering = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_MieHeight         = 0.0f;
+		glm::vec3    m_MieBetaScattering      = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::float32 m_MieHeight              = 0.0f;
 		//
-		glm::uint32_t m_AllowMieScattering  = 0;
-		glm::float32  m_ScatteringIntensity = 0.0f;
-		glm::vec2     m_Pad0                = glm::vec2(0xdeadbeef, 0xdeadbeef);
+		glm::uint32_t m_AllowMieScattering    = 0;
+		glm::float32  m_ScatteringIntensity   = 0.0f;
+		glm::vec2     m_Pad0                  = glm::vec2(0xdeadbeef, 0xdeadbeef);
 	};
-
-	std::vector<VkDescriptorSetLayoutBinding> GetAtmosphericsBindings()
-	{
-		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(2);
-
-		// 1: Fragment shader depth
-		attributeDescriptions[0].binding            = 0;
-		attributeDescriptions[0].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		attributeDescriptions[0].descriptorCount    = 1;
-		attributeDescriptions[0].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
-		attributeDescriptions[0].pImmutableSamplers = nullptr;
-
-		// 2: Fragment shader uniform bufferz
-		attributeDescriptions[1].binding            = 1;
-		attributeDescriptions[1].descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		attributeDescriptions[1].descriptorCount    = 1;
-		attributeDescriptions[1].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
-		attributeDescriptions[1].pImmutableSamplers = nullptr;
-
-		return attributeDescriptions;
-	}
 
 	void CAtmosphericsPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetAtmosphericsBindings();
-		const VkVertexInputBindingDescription                vertexBindingDescription = {};
-		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = {};
+		const SRenderAttachment atmosphericsAttachment  = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox);
+		const SRenderAttachment depthAttachment         = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth);
 
-		const VkFormat atmosphericsFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox).m_Format;
-		const std::vector<VkFormat> atmosphericsFormats = { atmosphericsFormat };
-		const VkFormat depthFormat = VK_FORMAT_UNDEFINED;
+		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentConstants));
 
-		m_AtmosphericsPipeline = new CPipeline(EGraphicsPipeline);
+		m_AtmosphericsTable = new CBindingTable();
+		m_AtmosphericsTable->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView, depthAttachment.m_Format, context->GetLinearClampSampler());
+		m_AtmosphericsTable->AddUniformBufferBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_AtmosphericsUniformBuffer, sizeof(SAtmosphericsFragmentConstants));
+		m_AtmosphericsTable->CreateBindings(context);
+
+		m_AtmosphericsPipeline = new CPipeline();
 		m_AtmosphericsPipeline->SetVertexShader("shaders/atmospherics.vert.spv");
 		m_AtmosphericsPipeline->SetFragmentShader("shaders/atmospherics.frag.spv");
 		m_AtmosphericsPipeline->SetCullingMode(VK_CULL_MODE_FRONT_BIT);
+		m_AtmosphericsPipeline->AddColorAttachment(atmosphericsAttachment.m_Format);
+		m_AtmosphericsPipeline->AddDepthAttachment(depthAttachment.m_Format);
 		m_AtmosphericsPipeline->AddPushConstantSlot(VK_SHADER_STAGE_VERTEX_BIT, sizeof(SAtmosphericsVertexPushConstants), 0);
-		m_AtmosphericsPipeline->CreatePipeline(
-			context,
-			CDrawPass::m_PipelineLayout,
-			CDrawPass::m_DescriptorSetLayout,
-			descriptorSetLayoutBindings,
-			vertexBindingDescription,
-			vertexAttributeDescriptions,
-			atmosphericsFormats,
-			VK_FORMAT_UNDEFINED);
-
-		m_AtmosphericsBuffer = CreateBuffer(
-			context,
-			m_AtmosphericsBufferMemory,
-			sizeof(SAtmosphericsFragmentConstants),
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-		AllocateDescriptorPool(context, g_MaxFramesInFlight, g_MaxFramesInFlight * 2, g_MaxFramesInFlight * 1);
-
-		SRenderAttachment depthAttachment = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth);
-
-		VkDescriptorImageInfo  descriptorDepth   = CreateDescriptorImageInfo(context->GetLinearClampSampler(), depthAttachment.m_ImageView, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(m_AtmosphericsBuffer, sizeof(SAtmosphericsFragmentConstants));
-
-		m_DescriptorSetsAtmospherics = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
-
-		const std::vector<VkWriteDescriptorSet> writeDescriptorSets =
-		{
-			CreateWriteDescriptorImage(context,  m_DescriptorSetsAtmospherics.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  0, &descriptorDepth),
-
-			CreateWriteDescriptorBuffer(context, m_DescriptorSetsAtmospherics.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &descriptorUniform)
-		};
-
-		UpdateDescriptorSets(context, m_DescriptorSetsAtmospherics, writeDescriptorSets);
+		m_AtmosphericsPipeline->CreatePipeline(context, m_AtmosphericsTable->GetDescriptorSetLayout());
 	}
 
-	void CAtmosphericsPass::UpdateAtmosphericsBuffer(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CAtmosphericsPass::UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		CCamera* camera = managers->m_InputManager->GetCamera();
 		float cameraNear = camera->GetNear();
@@ -180,10 +125,8 @@ namespace NVulkanEngine
 		vkUnmapMemory(context->GetLogicalDevice(), m_AtmosphericsBufferMemory);
 	}
 
-
 	void CAtmosphericsPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
-
 		ImGui::Begin("Atmospherics Pass");
 		ImGui::SliderFloat("Atmosphere Radius", &g_AtmosphereScale, 0.0f, 1.0f);
 		ImGui::SliderFloat("Planet Radius", &g_PlanetRadius, 0.0f, 6000.0f);
@@ -192,7 +135,16 @@ namespace NVulkanEngine
 		ImGui::SliderFloat("Scattering Intensity", &g_ScatteringIntensity, 0.0f, 1000.0f);
 		ImGui::End();
 
-		UpdateAtmosphericsBuffer(context, managers);
+		CCamera* camera = managers->m_InputManager->GetCamera();
+		glm::mat4 viewMatrix = camera->GetLookAtMatrix();
+		viewMatrix[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+		SAtmosphericsVertexPushConstants vertexPushConstants{};
+		vertexPushConstants.m_ViewMat   = viewMatrix;
+		vertexPushConstants.m_ProjMat   = camera->GetProjectionMatrix();
+		vertexPushConstants.m_CameraFar = camera->GetFar();
+
+		UpdateAtmosphericsConstants(context, managers);
 
 		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
 		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Depth, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
@@ -201,21 +153,10 @@ namespace NVulkanEngine
 		std::vector<SRenderAttachment> inscatteringAttachments = { atmosphericsAttachment };
 		BeginRendering(context, commandBuffer, inscatteringAttachments);
 
-		m_AtmosphericsPipeline->Bind(commandBuffer);
+		m_AtmosphericsTable->BindTable(context, commandBuffer, m_AtmosphericsPipeline->GetPipelineLayout());
+		m_AtmosphericsPipeline->BindPipeline(commandBuffer);
+		m_AtmosphericsPipeline->PushConstants(commandBuffer, (void*)&vertexPushConstants);
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSetsAtmospherics[context->GetFrameIndex()], 0, nullptr);
-
-		CCamera* camera = managers->m_InputManager->GetCamera();
-
-		glm::mat4 viewMatrix = camera->GetLookAtMatrix();
-		viewMatrix[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-		SAtmosphericsVertexPushConstants vertexPushConstants{};
-		vertexPushConstants.m_ViewMat = viewMatrix;
-		vertexPushConstants.m_ProjMat = camera->GetProjectionMatrix();
-		vertexPushConstants.m_CameraFar  = 1000.0f;
-
-		vkCmdPushConstants(commandBuffer, CDrawPass::m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, static_cast<uint32_t>(sizeof(SAtmosphericsVertexPushConstants)), &vertexPushConstants);
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
 		EndRendering(commandBuffer);
@@ -225,15 +166,13 @@ namespace NVulkanEngine
 	{
 		VkDevice device = context->GetLogicalDevice();
 
-		vkDestroyBuffer(device, m_AtmosphericsBuffer, nullptr);
+		vkDestroyBuffer(device, m_AtmosphericsUniformBuffer, nullptr);
 		vkFreeMemory(device, m_AtmosphericsBufferMemory, nullptr);
 
-		vkDestroyDescriptorPool(device, m_DescriptorPool, nullptr);
-		vkDestroyDescriptorSetLayout(device, m_DescriptorSetLayout, nullptr);
-
-		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
-
+		m_AtmosphericsTable->Cleanup(context);
 		m_AtmosphericsPipeline->Cleanup(context);
+
+		delete m_AtmosphericsTable;
 		delete m_AtmosphericsPipeline;
 	}
 

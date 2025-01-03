@@ -9,72 +9,50 @@
 
 namespace NVulkanEngine
 {
-	enum EPipelineType
-	{
-		EGraphicsPipeline = 0,
-		EComputePipeline  = 1
-	};
-
 	class CPipeline
 	{
 	public:
-		CPipeline(EPipelineType type) :
-		m_PipelineType(type)
-		{};
+		CPipeline() = default;
 		~CPipeline() = default;
 
 		void SetVertexShader(const std::string& vertexShaderPath);
 		void SetFragmentShader(const std::string& fragmentShaderPath);
-		void AddPushConstantSlot(VkShaderStageFlags shaderStage, size_t constantsSize, size_t offset);
+
+		void SetVertexInput(uint32_t stride, VkVertexInputRate vertexInputRate);
+		void AddVertexAttribute(uint32_t locationSlot, VkFormat format, uint32_t offset);
+
 		void SetCullingMode(VkCullModeFlagBits cullMode);
+		void AddPushConstantSlot(VkShaderStageFlags shaderStage, size_t constantsSize, size_t offset);
+		void AddColorAttachment(VkFormat colorFormat);
+		void AddDepthAttachment(VkFormat depthFormat);
 
-		void CreatePipeline(
-			CGraphicsContext*                              context,
-			VkPipelineLayout&                              pipelineLayout,
-			VkDescriptorSetLayout&                         descriptorSetLayout,
-			std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings,
-			VkVertexInputBindingDescription                vertexInputDescription,
-			std::vector<VkVertexInputAttributeDescription> vertexAttributeDescription,
-			std::vector<VkFormat>                          colorAttachmentFormats,
-			VkFormat                                       depthFormat);
+		void CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
 
+		VkPipelineLayout GetPipelineLayout() { return m_PipelineLayout; };
 
-		void Bind(VkCommandBuffer commandBuffer);
+		void BindPipeline(VkCommandBuffer commandBuffer);
+		void PushConstants(VkCommandBuffer, void* pushConstantData);
 
 		void Cleanup(CGraphicsContext* context);
 	private:
-		void CreateGraphicsPipeline(
-			CGraphicsContext*                              context,
-			VkPipelineLayout&                              pipelineLayout,
-			VkDescriptorSetLayout&                         descriptorSetLayout,
-			std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings,
-			VkVertexInputBindingDescription                vertexInputDescription,
-			std::vector<VkVertexInputAttributeDescription> vertexAttributeDescription,
-			std::vector<VkFormat>                          colorAttachmentFormats,
-			VkFormat                                       depthFormat,
-			const std::string                              vertexShaderPath, 
-			const std::string                              fragmentShaderPath);
+		void CreateGraphicsPipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
 
-		// TODO
-		/*
-		void CreateComputePipeline(
-			VkRenderPass renderPass,
-			VkPipelineLayout pipelineLayout,
-			VkDescriptorSetLayout descriptorSetLayout,
-			const std::string computeShaderPath);
-		*/
+		VkVertexInputBindingDescription m_VertexInputBindingDescription = {};
+		std::vector<VkVertexInputAttributeDescription> m_VertexAttributeDescriptions    = {};
 
-		EPipelineType                    m_PipelineType        = EGraphicsPipeline;
-		VkCullModeFlagBits               m_CullMode            = VK_CULL_MODE_BACK_BIT;
+		std::string           m_VertexShaderPath       = "";
+		std::string           m_FragmentShaderPath     = "";
+		std::string           m_ComputeShaderPath      = "";
 
-		std::string                      m_VertexShaderPath    = "";
-		std::string                      m_FragmentShaderPath  = "";
-		std::string                      m_ComputeShaderPath   = "";
+		VkFormat              m_DepthAttachmentFormat  = VK_FORMAT_UNDEFINED;
+		std::vector<VkFormat> m_ColorAttachmentFormats = {};
 
-		VkPipeline		                 m_Pipeline            = VK_NULL_HANDLE;
+		VkCullModeFlagBits    m_CullMode               = VK_CULL_MODE_BACK_BIT;
 
-		std::vector<VkPushConstantRange> m_PushConstantsRanges = {};
+		VkPushConstantRange   m_PushConstantsRanges    = {};
 
+		VkPipelineLayout      m_PipelineLayout         = VK_NULL_HANDLE;
+		VkPipeline		      m_Pipeline               = VK_NULL_HANDLE;
 	};
 
 };

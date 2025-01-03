@@ -102,6 +102,9 @@
     <ClCompile Include="..\source\VulkanEngine\Managers\AttachmentManager.cpp">
       <Filter>Source Files\Managers</Filter>
     </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawPasses\BindingTable.cpp">
+      <Filter>Source Files\DrawPasses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\GeometryPass.hpp">
@@ -166,6 +169,9 @@
     </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\Managers\AttachmentManager.hpp">
       <Filter>Header Files\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawPasses\BindingTable.hpp">
+      <Filter>Header Files\DrawPasses</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

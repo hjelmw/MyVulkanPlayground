@@ -29,62 +29,56 @@ namespace NVulkanEngine
 		pushConstant.offset     = static_cast<uint32_t>(offset);
 		pushConstant.size       = static_cast<uint32_t>(constantsSize);
 
-		m_PushConstantsRanges.push_back(pushConstant);
+		m_PushConstantsRanges = pushConstant;
 	}
 
-	void CPipeline::CreatePipeline(
-		CGraphicsContext*                              context,
-		VkPipelineLayout&                              pipelineLayout,
-		VkDescriptorSetLayout&                         descriptorSetLayout,
-		std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings,
-		VkVertexInputBindingDescription                vertexInputDescription,
-		std::vector<VkVertexInputAttributeDescription> vertexAttributeDescription,
-		std::vector<VkFormat>                          colorAttachmentFormats,
-		VkFormat                                       depthFormat)
+	void CPipeline::SetVertexInput(uint32_t stride, VkVertexInputRate vertexInputRate)
 	{
-		if (m_PipelineType == EGraphicsPipeline)
-		{
-			CreateGraphicsPipeline(
-				context,
-				pipelineLayout,
-				descriptorSetLayout,
-				descriptorSetLayoutBindings,
-				vertexInputDescription,
-				vertexAttributeDescription,
-				colorAttachmentFormats,
-				depthFormat,
-				m_VertexShaderPath,
-				m_FragmentShaderPath);
-		}
-		else 
-		{
-			throw std::runtime_error("Pipeline type not supported!");
-		}
+		VkVertexInputBindingDescription vertexInputBindingDescription{};
+		vertexInputBindingDescription.binding   = 0;
+		vertexInputBindingDescription.stride    = stride;
+		vertexInputBindingDescription.inputRate = vertexInputRate;
 
+		m_VertexInputBindingDescription = vertexInputBindingDescription;
+	}
 
+	void CPipeline::AddVertexAttribute(uint32_t locationSlot, VkFormat format, uint32_t offset)
+	{
+		VkVertexInputAttributeDescription vertexAttributeDescription{};
+		vertexAttributeDescription.binding  = 0;
+		vertexAttributeDescription.location = locationSlot;
+		vertexAttributeDescription.format   = format;
+		vertexAttributeDescription.offset   = offset;
+		
+		m_VertexAttributeDescriptions.push_back(vertexAttributeDescription);
+	}
+
+	void CPipeline::AddColorAttachment(VkFormat colorFormat)
+	{
+		m_ColorAttachmentFormats.push_back(colorFormat);
+	}
+
+	void CPipeline::AddDepthAttachment(VkFormat depthFormat)
+	{
+		m_DepthAttachmentFormat = depthFormat;
+	}
+
+	void CPipeline::CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
+	{
+		CreateGraphicsPipeline(context, descriptorSetLayout);
 #if defined(_DEBUG)
 		std::cout << "\n --- Pipeline created succesfully! ---" << "\n" << std::endl;
 #endif
 	}
 
-	void CPipeline::CreateGraphicsPipeline(
-		CGraphicsContext*                              context,
-		VkPipelineLayout&                              pipelineLayout,
-		VkDescriptorSetLayout&                         descriptorSetLayout,
-		std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings,
-		VkVertexInputBindingDescription                vertexInputDescription,
-		std::vector<VkVertexInputAttributeDescription> vertexAttributeDescription,
-		std::vector<VkFormat>                          colorAttachmentFormats,
-		VkFormat                                       depthFormat,
-		std::string                                    vertexShaderPath,
-		std::string                                    fragmentShaderPath)
+	void CPipeline::CreateGraphicsPipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
 	{
 #if defined(_DEBUG)
 		std::cout << "\n --- Creating Graphics pipeline ---" << "\n" << std::endl;
 #endif
 
-		VkShaderModule vertexShaderModule   = CreateShaderModule(context->GetLogicalDevice(), vertexShaderPath);
-		VkShaderModule fragmentShaderModule = CreateShaderModule(context->GetLogicalDevice(), fragmentShaderPath);
+		VkShaderModule vertexShaderModule   = CreateShaderModule(context->GetLogicalDevice(), m_VertexShaderPath);
+		VkShaderModule fragmentShaderModule = CreateShaderModule(context->GetLogicalDevice(), m_FragmentShaderPath);
 
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -104,9 +98,9 @@ namespace NVulkanEngine
 
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.vertexBindingDescriptionCount = 1; // single binding descriptor for now
-		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescription.size());
-		vertexInputInfo.pVertexBindingDescriptions = &vertexInputDescription;
-		vertexInputInfo.pVertexAttributeDescriptions = vertexAttributeDescription.data();
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_VertexAttributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = &m_VertexInputBindingDescription;
+		vertexInputInfo.pVertexAttributeDescriptions = m_VertexAttributeDescriptions.data();
 
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -151,12 +145,12 @@ namespace NVulkanEngine
 		multisampling.sampleShadingEnable = VK_FALSE;
 		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(colorAttachmentFormats.size());
+		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(m_ColorAttachmentFormats.size());
 
 #if defined(_DEBUG)
-		std::cout << "Attachments  " << "\n\tColor: " << colorAttachmentFormats.size() << "\n\tDepth: 1" << std::endl;
+		std::cout << "Attachments  " << "\n\tColor: " << m_ColorAttachmentFormats.size() << "\n\tDepth: 1" << std::endl;
 #endif
-		for (uint32_t i = 0; i < colorAttachmentFormats.size(); i++)
+		for (uint32_t i = 0; i < m_ColorAttachmentFormats.size(); i++)
 		{
 			colorBlendAttachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			colorBlendAttachments[i].blendEnable = VK_FALSE;
@@ -184,24 +178,14 @@ namespace NVulkanEngine
 		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 		dynamicState.pDynamicStates = dynamicStates.data();
 
-		VkDescriptorSetLayoutCreateInfo layoutInfo{};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size());
-		layoutInfo.pBindings = descriptorSetLayoutBindings.data();
-
-		if (vkCreateDescriptorSetLayout(context->GetLogicalDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-		pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(m_PushConstantsRanges.size());
-		pipelineLayoutInfo.pPushConstantRanges = m_PushConstantsRanges.data();
+		pipelineLayoutInfo.pushConstantRangeCount = m_PushConstantsRanges.size != 0 ? 1 : 0; // For now
+		pipelineLayoutInfo.pPushConstantRanges = &m_PushConstantsRanges;
 
-		if (vkCreatePipelineLayout(context->GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(context->GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
@@ -220,9 +204,9 @@ namespace NVulkanEngine
 
 		VkPipelineRenderingCreateInfo renderingCreateInfo{};	
 		renderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-		renderingCreateInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentFormats.size());
-		renderingCreateInfo.pColorAttachmentFormats = colorAttachmentFormats.data();
-		renderingCreateInfo.depthAttachmentFormat = depthFormat;
+		renderingCreateInfo.colorAttachmentCount = static_cast<uint32_t>(m_ColorAttachmentFormats.size());
+		renderingCreateInfo.pColorAttachmentFormats = m_ColorAttachmentFormats.data();
+		renderingCreateInfo.depthAttachmentFormat = m_DepthAttachmentFormat;
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -236,7 +220,7 @@ namespace NVulkanEngine
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = &dynamicState;
 		pipelineInfo.pDepthStencilState = &depthStencil;
-		pipelineInfo.layout = pipelineLayout;
+		pipelineInfo.layout = m_PipelineLayout;
 		pipelineInfo.renderPass = VK_NULL_HANDLE;  // Don't need this since we are using dynamic rendering :)
 		pipelineInfo.pNext = &renderingCreateInfo; // Set this instead!
 		pipelineInfo.subpass = 0;
@@ -251,13 +235,19 @@ namespace NVulkanEngine
 		vkDestroyShaderModule(context->GetLogicalDevice(), fragmentShaderModule, nullptr);
 	}
 
-	void CPipeline::Bind(VkCommandBuffer commandBuffer)
+	void CPipeline::BindPipeline(VkCommandBuffer commandBuffer)
 	{
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+	}
+
+	void CPipeline::PushConstants(VkCommandBuffer commandBuffer, void* data)
+	{
+		vkCmdPushConstants(commandBuffer, m_PipelineLayout, m_PushConstantsRanges.stageFlags, m_PushConstantsRanges.offset, m_PushConstantsRanges.size, { data });
 	}
 
 	void CPipeline::Cleanup(CGraphicsContext* context)
 	{
 		vkDestroyPipeline(context->GetLogicalDevice(), m_Pipeline, nullptr);
+		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
 	}
 }

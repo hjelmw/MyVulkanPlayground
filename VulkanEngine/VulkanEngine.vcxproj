@@ -22,6 +22,7 @@
     <ClCompile Include="..\source\Main.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Camera.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawPasses\BindingTable.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\DrawPass.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\GeometryPass.cpp" />
     <ClCompile Include="..\source\VulkanEngine\DrawPasses\LightingPass.cpp" />
@@ -60,6 +61,7 @@
   <ItemGroup>
     <ClInclude Include="..\source\VulkanEngine\Camera.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawPasses\BindingTable.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\DrawPass.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\GeometryPass.hpp" />
     <ClInclude Include="..\source\VulkanEngine\DrawPasses\LightingPass.hpp" />

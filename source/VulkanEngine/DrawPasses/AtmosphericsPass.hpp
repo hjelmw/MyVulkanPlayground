@@ -1,10 +1,8 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 #include <DrawPasses/DrawPass.hpp>
 #include <DrawPasses/Pipeline.hpp>
-#include <Managers/Model.hpp>
+#include <DrawPasses/BindingTable.hpp>
 
 namespace NVulkanEngine
 {
@@ -19,15 +17,13 @@ namespace NVulkanEngine
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
 	private:
-		void UpdateAtmosphericsBuffer(CGraphicsContext* context, SGraphicsManagers* managers);
+		void UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers);
 
-		std::vector<VkDescriptorSet> m_DescriptorSetsAtmospherics = { };
+		VkBuffer       m_AtmosphericsUniformBuffer = VK_NULL_HANDLE;
+		VkDeviceMemory m_AtmosphericsBufferMemory  = VK_NULL_HANDLE;
 
-		// Atmospherics Uniform Buffer
-		VkBuffer					m_AtmosphericsBuffer       = VK_NULL_HANDLE;
-		VkDeviceMemory				m_AtmosphericsBufferMemory = VK_NULL_HANDLE;
-
-		// Pipeline
-		CPipeline* m_AtmosphericsPipeline = nullptr;
+		// Pipeline & shader binding
+		CBindingTable* m_AtmosphericsTable         = nullptr;
+		CPipeline*     m_AtmosphericsPipeline      = nullptr;
 	};
 }

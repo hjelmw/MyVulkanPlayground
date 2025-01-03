@@ -1,15 +1,16 @@
 #pragma once
 
-#include <GraphicsContext.hpp>
 #include <VulkanGraphicsEngineUtils.hpp>
+#include <GraphicsContext.hpp>
 #include <Managers/Texture.hpp>
+#include <DrawPasses/BindingTable.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 
 #include <vector>
 
-struct SVertex
+struct SModelVertex
 {
 	glm::vec3 m_Position = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 m_Color    = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -17,71 +18,7 @@ struct SVertex
 	glm::vec3 m_Normal   = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 m_Tangent  = glm::vec3(0.0f, 0.0f, 0.0f);
 
-	// Vertex bindings
-	static VkVertexInputBindingDescription GetVertexBindingDescription()
-	{
-		VkVertexInputBindingDescription bindingDescription{};
-
-		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(SVertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // Move to the next data entry after each vertex
-
-		return bindingDescription;
-	};
-
-	// Vertex attributes
-	static std::vector<VkVertexInputAttributeDescription> GetShadowVertexInputAttributes()
-	{
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(1);
-
-		// inPosition
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT; //vec2
-		attributeDescriptions[0].offset = 0;
-
-		return attributeDescriptions;
-	}
-
-	// Vertex attributes
-	static std::vector<VkVertexInputAttributeDescription> GetModelVertexInputAttributes()
-	{
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions(5);
-
-		// inPosition
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT; //vec2
-		attributeDescriptions[0].offset = offsetof(SVertex, m_Position);
-
-		// inColor
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT; //vec3
-		attributeDescriptions[1].offset = offsetof(SVertex, m_Color);
-
-		// texCoord
-		attributeDescriptions[2].binding = 0;
-		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(SVertex, m_TexCoord);
-
-		// normal
-		attributeDescriptions[3].binding = 0;
-		attributeDescriptions[3].location = 3;
-		attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[3].offset = offsetof(SVertex, m_Normal);
-
-		// tangent
-		attributeDescriptions[4].binding = 0;
-		attributeDescriptions[4].location = 4;
-		attributeDescriptions[4].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[4].offset = offsetof(SVertex, m_Tangent);
-
-		return attributeDescriptions;
-	}
-
-	bool operator==(const SVertex& other) const {
+	bool operator==(const SModelVertex& other) const {
 		return m_Position == other.m_Position &&
 		m_Color == other.m_Color              &&
 		m_TexCoord == other.m_TexCoord        &&
@@ -91,8 +28,8 @@ struct SVertex
 
 // Hash function for storing unique vertices in unordered_map
 namespace std {
-	template<> struct hash<SVertex> {
-		size_t operator()(SVertex const& vertex) const {
+	template<> struct hash<SModelVertex> {
+		size_t operator()(SModelVertex const& vertex) const {
 			return ((hash<glm::vec3>()(vertex.m_Position + vertex.m_Color + vertex.m_Normal)));
 		}
 	};
@@ -120,7 +57,7 @@ struct SMesh
 	uint32_t m_NumVertices = 0;
 };
 
-struct SMaterial
+struct SModelMaterial
 {
 	glm::vec4    m_Diffuse          = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	//
@@ -161,6 +98,9 @@ namespace NVulkanEngine
 		CTexture*          GetModelTexture();
 		void               SetModelTexture(CTexture* texture);
 
+		void               CreateGeometryBindingTable(CGraphicsContext* context);
+		void               CreateShadowBindingTable(CGraphicsContext* context);
+
 		// Creates the geometry and shadow UBOs. Fetch with functions just below this
 		void               CreateGeometryMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size);
 		void               CreateShadowMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size);
@@ -168,6 +108,7 @@ namespace NVulkanEngine
 		SUniformMemoryBuffer GetGeometryMemoryBuffer();
 		SUniformMemoryBuffer GetShadowMemoryBuffer();
 
+		VkDescriptorSetLayout GetModelDescriptorSetLayout();
 
 		uint32_t           GetNumMeshes();
 		SMesh              GetMesh(const uint32_t index);
@@ -175,11 +116,12 @@ namespace NVulkanEngine
 		uint32_t           GetNumIndices();
 
 		// Get number of indices of model
-		SMaterial          GetMaterial(uint32_t materialId);
+		SModelMaterial     GetMaterial(uint32_t materialId);
 
 		// Bind vertex and index buffers for a mesh
-		void               Bind(VkCommandBuffer commandBuffer);
-		void               Bind(VkCommandBuffer commandBuffer, SMesh mesh);
+		void               BindVertexAndIndexBuffers(VkCommandBuffer commandBuffer);
+		void               BindGeometryTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		void               BindShadowTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
 
 		// Cleanup model and meshes
 		void               Cleanup(CGraphicsContext* context);
@@ -188,11 +130,11 @@ namespace NVulkanEngine
 		std::string            m_MaterialFilepath   = {};
 		std::string            m_ModelTexturePath   = {};
 
-		std::vector<SMesh>     m_Meshes             = {};
-		std::vector<SMaterial> m_Materials          = {};
+		std::vector<SMesh>          m_Meshes        = {};
+		std::vector<SModelMaterial> m_Materials     = {};
 			
-		std::vector<SVertex>   m_Vertices           = {};
-		std::vector<uint32_t>  m_Indices            = {};
+		std::vector<SModelVertex>   m_Vertices      = {};
+		std::vector<uint32_t>       m_Indices       = {};
 
 		glm::mat4              m_Transform          = glm::identity<glm::mat4>();
 
@@ -208,8 +150,14 @@ namespace NVulkanEngine
 		SUniformMemoryBuffer   m_GeometryBuffer     = {};
 		SUniformMemoryBuffer   m_ShadowBuffer       = {};
 
+		uint32_t               m_GeometryBufferSize = 0;
+		uint32_t               m_ShadowBufferSize   = 0;
+
 		bool                   m_UsesModelTexture   = false;
 		CTexture*              m_ModelTexture       = nullptr;
+
+		CBindingTable*         m_GeometryTable      = nullptr;
+		CBindingTable*         m_ShadowTable        = nullptr;
 
 		// Load a model .obj file using relative path
 		bool LoadModel(const std::string modelFilepath, const std::string materialSearchPath);

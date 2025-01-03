@@ -1,17 +1,13 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
-
 #include <GraphicsContext.hpp>
 #include <VulkanGraphicsEngineUtils.hpp>
-
-#include <Swapchain.hpp>
 
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>
 #include <Managers/AttachmentManager.hpp>
 
-#include <glm/glm.hpp>
+#include <Swapchain.hpp>
 
 namespace NVulkanEngine
 {
@@ -26,14 +22,7 @@ namespace NVulkanEngine
 
 	struct SGraphicsContext
 	{
-		VkInstance        m_VulkanInstance      = VK_NULL_HANDLE;
-		VkSurfaceKHR      m_VulkanSurface       = VK_NULL_HANDLE;
 		VkDevice          m_VulkanDevice        = VK_NULL_HANDLE;
-		VkPhysicalDevice  m_PhysicalDevice      = VK_NULL_HANDLE;
-		VkCommandPool     m_CommandPool         = VK_NULL_HANDLE;
-		VkQueue           m_GraphicsQueue       = VK_NULL_HANDLE;
-		VkQueue           m_PresentQueue        = VK_NULL_HANDLE;
-		GLFWwindow*       m_GLFWWindow          = nullptr;
 		VkExtent2D        m_RenderResolution    = { 0,0 };
 		float             m_DeltaTime           = 0.0f;
 		uint32_t          m_FrameIndex          = 0;
@@ -56,40 +45,6 @@ namespace NVulkanEngine
 		virtual void CleanupPass(CGraphicsContext* context);
 
 	protected:
-		// Creates the descriptor pool from which descriptor sets can be allocated from
-		void AllocateDescriptorPool(
-			CGraphicsContext* context,
-			uint32_t          numDescriptorSets,
-			uint32_t          descriptorImageCount,
-			uint32_t          descriptorBufferCount);
-
-		// Update descriptor set layout with a write descriptor set (vector of image views)
-		void UpdateDescriptorSets(
-			CGraphicsContext*                 context, 
-			std::vector<VkDescriptorSet>      descriptorSets,
-			std::vector<VkWriteDescriptorSet> writeDescriptorSets);
-
-		// Build vulkan descriptor image & buffer structs
-		VkDescriptorImageInfo  CreateDescriptorImageInfo(VkSampler sampler, VkImageView imageView, VkImageLayout imageLayout);
-		VkDescriptorBufferInfo CreateDescriptorBufferInfo(VkBuffer uniformBuffer, uint32_t range);
-
-		// Create write descriptors at the specified binding and slot
-		VkWriteDescriptorSet CreateWriteDescriptorImage(
-			CGraphicsContext*      context, 
-			VkDescriptorSet*       descriptorSets, 
-			VkDescriptorType       descriptorType, 
-			uint32_t               descriptorSlot, 
-			VkDescriptorImageInfo* descriptorImageInfo);
-
-		// Create write descriptor for buffer at the specified binding and slot
-		VkWriteDescriptorSet CreateWriteDescriptorBuffer(
-			CGraphicsContext*       context, 
-			VkDescriptorSet*        descriptorSets, 
-			VkDescriptorType        descriptorType, 
-			uint32_t                descriptorSlot, 
-			VkDescriptorBufferInfo* descriptorBufferInfo);
-
-		
 		void GenerateMipmaps(
 			CGraphicsContext* context, 
 			VkImage           image, 
@@ -107,19 +62,5 @@ namespace NVulkanEngine
 			std::vector<SRenderAttachment> attachmentInfos);
 
 		void EndRendering(VkCommandBuffer commandBuffer);
-
-		void PushConstants(VkCommandBuffer commandBuffer, VkShaderStageFlags shaderStage, void* data, size_t constantsSize);
-
-		// Copies buffer into image
-		void CopyBufferToImage(
-			CGraphicsContext* context, 
-			VkBuffer buffer, 
-			VkImage image, 
-			uint32_t width, 
-			uint32_t height);
-
-		VkDescriptorSetLayout        m_DescriptorSetLayout   = VK_NULL_HANDLE;
-		VkPipelineLayout             m_PipelineLayout        = VK_NULL_HANDLE;
-		VkDescriptorPool             m_DescriptorPool        = VK_NULL_HANDLE;
 	};
 };

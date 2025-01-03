@@ -9,109 +9,6 @@ namespace NVulkanEngine
 	void CDrawPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
 	void CDrawPass::CleanupPass(CGraphicsContext* context) { }
 
-	VkDescriptorBufferInfo CDrawPass::CreateDescriptorBufferInfo(VkBuffer uniformBuffer, uint32_t range)
-	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = uniformBuffer;
-		bufferInfo.offset = 0;
-		bufferInfo.range = range;
-
-		return bufferInfo;
-	}
-
-	VkDescriptorImageInfo CDrawPass::CreateDescriptorImageInfo(
-		VkSampler         sampler, 
-		VkImageView       imageView, 
-		VkImageLayout     imageLayout)
-	{
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = imageLayout;
-		imageInfo.imageView = imageView;
-		imageInfo.sampler = sampler;
-
-		return imageInfo;
-	}
-
-	VkWriteDescriptorSet CDrawPass::CreateWriteDescriptorImage(
-		CGraphicsContext*      context, 
-		VkDescriptorSet*       descriptorSets,
-		VkDescriptorType       descriptorType, 
-		uint32_t               descriptorBinding,
-		VkDescriptorImageInfo* descriptorImageInfo)
-	{
-		VkWriteDescriptorSet descriptorImageWrites{};
-		descriptorImageWrites.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorImageWrites.dstBinding      = descriptorBinding;
-		descriptorImageWrites.descriptorCount = 1;
-		descriptorImageWrites.descriptorType  = descriptorType;
-		descriptorImageWrites.dstArrayElement = 0;
-		descriptorImageWrites.pImageInfo      = descriptorImageInfo;
-
-		return descriptorImageWrites;
-	}
-
-
-	VkWriteDescriptorSet CDrawPass::CreateWriteDescriptorBuffer(
-		CGraphicsContext*       context,
-		VkDescriptorSet*        descriptorSets,
-		VkDescriptorType        descriptorType,
-		uint32_t                descriptorSlot,
-		VkDescriptorBufferInfo* descriptorBufferInfo)
-	{
-		VkWriteDescriptorSet descriptorBufferWrites{};
-		descriptorBufferWrites.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorBufferWrites.dstSet          = descriptorSets[descriptorSlot];
-		descriptorBufferWrites.dstBinding      = descriptorSlot;
-		descriptorBufferWrites.descriptorCount = 1;
-		descriptorBufferWrites.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorBufferWrites.dstArrayElement = 0;
-		descriptorBufferWrites.pBufferInfo     = descriptorBufferInfo;
-
-		return descriptorBufferWrites;
-	}
-
-	void CDrawPass::AllocateDescriptorPool(
-		CGraphicsContext* context, 
-		uint32_t          numDescriptorSets,
-		uint32_t          descriptorImageCount,
-		uint32_t          descriptorBufferCount)
-	{
-		std::array<VkDescriptorPoolSize, 2> poolSizes{};
-		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = descriptorBufferCount;
-
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = descriptorImageCount;
-
-		VkDescriptorPoolCreateInfo poolInfo{};
-		poolInfo.sType               = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount       = descriptorImageCount > 0 ? static_cast<uint32_t>(poolSizes.size()) : 1;
-		poolInfo.pPoolSizes          = poolSizes.data();
-		poolInfo.maxSets             = numDescriptorSets;
-
-		if (vkCreateDescriptorPool(context->GetLogicalDevice(), &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create descriptor pool!");
-		}
-	}
-
-	void CDrawPass::UpdateDescriptorSets(
-		CGraphicsContext* context,
-		std::vector<VkDescriptorSet> descriptorSets,
-		std::vector<VkWriteDescriptorSet> writeDescriptorSets)
-	{
-		// One set per frame in flight
-		for (uint32_t i = 0; i < descriptorSets.size(); i++)
-		{
-			for (uint32_t j = 0; j < writeDescriptorSets.size(); j++)
-			{
-				writeDescriptorSets[j].dstSet = descriptorSets[i];
-			}
-			vkUpdateDescriptorSets(context->GetLogicalDevice(), static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
-		}
-
-	}
-
 	void CDrawPass::GenerateMipmaps(CGraphicsContext* context, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
 	{
 		// Check if image format supports linear blitting
@@ -270,10 +167,5 @@ namespace NVulkanEngine
 	void CDrawPass::EndRendering(VkCommandBuffer commandBuffer)
 	{
 		vkCmdEndRendering(commandBuffer);
-	}
-
-	void CDrawPass::PushConstants(VkCommandBuffer commandBuffer, VkShaderStageFlags shaderStage, void* data, size_t constantsSize)
-	{
-		vkCmdPushConstants(commandBuffer, m_PipelineLayout, shaderStage, 0, static_cast<uint32_t>(constantsSize), &data);
 	}
 };

@@ -816,14 +816,7 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::RecordDrawPasses(VkCommandBuffer commandBuffer)
 	{
 		SGraphicsContext context{};
-		context.m_VulkanInstance      = m_Context->GetVulkanInstance();
-		context.m_VulkanSurface       = m_Context->GetVulkanSurface();
 		context.m_VulkanDevice        = m_Context->GetLogicalDevice();
-		context.m_PhysicalDevice      = m_Context->GetPhysicalDevice();
-		context.m_CommandPool         = m_Context->GetCommandPool();
-		context.m_GraphicsQueue       = m_Context->GetGraphicsQueue();
-		context.m_PresentQueue        = m_Context->GetPresentQueue();
-		context.m_GLFWWindow          = m_Context->GetGLFWWindow();
 		context.m_RenderResolution    = m_Context->GetRenderResolution();
 		context.m_DeltaTime           = m_Context->GetDeltaTime();
 		context.m_FrameIndex          = m_Context->GetFrameIndex();

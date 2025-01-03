@@ -1,9 +1,8 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 #include <DrawPasses/DrawPass.hpp>
 #include <DrawPasses/Pipeline.hpp>
+#include <DrawPasses/BindingTable.hpp>
 
 namespace NVulkanEngine
 {
@@ -20,13 +19,11 @@ namespace NVulkanEngine
 	private:
 		void UpdateLightBuffers(CGraphicsContext* context, SGraphicsManagers* managers);
 
-		std::vector<VkDescriptorSet> m_DescriptorSetsLighting = { VK_NULL_HANDLE };
+		VkBuffer       m_DeferredUniformBuffer       = VK_NULL_HANDLE;
+		VkDeviceMemory m_DeferredLightBufferMemory   = VK_NULL_HANDLE;
 
-		// Deferred Lighting Uniform Buffer
-		VkBuffer					  m_DeferredLightBuffer       = VK_NULL_HANDLE;
-		VkDeviceMemory				  m_DeferredLightBufferMemory = VK_NULL_HANDLE;
-
-		// Pipeline
-		CPipeline* m_DeferredPipeline = nullptr;
+		// Pipeline & shader binding
+		CBindingTable* m_DeferredTable               = nullptr;
+		CPipeline*     m_DeferredPipeline            = nullptr;
 	};
 }

@@ -355,10 +355,10 @@ namespace NVulkanEngine
 	}
 
 	static VkBuffer CreateBuffer(
-		CGraphicsContext*     context, 
-		VkDeviceMemory&       bufferMemory, 
-		VkDeviceSize          size, 
-		VkBufferUsageFlags    usage, 
+		CGraphicsContext*     context,
+		VkDeviceMemory&       bufferMemory,
+		VkDeviceSize          size,
+		VkBufferUsageFlags    usage,
 		VkMemoryPropertyFlags properties)
 	{
 		VkBufferCreateInfo bufferInfo{};
@@ -381,7 +381,7 @@ namespace NVulkanEngine
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memoryRequirements.size;
-		allocInfo.memoryTypeIndex = FindMemoryType(context->GetPhysicalDevice(), memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		allocInfo.memoryTypeIndex = FindMemoryType(context->GetPhysicalDevice(), memoryRequirements.memoryTypeBits, properties);
 
 		if (vkAllocateMemory(context->GetLogicalDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
 		{
@@ -404,6 +404,12 @@ namespace NVulkanEngine
 		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
 		EndSingleTimeCommands(context, commandBuffer);
+	}
+
+	static VkBuffer CreateUniformBuffer(CGraphicsContext* context, VkDeviceMemory& bufferMemory, VkDeviceSize size)
+	{
+		VkBuffer buffer = CreateBuffer(context, bufferMemory, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		return buffer;
 	}
 
 	static VkImage CreateImage(
@@ -670,7 +676,7 @@ namespace NVulkanEngine
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
 		else if ((renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL || renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL)
-				&& (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || renderAttachment.m_CurrentImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL))
+				&& (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL))
 		{
 			barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;

@@ -19,64 +19,29 @@ namespace NVulkanEngine
 		glm::mat4 m_ProjectionMatrix;
 	};
 
-	std::vector<VkDescriptorSetLayoutBinding> GetShadowBindings()
-	{
-		std::vector<VkDescriptorSetLayoutBinding> attributeDescriptions(1);
-
-		// 0: Vertex shader uniform buffer
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		attributeDescriptions[0].descriptorCount = 1;
-		attributeDescriptions[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		attributeDescriptions[0].pImmutableSamplers = nullptr;
-
-		return attributeDescriptions;
-	}
-
 	void CShadowPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		const std::vector<VkDescriptorSetLayoutBinding>      descriptorSetLayoutBindings = GetShadowBindings();
-		const VkVertexInputBindingDescription                vertexBindingDescription    = SVertex::GetVertexBindingDescription();
-		const std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions = SVertex::GetShadowVertexInputAttributes();
-
-		const std::vector<VkFormat> colorAttachmentFormats = {};
-		const VkFormat shadowmapFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::ShadowMap).m_Format;
-
-		m_ShadowPipeline = new CPipeline(EGraphicsPipeline);
-		m_ShadowPipeline->SetVertexShader("shaders/shadow.vert.spv");
-		m_ShadowPipeline->SetFragmentShader("shaders/shadow.frag.spv");
-		m_ShadowPipeline->SetCullingMode(VK_CULL_MODE_BACK_BIT);
-		m_ShadowPipeline->CreatePipeline(
-			context,
-			CDrawPass::m_PipelineLayout,
-			CDrawPass::m_DescriptorSetLayout,
-			descriptorSetLayoutBindings,
-			vertexBindingDescription,
-			vertexAttributeDescriptions,
-			{},
-			shadowmapFormat);
-
-		/* Allocate 2 sets per frame in flight consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, managers->m_Modelmanager->GetNumModels() * 2, 0, managers->m_Modelmanager->GetNumModels() * 2);
-
-		m_DescriptorSetsShadow.resize(managers->m_Modelmanager->GetNumModels());
-
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
-
-			m_DescriptorSetsShadow[i].m_DescriptorSets = AllocateDescriptorSets(context, CDrawPass::m_DescriptorPool, CDrawPass::m_DescriptorSetLayout, g_MaxFramesInFlight);
 			model->CreateShadowMemoryBuffer(context, (VkDeviceSize)sizeof(SShadowUniformBuffer));
-
-			VkDescriptorBufferInfo descriptorUniform = CreateDescriptorBufferInfo(model->GetShadowMemoryBuffer().m_Buffer, sizeof(SShadowUniformBuffer));
-
-			std::vector<VkWriteDescriptorSet> writeDescriptors=
-			{
-				CreateWriteDescriptorBuffer(context, m_DescriptorSetsShadow[i].m_DescriptorSets.data(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &descriptorUniform),
-			};
-
-			UpdateDescriptorSets(context, m_DescriptorSetsShadow[i].m_DescriptorSets, writeDescriptors);
+			model->CreateShadowBindingTable(context);
 		}
+
+		VkFormat shadowMapFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::ShadowMap).m_Format;
+
+		// Just get any descriptor set layout since they are the same for all the models atm
+		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();
+
+		m_ShadowPipeline = new CPipeline();
+		m_ShadowPipeline->SetVertexShader("shaders/shadow.vert.spv");
+		m_ShadowPipeline->SetFragmentShader("shaders/shadow.frag.spv");
+		m_ShadowPipeline->SetCullingMode(VK_CULL_MODE_BACK_BIT);
+		m_ShadowPipeline->SetVertexInput(sizeof(SModelVertex), VK_VERTEX_INPUT_RATE_VERTEX);
+		m_ShadowPipeline->AddVertexAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SModelVertex, m_Position));
+		m_ShadowPipeline->AddDepthAttachment(shadowMapFormat);
+		m_ShadowPipeline->AddPushConstantSlot(VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(SModelMaterial), 0);
+		m_ShadowPipeline->CreatePipeline(context, modelDescriptorSetLayout);
 	}
 
 	void CShadowPass::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
@@ -86,7 +51,7 @@ namespace NVulkanEngine
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 
-			glm::vec3 lightPosition  = CGeometryPass::GetSphereMatrix()[3];
+			glm::vec3 lightPosition  = glm::vec3(0.0f, 1000.0f, 30.0f);
 			glm::vec3 lightDirection = normalize(-lightPosition);
 
 			static float left   = 0.0f;
@@ -107,7 +72,7 @@ namespace NVulkanEngine
 
 			glm::mat4 perspectiveMatrix = glm::ortho(left, right, bottom, top, near, far);
 
-			//orthoMatrix[1][1] *= -1; // Stupid vulkan requirement
+			//orthoMatrix[1][1] *= -1; // Some vulkan requirement
 
 			glm::mat4 lookAtMatrix = glm::lookAt(
 				lightPosition,
@@ -142,16 +107,14 @@ namespace NVulkanEngine
 		BeginRendering(context, commandBuffer, { shadowmapAttachment });
 		UpdateShadowBuffers(context, managers);
 
-		m_ShadowPipeline->Bind(commandBuffer);
+		m_ShadowPipeline->BindPipeline(commandBuffer);
 
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 
-			VkDescriptorSet shadowDescriptor = m_DescriptorSetsShadow[i].m_DescriptorSets[context->GetFrameIndex() % 2];
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &shadowDescriptor, 0, nullptr);
-
-			model->Bind(commandBuffer);
+			model->BindVertexAndIndexBuffers(commandBuffer);
+			model->BindShadowTable(context, commandBuffer, m_ShadowPipeline->GetPipelineLayout());
 			for (uint32_t j = 0; j < model->GetNumMeshes(); j++)
 			{
 				SMesh modelMesh = model->GetMesh(j);
@@ -164,13 +127,8 @@ namespace NVulkanEngine
 
 	void CShadowPass::CleanupPass(CGraphicsContext* context)
 	{
-		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
-		vkDestroyDescriptorSetLayout(context->GetLogicalDevice(), m_DescriptorSetLayout, nullptr);
-
 		vkDestroyBuffer(context->GetLogicalDevice(), m_ShadowBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_ShadowBufferMemory, nullptr);
-
-		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
 
 		m_ShadowPipeline->Cleanup(context);
 		delete m_ShadowPipeline;

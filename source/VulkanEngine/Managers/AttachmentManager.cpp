@@ -37,12 +37,12 @@ namespace NVulkanEngine
 		return attachment;
 	}
 
-	SRenderAttachment CAttachmentManager::GetAttachment(const EAttachmentIndices index)
+	const SRenderAttachment CAttachmentManager::GetAttachment(const EAttachmentIndices index)
 	{
 		return m_RenderAttachments[(uint32_t)index];
 	}
 
-	std::array<SRenderAttachment, (uint32_t)EAttachmentIndices::Count> CAttachmentManager::GetAttachments()
+	const std::array<SRenderAttachment, (uint32_t)EAttachmentIndices::Count> CAttachmentManager::GetAttachments()
 	{
 		return m_RenderAttachments;
 	}

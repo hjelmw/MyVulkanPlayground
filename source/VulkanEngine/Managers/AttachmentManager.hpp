@@ -37,16 +37,12 @@ namespace NVulkanEngine
 			uint32_t           width,
 			uint32_t           height);
 
-		// Returns the attachment if it has been created
-		SRenderAttachment GetAttachment(EAttachmentIndices index);
-		std::array<SRenderAttachment, (uint32_t)EAttachmentIndices::Count> GetAttachments();
+		// Returns the attachment if it has been created. You cannot modify this
+		const SRenderAttachment GetAttachment(EAttachmentIndices index);
+		const std::array<SRenderAttachment, (uint32_t)EAttachmentIndices::Count> GetAttachments();
 
 		// Returns the attachment in state ready for rendering
-		SRenderAttachment TransitionAttachment(
-			VkCommandBuffer          commandBuffer, 
-			EAttachmentIndices       index,
-			VkAttachmentLoadOp       loadOperation,
-			VkImageLayout            wantedState);
+		SRenderAttachment TransitionAttachment(VkCommandBuffer commandBuffer, EAttachmentIndices index,VkAttachmentLoadOp loadOperation, VkImageLayout wantedState);
 
 		void Cleanup(CGraphicsContext* context);
 	private:
