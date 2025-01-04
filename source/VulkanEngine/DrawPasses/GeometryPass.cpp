@@ -65,7 +65,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CGeometryPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CGeometryPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
 

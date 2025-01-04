@@ -6,7 +6,7 @@ namespace NVulkanEngine
 {
 	/* Implemented by derived class */
 	void CDrawPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers) { }
-	void CDrawPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
+	void CDrawPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
 	void CDrawPass::CleanupPass(CGraphicsContext* context) { }
 
 	void CDrawPass::GenerateMipmaps(CGraphicsContext* context, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)

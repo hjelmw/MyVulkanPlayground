@@ -13,7 +13,7 @@ namespace NVulkanEngine
 		~CLightingPass() = default;
 
 		virtual void InitPass(CGraphicsContext* context, SGraphicsManagers* managers)  override;
-		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
+		virtual void DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
 	private:

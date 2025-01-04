@@ -76,7 +76,7 @@ namespace NVulkanEngine
 		vkUnmapMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory);
 	}
 
-	void CLightingPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CLightingPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		UpdateLightBuffers(context, managers);
 

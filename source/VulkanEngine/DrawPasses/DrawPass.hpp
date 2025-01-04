@@ -41,7 +41,7 @@ namespace NVulkanEngine
 	{
 	public:
 		virtual void InitPass(CGraphicsContext* context, SGraphicsManagers* managers);
-		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer);
+		virtual void DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer);
 		virtual void CleanupPass(CGraphicsContext* context);
 
 	protected:

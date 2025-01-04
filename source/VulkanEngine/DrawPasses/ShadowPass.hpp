@@ -15,7 +15,7 @@ namespace NVulkanEngine
 		~CShadowPass() = default;
 
 		virtual void InitPass(CGraphicsContext* context, SGraphicsManagers* managers)  override;
-		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
+		virtual void DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
 		virtual void CleanupPass(CGraphicsContext* context) override;
 
 		static glm::mat4 GetLightMatrix() { return s_LightMatrix; };

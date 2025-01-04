@@ -831,7 +831,7 @@ namespace NVulkanEngine
 		{
 			CDrawPass* drawPass = m_DrawPasses[i];
 			if (drawPass)
-				drawPass->Draw(m_Context, &managers, commandBuffer);
+				drawPass->DrawPass(m_Context, &managers, commandBuffer);
 		}
 	}
 
@@ -868,7 +868,9 @@ namespace NVulkanEngine
 			{
 				SRenderAttachment attachment = m_AttachmentManager->GetAttachment((EAttachmentIndices)selectedId);
 				ImGui::Text("Name: %s", attachment.m_DebugName);
-				ImGui::Image(attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.0f));
+				static float brightness = 1.0f;
+				ImGui::SliderFloat("Brightness", &brightness, 0.0f, 1.0f);
+				ImGui::Image(attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f * brightness, 1.0f * brightness, 1.0f * brightness, 1.0f) );
 				if (ImGui::Button("Remove Selection"))
 				{
 					selected[selectedId] = false;

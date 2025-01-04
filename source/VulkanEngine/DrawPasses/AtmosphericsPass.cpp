@@ -125,7 +125,7 @@ namespace NVulkanEngine
 		vkUnmapMemory(context->GetLogicalDevice(), m_AtmosphericsBufferMemory);
 	}
 
-	void CAtmosphericsPass::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CAtmosphericsPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		ImGui::Begin("Atmospherics Pass");
 		ImGui::SliderFloat("Atmosphere Radius", &g_AtmosphereScale, 0.0f, 1.0f);
