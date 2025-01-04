@@ -203,6 +203,7 @@ namespace NVulkanEngine
 		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
 		vkDestroyDescriptorSetLayout(context->GetLogicalDevice(), m_DescriptorSetLayout, nullptr);
 
+		m_DescriptorSets.clear();
 		m_DescriptorInfos.clear();
 		m_DescriptorSetLayoutBindings.clear();
 		m_VertexInputAttributes.clear();

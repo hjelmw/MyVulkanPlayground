@@ -398,7 +398,7 @@ namespace NVulkanEngine
 	{
 		m_ShadowTable = new CBindingTable();
 		m_ShadowTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, m_ShadowBuffer.m_Buffer, m_ShadowBufferSize);
-		m_GeometryTable->CreateBindings(context);
+		m_ShadowTable->CreateBindings(context);
 	}
 
 
