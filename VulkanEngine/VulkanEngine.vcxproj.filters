@@ -75,7 +75,7 @@
     <ClCompile Include="..\vendor\imgui-docking\imgui_widgets.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.cpp">
+    <ClCompile Include="..\source\VulkanEngine\DrawPasses\SkyPass.cpp">
       <Filter>Source Files\DrawPasses</Filter>
     </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\Managers\InputManager.cpp">
@@ -149,7 +149,7 @@
     <ClInclude Include="..\vendor\imgui-docking\imconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\AtmosphericsPass.hpp">
+    <ClInclude Include="..\source\VulkanEngine\DrawPasses\SkyPass.hpp">
       <Filter>Header Files\DrawPasses</Filter>
     </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\Managers\InputManager.hpp">

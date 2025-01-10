@@ -104,10 +104,10 @@ namespace NVulkanEngine
 	}
 
 	void CDrawPass::BeginRendering(
-		CGraphicsContext*             context,
-		VkCommandBuffer               commandBuffer,
-		std::vector<SRenderAttachment> attachmentInfos
-	)
+		const std::string              markerName,
+		CGraphicsContext*              context,
+		VkCommandBuffer                commandBuffer,
+		std::vector<SRenderAttachment> attachmentInfos)
 	{
 		std::vector<VkRenderingAttachmentInfo> colorAttachmentInfos = {};
 		VkRenderingAttachmentInfo depthAttachmentInfo = {};
@@ -134,11 +134,14 @@ namespace NVulkanEngine
 		renderInfo.pColorAttachments    = colorAttachmentInfos.data();
 		renderInfo.pDepthAttachment     = hasDepthAttachment ? &depthAttachmentInfo : nullptr;
 
+		const float drawPassMarkerColor[4] = { 0.4f, 0.6f, 0.3f, 1.0f };
+		BeginMarker(context->GetVulkanInstance(), commandBuffer, markerName, drawPassMarkerColor);
 		vkCmdBeginRendering(commandBuffer, &renderInfo);
 	}
 
-	void CDrawPass::EndRendering(VkCommandBuffer commandBuffer)
+	void CDrawPass::EndRendering(CGraphicsContext* context, VkCommandBuffer commandBuffer)
 	{
 		vkCmdEndRendering(commandBuffer);
+		EndMarker(context->GetVulkanInstance(), commandBuffer);
 	}
 };

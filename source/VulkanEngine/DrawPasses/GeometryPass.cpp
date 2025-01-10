@@ -76,7 +76,7 @@ namespace NVulkanEngine
 		
 		std::vector<SRenderAttachment> renderAttachments = { positionsAttachment, normalsAttachment, albedoAttachment, depthAttachment };
 
-		BeginRendering(context, commandBuffer, renderAttachments);
+		BeginRendering("GBuffers", context, commandBuffer, renderAttachments);
 		UpdateGeometryBuffers(context, managers);
 
 		m_GeometryPipeline->BindPipeline(commandBuffer);
@@ -98,7 +98,7 @@ namespace NVulkanEngine
 			}
 		}
 
-		EndRendering(commandBuffer);
+		EndRendering(context, commandBuffer);
 	}
 
 	void CGeometryPass::CleanupPass(CGraphicsContext* context)

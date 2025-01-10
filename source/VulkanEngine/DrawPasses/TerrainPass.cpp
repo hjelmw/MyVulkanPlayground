@@ -30,16 +30,16 @@ namespace NVulkanEngine
 
 	void CTerrainPass::CleanupPass(CGraphicsContext* context)
 	{
-		VkDevice device = context->GetLogicalDevice();
+		//VkDevice device = context->GetLogicalDevice();
 
-		vkDestroyBuffer(device, m_TerrainUniformBuffer, nullptr);
-		vkFreeMemory(device, m_TerrainBufferMemory, nullptr);
+		//vkDestroyBuffer(device, m_TerrainUniformBuffer, nullptr);
+		//vkFreeMemory(device, m_TerrainBufferMemory, nullptr);
 
-		m_TerrainTable->Cleanup(context);
-		m_TerrainPipeline->Cleanup(context);
+		//m_TerrainTable->Cleanup(context);
+		//m_TerrainPipeline->Cleanup(context);
 
-		delete m_TerrainTable;
-		delete m_TerrainPipeline;
+		//delete m_TerrainTable;
+		//delete m_TerrainPipeline;
 	}
 
 };

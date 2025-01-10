@@ -6,11 +6,11 @@
 
 namespace NVulkanEngine
 {
-	class CAtmosphericsPass : public CDrawPass
+	class CSkyPass : public CDrawPass
 	{
 	public:
-		CAtmosphericsPass() = default;
-		~CAtmosphericsPass() = default;
+		CSkyPass() = default;
+		~CSkyPass() = default;
 
 		virtual void InitPass(CGraphicsContext* context, SGraphicsManagers* managers)  override;
 		virtual void DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;

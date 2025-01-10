@@ -52,7 +52,7 @@ namespace NVulkanEngine
 
         // Vulkan init
         void CreateVulkanInstance();
-        void SetupDebugMessenger();
+        void SetupDebugUtils();
         void CreateVulkanSurface();
         void SelectPhysicalDevice();
         void CreateLogicalDevice();

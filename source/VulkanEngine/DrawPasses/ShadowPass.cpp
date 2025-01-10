@@ -104,7 +104,7 @@ namespace NVulkanEngine
 		if (true)
 			return;
 
-		BeginRendering(context, commandBuffer, { shadowmapAttachment });
+		BeginRendering("Shadow Map", context, commandBuffer, {shadowmapAttachment});
 		UpdateShadowBuffers(context, managers);
 
 		m_ShadowPipeline->BindPipeline(commandBuffer);
@@ -122,7 +122,7 @@ namespace NVulkanEngine
 			}
 		}
 
-		EndRendering(commandBuffer);
+		EndRendering(context, commandBuffer);
 	}
 
 	void CShadowPass::CleanupPass(CGraphicsContext* context)

@@ -91,7 +91,7 @@ namespace NVulkanEngine
 		SRenderAttachment sceneColorAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		std::vector<SRenderAttachment> sceneColorAttachments = { sceneColorAttachment };
-		BeginRendering(context, commandBuffer, sceneColorAttachments);
+		BeginRendering("Deferred Lighting", context, commandBuffer, sceneColorAttachments);
 
 		m_DeferredTable->BindTable(context, commandBuffer, m_DeferredPipeline->GetPipelineLayout());
 		m_DeferredPipeline->BindPipeline(commandBuffer);
@@ -99,7 +99,7 @@ namespace NVulkanEngine
 		// Draw single triangle covering entire screen. See deferred.vert
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
-		EndRendering(commandBuffer);
+		EndRendering(context, commandBuffer);
 	}
 
 	void CLightingPass::CleanupPass(CGraphicsContext* context)

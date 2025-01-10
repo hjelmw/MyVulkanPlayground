@@ -1,4 +1,4 @@
-#include "AtmosphericsPass.hpp"
+#include "SkyPass.hpp"
 
 #include <imgui.h>
 
@@ -66,7 +66,7 @@ namespace NVulkanEngine
 		glm::vec2     m_Pad0                  = glm::vec2(0xdeadbeef, 0xdeadbeef);
 	};
 
-	void CAtmosphericsPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CSkyPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		const SRenderAttachment atmosphericsAttachment  = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox);
 		const SRenderAttachment depthAttachment         = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth);
@@ -88,7 +88,7 @@ namespace NVulkanEngine
 		m_AtmosphericsPipeline->CreatePipeline(context, m_AtmosphericsTable->GetDescriptorSetLayout());
 	}
 
-	void CAtmosphericsPass::UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CSkyPass::UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		CCamera* camera = managers->m_InputManager->GetCamera();
 		float cameraNear = camera->GetNear();
@@ -125,9 +125,9 @@ namespace NVulkanEngine
 		vkUnmapMemory(context->GetLogicalDevice(), m_AtmosphericsBufferMemory);
 	}
 
-	void CAtmosphericsPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CSkyPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
-		ImGui::Begin("Atmospherics Pass");
+		ImGui::Begin("Atmospherics");
 		ImGui::SliderFloat("Atmosphere Radius", &g_AtmosphereScale, 0.0f, 1.0f);
 		ImGui::SliderFloat("Planet Radius", &g_PlanetRadius, 0.0f, 6000.0f);
 		ImGui::SliderInt("Num Inscattering Points", &g_NumInscatteringPoints, 0, 128);
@@ -151,7 +151,7 @@ namespace NVulkanEngine
 		SRenderAttachment atmosphericsAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::AtmosphericsSkyBox, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		std::vector<SRenderAttachment> inscatteringAttachments = { atmosphericsAttachment };
-		BeginRendering(context, commandBuffer, inscatteringAttachments);
+		BeginRendering("Skybox", context, commandBuffer, inscatteringAttachments);
 
 		m_AtmosphericsTable->BindTable(context, commandBuffer, m_AtmosphericsPipeline->GetPipelineLayout());
 		m_AtmosphericsPipeline->BindPipeline(commandBuffer);
@@ -159,10 +159,10 @@ namespace NVulkanEngine
 
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
-		EndRendering(commandBuffer);
+		EndRendering(context, commandBuffer);
 	}
 
-	void CAtmosphericsPass::CleanupPass(CGraphicsContext* context)
+	void CSkyPass::CleanupPass(CGraphicsContext* context)
 	{
 		VkDevice device = context->GetLogicalDevice();
 

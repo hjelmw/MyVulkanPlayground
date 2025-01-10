@@ -16,7 +16,7 @@ namespace NVulkanEngine
 		Geometry     = 0,
 		Shadows      = 1,
 		Terrain      = 2,
-		Atmospherics = 3,
+		Skybox       = 3,
 		Lighting     = 4,
 		Count
 	};
@@ -56,10 +56,11 @@ namespace NVulkanEngine
 
 		// Begin rendering with attachments
 		void BeginRendering(
-			CGraphicsContext*             context,
-			VkCommandBuffer               commandBuffer,
+			const std::string              markerName,
+			CGraphicsContext*              context,
+			VkCommandBuffer                commandBuffer,
 			std::vector<SRenderAttachment> attachmentInfos);
 
-		void EndRendering(VkCommandBuffer commandBuffer);
+		void EndRendering(CGraphicsContext* context, VkCommandBuffer commandBuffer);
 	};
 };

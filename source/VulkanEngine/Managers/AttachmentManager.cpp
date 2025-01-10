@@ -5,9 +5,14 @@
 
 namespace NVulkanEngine
 {
+	CAttachmentManager::CAttachmentManager(VkInstance vulkanInstance)
+	{
+		m_VkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(vulkanInstance, "vkSetDebugUtilsObjectNameEXT");
+	}
+
 	SRenderAttachment CAttachmentManager::AddAttachment(
 		CGraphicsContext*  context,
-		const char*        debugName,
+		const std::string  debugName,
 		EAttachmentIndices attachmentIndex,
 		VkSampler          sampler,
 		VkFormat           format,
@@ -17,7 +22,6 @@ namespace NVulkanEngine
 		uint32_t           height)
 	{
 		SRenderAttachment attachment  = CreateRenderAttachment(context, format, usage, imageLayout, width, height);
-		memcpy(attachment.m_DebugName, debugName, strlen(debugName));
 
 		// ImGui allocates a descriptor with VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER where there are some image layouts that are not allowed
 		VkImageLayout imGuiImageLayout = attachment.m_CurrentImageLayout;
@@ -32,6 +36,15 @@ namespace NVulkanEngine
 
 		attachment.m_ImguiDescriptor  = ImGui_ImplVulkan_AddTexture(sampler, attachment.m_ImageView, imGuiImageLayout);
 
+		memcpy(attachment.m_DebugName, debugName.c_str(), debugName.length());
+		if (m_VkSetDebugUtilsObjectNameEXT)
+		{
+			VkDebugUtilsObjectNameInfoEXT nameInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+			nameInfo.objectType   = VK_OBJECT_TYPE_IMAGE;
+			nameInfo.objectHandle = (uint64_t)attachment.m_Image;
+			nameInfo.pObjectName  = attachment.m_DebugName;
+			m_VkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+		}
 
 		m_RenderAttachments[(uint32_t)attachmentIndex] = attachment;
 		return attachment;

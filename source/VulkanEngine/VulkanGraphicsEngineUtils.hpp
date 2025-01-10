@@ -19,7 +19,7 @@ namespace NVulkanEngine
 {
 	static const std::vector<const char*> g_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
 	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME };
-
+	
 #if defined(_DEBUG)
 	static const bool g_EnableValidationLayers = true;
 #else
@@ -793,6 +793,29 @@ namespace NVulkanEngine
 		renderAttachment.m_CurrentImageLayout = imageLayout;
 
 		return renderAttachment;
+	}
+
+	static void BeginMarker(VkInstance instance, VkCommandBuffer commandBuffer, const std::string markerName, const float *markerColor)
+	{
+		PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
+		if (vkCmdBeginDebugUtilsLabelEXT)
+		{
+			VkDebugUtilsLabelEXT utilsLabel{};
+			utilsLabel.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+			utilsLabel.pLabelName = markerName.c_str();
+			memcpy(utilsLabel.color, markerColor, 16);
+			vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &utilsLabel);
+		}
+	}
+
+	static void EndMarker(VkInstance instance, VkCommandBuffer commandBuffer)
+	{
+		PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
+
+		if (vkCmdEndDebugUtilsLabelEXT)
+		{
+			vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+		}
 	}
 
 	static VkSampler CreateSampler(

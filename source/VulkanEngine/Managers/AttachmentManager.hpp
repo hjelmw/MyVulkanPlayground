@@ -23,12 +23,12 @@ namespace NVulkanEngine
 	class CAttachmentManager
 	{
 	public:
-		CAttachmentManager() = default;
+		CAttachmentManager(VkInstance vulkanInstance);
 		~CAttachmentManager() = default;
 
 		SRenderAttachment AddAttachment(
 			CGraphicsContext*  context,
-			const char*        debugName,
+			const std::string  debugName,
 			EAttachmentIndices attachmentIndex,
 			VkSampler          sampler,
 			VkFormat           format,
@@ -47,5 +47,8 @@ namespace NVulkanEngine
 		void Cleanup(CGraphicsContext* context);
 	private:
 		std::array<SRenderAttachment, (uint32_t)EAttachmentIndices::Count> m_RenderAttachments = {};
+
+		// To mark attachments with debug names
+		PFN_vkSetDebugUtilsObjectNameEXT m_VkSetDebugUtilsObjectNameEXT = nullptr;
 	};
 };

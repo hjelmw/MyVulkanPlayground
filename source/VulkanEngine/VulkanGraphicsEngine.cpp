@@ -4,7 +4,7 @@
 #include <DrawPasses/GeometryPass.hpp>
 #include <DrawPasses/LightingPass.hpp>
 #include <DrawPasses/TerrainPass.hpp>
-#include <DrawPasses/AtmosphericsPass.hpp>
+#include <DrawPasses/SkyPass.hpp>
 #include <DrawPasses/ShadowPass.hpp>
 
 #include <Managers/InputManager.hpp>
@@ -71,7 +71,7 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::InitVulkan()
 	{
 		CreateVulkanInstance();
-		SetupDebugMessenger();
+		SetupDebugUtils();
 		CreateVulkanSurface();
 		SelectPhysicalDevice();
 		CreateLogicalDevice();
@@ -190,7 +190,7 @@ namespace NVulkanEngine
 	{
 		m_InputManager = new CInputManager();
 		m_ModelManager = new CModelManager();
-		m_AttachmentManager = new CAttachmentManager();
+		m_AttachmentManager = new CAttachmentManager(m_VulkanInstance);
 
 		// For mouse and keyboard callbacks
 		glfwSetWindowUserPointer(m_Window, this);
@@ -322,10 +322,10 @@ namespace NVulkanEngine
 
 	VkResult CVulkanGraphicsEngine::CreateDebugUtilsMessengerEXT(const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
 	{
-		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_VulkanInstance, "vkCreateDebugUtilsMessengerEXT");
-		if (func != nullptr)
+		auto createDebugUtilsMessengerFunc = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_VulkanInstance, "vkCreateDebugUtilsMessengerEXT");
+		if (createDebugUtilsMessengerFunc != nullptr)
 		{
-			return func(m_VulkanInstance, pCreateInfo, pAllocator, pDebugMessenger);
+			return createDebugUtilsMessengerFunc(m_VulkanInstance, pCreateInfo, pAllocator, pDebugMessenger);
 		}
 		else
 		{
@@ -344,7 +344,7 @@ namespace NVulkanEngine
 		return VK_SUCCESS;
 	}
 
-	void CVulkanGraphicsEngine::SetupDebugMessenger()
+	void CVulkanGraphicsEngine::SetupDebugUtils()
 	{
 		if (!g_EnableValidationLayers)
 			return;
@@ -849,7 +849,7 @@ namespace NVulkanEngine
 		m_DrawPasses[(uint32_t)EDrawPasses::Geometry]     = new CGeometryPass();
 		m_DrawPasses[(uint32_t)EDrawPasses::Shadows]      = new CShadowPass();
 		m_DrawPasses[(uint32_t)EDrawPasses::Terrain]      = new CTerrainPass();
-		m_DrawPasses[(uint32_t)EDrawPasses::Atmospherics] = new CAtmosphericsPass();
+		m_DrawPasses[(uint32_t)EDrawPasses::Skybox]       = new CSkyPass();
 		m_DrawPasses[(uint32_t)EDrawPasses::Lighting]     = new CLightingPass();
 
 		SGraphicsManagers managers{};
@@ -1076,10 +1076,19 @@ namespace NVulkanEngine
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		RecordDrawPasses(m_CommandBuffers[m_FrameIndex]);
+		// Light green
+		const float mainRenderMarkerColor[4] = { 0.5f, 0.75f, 0.35f, 1.0f };
 
+		BeginMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex], "Main Rendering", mainRenderMarkerColor);
+		RecordDrawPasses(m_CommandBuffers[m_FrameIndex]);
+		EndMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex]);
+
+		const float ImGuiMarkerColor[4] = { 0.8f, 0.8f, 0.0f, 1.0f };
+
+		BeginMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex], "ImGui Viewport", ImGuiMarkerColor);
 		DoImGuiViewport();
 		RenderImGuiDrawData(imageIndex);
+		EndMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex]);
 
 		if (vkEndCommandBuffer(m_CommandBuffers[m_FrameIndex]) != VK_SUCCESS)
 		{
