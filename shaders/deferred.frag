@@ -50,13 +50,13 @@ float CalculateShadow(vec4 fragPosLightSpace)
 void main()
 {
 	// Get G-Buffer values
-	vec3  position     = texture(GBufferPositions, inUV).rgb;
-	float metalness    = texture(GBufferPositions, inUV).a;
-	vec3  albedo       = texture(GBufferAlbedo,    inUV).rgb;
-	float fresnel      = texture(GBufferAlbedo,    inUV).a;
-	vec3  normal       = texture(GBufferNormals,   inUV).rgb;
-	float roughness    = texture(GBufferNormals,   inUV).a;
-	float depth        = texture(GBufferDepth,     inUV).r;
+	vec3  position  = texture(GBufferPositions, inUV).rgb;
+	float metalness = texture(GBufferPositions, inUV).a;
+	vec3  albedo    = texture(GBufferAlbedo,    inUV).rgb;
+	float fresnel   = texture(GBufferAlbedo,    inUV).a;
+	vec3  normal    = texture(GBufferNormals,   inUV).rgb;
+	float roughness = texture(GBufferNormals,   inUV).a;
+	float depth     = texture(GBufferDepth,     inUV).r;
 
 	// Early out for skybox
 	if(depth == 1.0f)

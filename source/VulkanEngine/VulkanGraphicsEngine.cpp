@@ -920,7 +920,7 @@ namespace NVulkanEngine
 				ImGui::Text("Name: %s", attachment.m_DebugName);
 				static float brightness = 1.0f;
 				ImGui::SliderFloat("Brightness", &brightness, 0.0f, 1.0f);
-				ImGui::Image(attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f * brightness, 1.0f * brightness, 1.0f * brightness, 1.0f) );
+				ImGui::Image(attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.0f), ImVec2(0.0f , 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f * brightness, 1.0f * brightness, 1.0f * brightness, 1.0f) );
 				if (ImGui::Button("Remove Selection"))
 				{
 					selected[selectedId] = false;

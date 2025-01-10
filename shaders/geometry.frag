@@ -27,20 +27,23 @@ layout( push_constant ) uniform constants
 	bool  m_UseAlbedoTexture;
 } SMaterialConstants;
 
+float LinearizeDepth(float d,float zNear, float zFar)
+{
+    return zNear * zFar / (zFar + d * (zNear - zFar));
+}
 
 void main() 
 {
-	float metalness = SMaterialConstants.m_Metalness;
-	float fresnel   = SMaterialConstants.m_Fresnel;
-	float roughness = SMaterialConstants.m_Shininess;
+	const bool  useAlbedoTexture = SMaterialConstants.m_UseAlbedoTexture;
+	const float metalness        = SMaterialConstants.m_Metalness;
+	const float fresnel          = SMaterialConstants.m_Fresnel;
+	const float roughness        = SMaterialConstants.m_Shininess;
 
-	outPosition = vec4(inWorldPosition, metalness);
+	outPosition = vec4(inWorldPosition, 1.0f);
 	
-	outNormal = vec4(inNormal, fresnel);
+	outNormal = vec4(inNormal, 1.0f);
 
-	outAlbedo = vec4(SMaterialConstants.m_UseAlbedoTexture ? 
-		texture(samplerColor, inUV).rgb : 
-		SMaterialConstants.m_Diffuse.rgb, roughness);
+	outAlbedo = vec4(useAlbedoTexture ? texture(samplerColor, inUV).rgb : SMaterialConstants.m_Diffuse.rgb, 1.0f);
 
 	gl_FragDepth = gl_FragCoord.z;
 }

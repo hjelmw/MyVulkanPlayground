@@ -33,6 +33,7 @@ void main()
 	
 	outNormal = (normalMatrix * vec4(inNormal, 1.0f)).xyz;
 	
+
 	// Currently just vertex color
 	outColor = inColor;
 }
