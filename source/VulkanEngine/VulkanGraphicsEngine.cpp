@@ -3,6 +3,7 @@
 
 #include <DrawPasses/GeometryPass.hpp>
 #include <DrawPasses/LightingPass.hpp>
+#include <DrawPasses/TerrainPass.hpp>
 #include <DrawPasses/AtmosphericsPass.hpp>
 #include <DrawPasses/ShadowPass.hpp>
 
@@ -847,6 +848,7 @@ namespace NVulkanEngine
 	{
 		m_DrawPasses[(uint32_t)EDrawPasses::Geometry]     = new CGeometryPass();
 		m_DrawPasses[(uint32_t)EDrawPasses::Shadows]      = new CShadowPass();
+		m_DrawPasses[(uint32_t)EDrawPasses::Terrain]      = new CTerrainPass();
 		m_DrawPasses[(uint32_t)EDrawPasses::Atmospherics] = new CAtmosphericsPass();
 		m_DrawPasses[(uint32_t)EDrawPasses::Lighting]     = new CLightingPass();
 

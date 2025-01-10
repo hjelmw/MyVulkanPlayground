@@ -15,8 +15,9 @@ namespace NVulkanEngine
 	{
 		Geometry     = 0,
 		Shadows      = 1,
-		Atmospherics = 2,
-		Lighting     = 3,
+		Terrain      = 2,
+		Atmospherics = 3,
+		Lighting     = 4,
 		Count
 	};
 
