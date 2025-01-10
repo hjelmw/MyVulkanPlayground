@@ -8,7 +8,7 @@ namespace NVulkanEngine
 	{
 		CModel* model = new CModel();
 
-		model->SetModelFilepath(modelFilepath, "./assets");
+		model->SetModelFilepath("./assets/" + modelFilepath, "./assets/models");
 
 		m_Models.push_back(model);
 		m_CurrentModelIndex++;
@@ -45,7 +45,7 @@ namespace NVulkanEngine
 
 	void CModelManager::AddTexturePath(uint32_t index, const std::string& textureFilepath)
 	{
-		m_Models[m_CurrentModelIndex]->SetModelTexturePath(textureFilepath);
+		m_Models[m_CurrentModelIndex]->SetModelTexturePath("./assets/" + textureFilepath);
 	}
 
 	uint32_t CModelManager::GetCurrentModelIndex()

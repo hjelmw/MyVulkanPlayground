@@ -45,5 +45,5 @@ void main()
 
 	outAlbedo = vec4(useAlbedoTexture ? texture(samplerColor, inUV).rgb : SMaterialConstants.m_Diffuse.rgb, 1.0f);
 
-	gl_FragDepth = gl_FragCoord.z;
+	//gl_FragDepth = gl_FragCoord.z;
 }
