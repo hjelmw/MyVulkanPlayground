@@ -6,19 +6,7 @@
 
 namespace NVulkanEngine
 {
-	CSwapchain* CSwapchain::s_SwapchainInstance = nullptr;
-
-	CSwapchain* CSwapchain::GetInstance()
-	{
-		if (!s_SwapchainInstance)
-		{
-			s_SwapchainInstance = new CSwapchain();
-		}
-
-		return s_SwapchainInstance;
-	}
-
-	void CSwapchain::CreateSwapchain(CGraphicsContext* context)
+	void CSwapchain::Create(CGraphicsContext* context)
 	{
 		CSwapchain::SSwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(context->GetPhysicalDevice(), context->GetVulkanSurface());
 
@@ -193,10 +181,10 @@ namespace NVulkanEngine
 		}
 	}
 
-	ESwapchainResult CSwapchain::AcquireSwapchainImageIndex(CGraphicsContext* context, VkSemaphore imageAvailableSemaphore, uint32_t& imageIndex)
+	VkResult CSwapchain::AcquireSwapchainImageIndex(CGraphicsContext* context, VkSemaphore imageAvailableSemaphore, uint32_t& imageIndex)
 	{
 		VkResult result = vkAcquireNextImageKHR(context->GetLogicalDevice(), m_VulkanSwapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-		return result == VK_SUCCESS ? ESuccesful : EErrorFailure;
+		return result;
 	}
 
 	VkImage CSwapchain::GetSwapchainImage(uint32_t imageIndex)
@@ -223,18 +211,29 @@ namespace NVulkanEngine
 		presentInfo.pImageIndices = &imageIndex;
 
 		VkResult result = vkQueuePresentKHR(context->GetPresentQueue(), &presentInfo);
-
-		//return result == VK_SUCCESS ? ESuccesful : EErrorFailure;
+		if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("Swapchain present did not suceed. Fatal?");
+		}
 	}
 
-	void CSwapchain::CleanupSwapchain(CGraphicsContext* context)
+	void CSwapchain::Recreate(CGraphicsContext* context)
 	{
-		for (size_t i = 0; i < m_SwapchainImageViews.size(); i++) {
+		Cleanup(context);
+		Create(context);
+	}
+
+	void CSwapchain::Cleanup(CGraphicsContext* context)
+	{
+		for (size_t i = 0; i < m_SwapchainImageViews.size(); i++) 
+		{
 			vkDestroyImageView(context->GetLogicalDevice(), m_SwapchainImageViews[i], nullptr);
 		}
 
+		// This also destroy the all of the VkImage(s) stored in m_SwapchainImages
 		vkDestroySwapchainKHR(context->GetLogicalDevice(), m_VulkanSwapchain, nullptr);
 
-		delete s_SwapchainInstance;
+		m_SwapchainImages.clear();
+		m_SwapchainImageViews.clear();
 	}
 }

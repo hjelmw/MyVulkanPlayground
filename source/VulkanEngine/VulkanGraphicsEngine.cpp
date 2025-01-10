@@ -93,12 +93,51 @@ namespace NVulkanEngine
 	{
 		vkDeviceWaitIdle(m_VulkanDevice);
 
-		CleanupSwapchain();
 		CleanupDrawPasses();
 		CleanupManagers();
 		CleanupImGui();
 		CleanupVulkan();
 		CleanupWindow();
+	}
+
+	void CVulkanGraphicsEngine::ResizeFrame()
+	{
+		vkDeviceWaitIdle(m_VulkanDevice);
+
+		// These don't directly depend on resolution but we need to recreate them anyway
+		m_Swapchain->Recreate(m_Context);
+		CleanupSyncObjects();
+		CreateSyncObjects();
+
+		// These do depend on resolution
+		m_AttachmentManager->Cleanup(m_Context);
+		CleanupDrawPasses();
+
+		g_DisplayWidth  = m_NewRenderResolution.width;
+		g_DisplayHeight = m_NewRenderResolution.height;
+		m_Context->SetRenderResolution(VkExtent2D(g_DisplayWidth, g_DisplayHeight));
+
+		// Order of init important here
+		CreateAttachments();
+		InitDrawPasses();
+
+		m_NeedsResize = false;
+	}
+
+	void CVulkanGraphicsEngine::ResizeGLFWFrame(GLFWwindow* window, int newWidth, int newHeight)
+	{
+		m_NeedsResize = true;
+		m_NewRenderResolution = VkExtent2D(newWidth, newHeight);
+	}
+
+	void CVulkanGraphicsEngine::ProcessGLFWKeyboardInputs(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{
+		m_InputManager->ProcessKeyboardInputs(window, key, scancode, action, mods);
+	}
+
+	void CVulkanGraphicsEngine::ProcessGLFWMouseInput(GLFWwindow* window, int button, int action, int mods)
+	{
+		m_InputManager->ProcessMouseInput(window, button, action, mods);
 	}
 
 	void CVulkanGraphicsEngine::InitWindow()
@@ -115,28 +154,35 @@ namespace NVulkanEngine
 			throw std::runtime_error("Failed to init Window");
 		}
 
-		m_RenderResolution.width  = g_DisplayWidth;
-		m_RenderResolution.height = g_DisplayHeight;
-
 		GLFWkeyfun keyboardCallback = ([](GLFWwindow* window, int key, int scancode, int action, int mods)
 		{
-			CInputManager& modelManager = *static_cast<CInputManager*>(glfwGetWindowUserPointer(window));
-			modelManager.ProcessKeyboardInputs(window, key, scancode, action, mods);
+			CVulkanGraphicsEngine& graphicsEngine = *static_cast<CVulkanGraphicsEngine*>(glfwGetWindowUserPointer(window));
+			graphicsEngine.ProcessGLFWKeyboardInputs(window, key, scancode, action, mods);
 		});
 
 		GLFWmousebuttonfun mouseCallback = ([](GLFWwindow* window, int button, int action, int mods)
 		{
-			CInputManager& modelManager = *static_cast<CInputManager*>(glfwGetWindowUserPointer(window));
-			modelManager.ProcessMouseInput(window, button, action, mods);
+			CVulkanGraphicsEngine& graphicsEngine = *static_cast<CVulkanGraphicsEngine*>(glfwGetWindowUserPointer(window));
+			graphicsEngine.ProcessGLFWMouseInput(window, button, action, mods);
 		});
 
 		glfwSetKeyCallback(m_Window, keyboardCallback);
 		glfwSetMouseButtonCallback(m_Window, mouseCallback);
+
+		GLFWframebuffersizefun windowScaleCallback = ([](GLFWwindow* window, int newWidth, int newHeight)
+		{
+			CVulkanGraphicsEngine& graphicsEngine = *static_cast<CVulkanGraphicsEngine*>(glfwGetWindowUserPointer(window));
+			graphicsEngine.ResizeGLFWFrame(window, newWidth, newHeight);
+		});
+
+
+		glfwSetFramebufferSizeCallback(m_Window, windowScaleCallback);
 	}
 
 	void CVulkanGraphicsEngine::InitSwapchain()
 	{
-		CSwapchain::GetInstance()->CreateSwapchain(m_Context);
+		m_Swapchain = new CSwapchain();
+		m_Swapchain->Create(m_Context);
 	}
 
 	void CVulkanGraphicsEngine::InitManagers()
@@ -146,7 +192,7 @@ namespace NVulkanEngine
 		m_AttachmentManager = new CAttachmentManager();
 
 		// For mouse and keyboard callbacks
-		glfwSetWindowUserPointer(m_Window, m_InputManager);
+		glfwSetWindowUserPointer(m_Window, this);
 	}
 
 	void CVulkanGraphicsEngine::InitCamera()
@@ -174,16 +220,22 @@ namespace NVulkanEngine
 		delete m_AttachmentManager;
 	};
 
-	void CVulkanGraphicsEngine::CleanupSwapchain()
-	{
-		CSwapchain::GetInstance()->CleanupSwapchain(m_Context);
-	}
 
 	void CVulkanGraphicsEngine::CleanupDrawPasses()
 	{
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
 			m_DrawPasses[i]->CleanupPass(m_Context);
+		}
+	}
+
+	void CVulkanGraphicsEngine::CleanupSyncObjects()
+	{
+		for (size_t i = 0; i < g_MaxFramesInFlight; i++)
+		{
+			vkDestroySemaphore(m_VulkanDevice, m_ImageAvailableSemaphores[i], nullptr);
+			vkDestroySemaphore(m_VulkanDevice, m_RenderFinishedSemaphores[i], nullptr);
+			vkDestroyFence(m_VulkanDevice, m_InFlightFences[i], nullptr);
 		}
 	}
 
@@ -194,12 +246,10 @@ namespace NVulkanEngine
 		vkDestroySampler(m_VulkanDevice, m_LinearClamp, nullptr);
 		vkDestroySampler(m_VulkanDevice, m_LinearRepeat, nullptr);
 
-		for (size_t i = 0; i < g_MaxFramesInFlight; i++)
-		{
-			vkDestroySemaphore(m_VulkanDevice, m_ImageAvailableSemaphores[i], nullptr);
-			vkDestroySemaphore(m_VulkanDevice, m_RenderFinishedSemaphores[i], nullptr);
-			vkDestroyFence(m_VulkanDevice, m_InFlightFences[i], nullptr);
-		}
+		CleanupSyncObjects();
+
+		m_Swapchain->Cleanup(m_Context);
+		delete m_Swapchain;
 
 		vkDestroyCommandPool(m_VulkanDevice, m_CommandPool, nullptr);
 
@@ -714,7 +764,7 @@ namespace NVulkanEngine
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		poolSizes[0].descriptorCount = (uint32_t)EAttachmentIndices::Count * 2;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = (uint32_t)EAttachmentIndices::Count * CSwapchain::GetInstance()->GetMinImageCount() + 1;
+		poolSizes[1].descriptorCount = (uint32_t)EAttachmentIndices::Count * m_Swapchain->GetMinImageCount() + 1;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -728,7 +778,7 @@ namespace NVulkanEngine
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
 
-		VkFormat swapchain_format = CSwapchain::GetInstance()->GetSwapchainFormat();
+		VkFormat swapchain_format = m_Swapchain->GetSwapchainFormat();
 
 		VkPipelineRenderingCreateInfoKHR pipeline_rendering_create_info{};
 		pipeline_rendering_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
@@ -747,8 +797,8 @@ namespace NVulkanEngine
 		init_info.UseDynamicRendering         = true;
 		init_info.RenderPass                  = nullptr; // Not needed since using dynamic rendering
 		init_info.Subpass                     = 0;
-		init_info.MinImageCount               = CSwapchain::GetInstance()->GetMinImageCount();
-		init_info.ImageCount                  = CSwapchain::GetInstance()->GetMinImageCount() + 1;
+		init_info.MinImageCount               = m_Swapchain->GetMinImageCount();
+		init_info.ImageCount                  = m_Swapchain->GetMinImageCount() + 1;
 		init_info.MSAASamples                 = VK_SAMPLE_COUNT_1_BIT;
 		init_info.Allocator                   = nullptr; // For now. Add to enable validation layer debugging?
 		init_info.CheckVkResultFn             = check_vk_result; // For now
@@ -769,7 +819,7 @@ namespace NVulkanEngine
 			m_PresentQueue,
 			m_LinearClamp,
 			m_LinearRepeat,
-			m_RenderResolution);
+			VkExtent2D(g_DisplayWidth, g_DisplayHeight));
 	}
 
 	void CVulkanGraphicsEngine::CreateModels()
@@ -885,7 +935,7 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::RenderImGuiDrawData(uint32_t imageIndex)
 	{
-		CSwapchain* swapchain = CSwapchain::GetInstance();
+		CSwapchain* swapchain = m_Swapchain;
 
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -984,7 +1034,13 @@ namespace NVulkanEngine
 		vkWaitForFences(m_VulkanDevice, 1, &m_InFlightFences[m_FrameIndex], VK_TRUE, UINT64_MAX);
 
 		uint32_t imageIndex = 0;
-		ESwapchainResult swapchainResult = CSwapchain::GetInstance()->AcquireSwapchainImageIndex(m_Context, m_ImageAvailableSemaphores[m_FrameIndex], imageIndex);
+		VkResult swapchainResult = m_Swapchain->AcquireSwapchainImageIndex(m_Context, m_ImageAvailableSemaphores[m_FrameIndex], imageIndex);
+
+		if (m_NeedsResize)
+		{
+			ResizeFrame();
+			return;
+		}
 
 		auto newTime = std::chrono::high_resolution_clock::now();
 		float deltatIme = std::chrono::duration<float, std::chrono::seconds::period>(newTime - s_LastTime).count();
@@ -1050,7 +1106,7 @@ namespace NVulkanEngine
 			throw std::runtime_error("failed to submit commandbuffer on graphics queue!");
 		}
 
-		CSwapchain::GetInstance()->Present(m_Context, signalSemaphores, imageIndex);
+		m_Swapchain->Present(m_Context, signalSemaphores, imageIndex);
 
 		m_FrameIndex = (m_FrameIndex + 1) % g_MaxFramesInFlight;
 		m_Context->SetFrameIndex(m_FrameIndex);

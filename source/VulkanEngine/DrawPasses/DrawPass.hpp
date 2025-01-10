@@ -53,8 +53,6 @@ namespace NVulkanEngine
 			int32_t           texHeight, 
 			uint32_t          mipLevels);
 
-		SRenderAttachment GetSwapchainAttachment(CGraphicsContext* context);
-
 		// Begin rendering with attachments
 		void BeginRendering(
 			CGraphicsContext*             context,

@@ -4,27 +4,17 @@
 
 namespace NVulkanEngine
 {
-	enum ESwapchainResult
-	{
-		ESuccesful            = 0,
-		EErrorRecreate        = 1,
-		EErrorFailure         = 2,
-		ESwapchainResultCount = 3
-	};
-
-
 	class CSwapchain
 	{
 	public:
-		/* Swapchain is a singleton class!*/
-		static CSwapchain* GetInstance();
+		CSwapchain()  = default;
 		~CSwapchain() = default;
 
 		// Creates the swapchain
-		void                CreateSwapchain(CGraphicsContext* context);
+		void                Create(CGraphicsContext* context);
 
 		// Acquires the swapchain image at the provided index
-		ESwapchainResult	AcquireSwapchainImageIndex(CGraphicsContext* context, VkSemaphore imageAvailableSemaphore, uint32_t& imageIndex);
+		VkResult            AcquireSwapchainImageIndex(CGraphicsContext* context, VkSemaphore imageAvailableSemaphore, uint32_t& imageIndex);
 
 		// Gets the current frame swapchain image. Needed for transitions
 		VkImage             GetSwapchainImage(uint32_t imageIndex);
@@ -44,16 +34,12 @@ namespace NVulkanEngine
 		void                Recreate(CGraphicsContext* context);
 
 		// Destroy the swapchain
-		void                CleanupSwapchain(CGraphicsContext* context);
+		void                Cleanup(CGraphicsContext* context);
 
 		// Presents the finished rendered swapchain image to the present queue
 		void                Present(CGraphicsContext* context, VkSemaphore* signalSemaphore, uint32_t imageIndex);
 
 	private:
-		CSwapchain() = default;
-
-		static CSwapchain* s_SwapchainInstance;
-
 		VkExtent2D         ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities, GLFWwindow* window);
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		VkPresentModeKHR   ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

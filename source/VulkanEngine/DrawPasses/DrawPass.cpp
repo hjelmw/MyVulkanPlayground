@@ -103,33 +103,6 @@ namespace NVulkanEngine
 		EndSingleTimeCommands(context, commandBuffer);
 	}
 
-	SRenderAttachment CDrawPass::GetSwapchainAttachment(CGraphicsContext* context)
-	{
-		CSwapchain* swapchain = CSwapchain::GetInstance();
-
-		SRenderAttachment swapchainAttachment{};
-		swapchainAttachment.m_Format     = swapchain->GetSwapchainFormat();
-		swapchainAttachment.m_Image      = swapchain->GetSwapchainImage(context->GetSwapchainImageIndex());
-		swapchainAttachment.m_ImageView  = swapchain->GetSwapchainImageView(context->GetSwapchainImageIndex());
-		swapchainAttachment.m_ImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		swapchainAttachment.m_Memory     = VK_NULL_HANDLE; // Not needed
-
-		VkRenderingAttachmentInfo renderAttachmentInfo{};
-		renderAttachmentInfo.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-		renderAttachmentInfo.imageView   = swapchainAttachment.m_ImageView;
-		renderAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		renderAttachmentInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		renderAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
-
-		VkClearValue clearValue{};
-		clearValue.color = { 0.0f, 0.0f, 0.0f, 0.0f };
-		renderAttachmentInfo.clearValue  = clearValue;
-
-		swapchainAttachment.m_RenderAttachmentInfo = renderAttachmentInfo;
-
-		return swapchainAttachment;
-	}
-
 	void CDrawPass::BeginRendering(
 		CGraphicsContext*             context,
 		VkCommandBuffer               commandBuffer,
