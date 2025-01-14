@@ -889,7 +889,6 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::DoImGuiViewport()
 	{
-		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 		ImGui::Begin("Viewport");
 		VkDescriptorSet sceneColorDescriptor = m_AttachmentManager->TransitionAttachment(m_CommandBuffers[m_FrameIndex], EAttachmentIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
 		ImGui::Image((ImTextureID)sceneColorDescriptor, ImGui::GetContentRegionAvail());
@@ -1079,6 +1078,7 @@ namespace NVulkanEngine
 		// Light green
 		const float mainRenderMarkerColor[4] = { 0.5f, 0.75f, 0.35f, 1.0f };
 
+		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		BeginMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex], "Main Rendering", mainRenderMarkerColor);
 		RecordDrawPasses(m_CommandBuffers[m_FrameIndex]);
 		EndMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex]);

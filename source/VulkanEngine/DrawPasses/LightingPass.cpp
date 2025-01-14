@@ -38,12 +38,12 @@ namespace NVulkanEngine
 		m_DeferredUniformBuffer = CreateUniformBuffer(context, m_DeferredLightBufferMemory, sizeof(SDeferredLightingUniformBuffer));
 
 		m_DeferredTable = new CBindingTable();
-		m_DeferredTable->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, positionsAttachment.m_ImageView,    positionsAttachment.m_Format,    context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, normalsAttachment.m_ImageView,      normalsAttachment.m_Format,      context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(2, VK_SHADER_STAGE_FRAGMENT_BIT, albedoAttachment.m_ImageView,       albedoAttachment.m_Format,       context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(3, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView,        depthAttachment.m_Format,        context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(4, VK_SHADER_STAGE_FRAGMENT_BIT, shadowMapAttachment.m_ImageView,    shadowMapAttachment.m_Format,    context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(5, VK_SHADER_STAGE_FRAGMENT_BIT, atmosphericsAttachment.m_ImageView, atmosphericsAttachment.m_Format, context->GetLinearClampSampler());
+		m_DeferredTable->AddSampledImageBinding(0,  VK_SHADER_STAGE_FRAGMENT_BIT, positionsAttachment.m_ImageView,    positionsAttachment.m_Format,    context->GetLinearClampSampler());
+		m_DeferredTable->AddSampledImageBinding(1,  VK_SHADER_STAGE_FRAGMENT_BIT, normalsAttachment.m_ImageView,      normalsAttachment.m_Format,      context->GetLinearClampSampler());
+		m_DeferredTable->AddSampledImageBinding(2,  VK_SHADER_STAGE_FRAGMENT_BIT, albedoAttachment.m_ImageView,       albedoAttachment.m_Format,       context->GetLinearClampSampler());
+		m_DeferredTable->AddSampledImageBinding(3,  VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView,        depthAttachment.m_Format,        context->GetLinearClampSampler());
+		m_DeferredTable->AddSampledImageBinding(4,  VK_SHADER_STAGE_FRAGMENT_BIT, shadowMapAttachment.m_ImageView,    shadowMapAttachment.m_Format,    context->GetLinearClampSampler());
+		m_DeferredTable->AddSampledImageBinding(5,  VK_SHADER_STAGE_FRAGMENT_BIT, atmosphericsAttachment.m_ImageView, atmosphericsAttachment.m_Format, context->GetLinearClampSampler());
 		m_DeferredTable->AddUniformBufferBinding(6, VK_SHADER_STAGE_FRAGMENT_BIT, m_DeferredUniformBuffer, sizeof(SDeferredLightingUniformBuffer));
 		m_DeferredTable->CreateBindings(context);
 
