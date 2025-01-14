@@ -33,6 +33,24 @@ namespace NVulkanEngine
 		LoadModel(m_ModelFilepath, m_MaterialFilepath);
 		CreateVertexBuffer(context);
 		CreateIndexBuffer(context);
+
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->GetVulkanInstance(), "vkSetDebugUtilsObjectNameEXT");
+		if (vkSetDebugUtilsObjectNameEXT)
+		{
+			// Get the file name
+			const std::string modelFileName    =  m_ModelFilepath.substr(m_ModelFilepath.find_last_of("/\\") + 1);
+			const std::string vertexBufferName = "Vertex Buffer - " + modelFileName;
+			const std::string indexBufferName  = "Index Buffer - " + modelFileName;
+
+			VkDebugUtilsObjectNameInfoEXT nameInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+			nameInfo.objectType   = VK_OBJECT_TYPE_BUFFER;
+			nameInfo.objectHandle = (uint64_t)m_VertexBuffer;
+			nameInfo.pObjectName  = vertexBufferName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			nameInfo.objectHandle = (uint64_t)m_IndexBuffer;
+			nameInfo.pObjectName  = indexBufferName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+		}
 	}
 
 	bool CModel::LoadModel(const std::string modelFilepath, const std::string materialSearchPath)

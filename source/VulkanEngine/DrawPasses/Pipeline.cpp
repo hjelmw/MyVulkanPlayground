@@ -77,6 +77,8 @@ namespace NVulkanEngine
 		std::cout << "\n --- Creating Graphics pipeline ---" << "\n" << std::endl;
 #endif
 
+
+
 		VkShaderModule vertexShaderModule   = CreateShaderModule(context->GetLogicalDevice(), m_VertexShaderPath);
 		VkShaderModule fragmentShaderModule = CreateShaderModule(context->GetLogicalDevice(), m_FragmentShaderPath);
 
@@ -229,6 +231,35 @@ namespace NVulkanEngine
 		if (vkCreateGraphicsPipelines(context->GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create graphics pipeline!");
+		}
+
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->GetVulkanInstance(), "vkSetDebugUtilsObjectNameEXT");
+		if (vkSetDebugUtilsObjectNameEXT)
+		{
+			// Get the file name
+			const std::string vertexShaderBase   = m_VertexShaderPath.substr(m_VertexShaderPath.find_last_of("/\\") + 1);
+			const std::string fragmentShaderBase = m_VertexShaderPath.substr(m_VertexShaderPath.find_last_of("/\\") + 1);
+			const std::string vertexShaderName   = "Vertex Shader - "   + vertexShaderBase;
+			const std::string fragmentShaderName = "Fragment Shader - " + fragmentShaderBase;
+			const std::string pipelineName       = "Pipeline - " + vertexShaderBase;
+			const std::string pipelineLayoutName = "Pipeline Layout - " + vertexShaderBase;
+
+			VkDebugUtilsObjectNameInfoEXT nameInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+			nameInfo.objectType   = VK_OBJECT_TYPE_SHADER_MODULE;
+			nameInfo.objectHandle = (uint64_t)vertexShaderModule;
+			nameInfo.pObjectName  = vertexShaderName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			nameInfo.objectHandle = (uint64_t)fragmentShaderModule;
+			nameInfo.pObjectName  = fragmentShaderName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			nameInfo.objectType   = VK_OBJECT_TYPE_PIPELINE;
+			nameInfo.objectHandle = (uint64_t)m_Pipeline;
+			nameInfo.pObjectName  = pipelineName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			nameInfo.objectType   = VK_OBJECT_TYPE_PIPELINE_LAYOUT;
+			nameInfo.objectHandle = (uint64_t)m_PipelineLayout;
+			nameInfo.pObjectName  = pipelineLayoutName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
 		}
 
 		vkDestroyShaderModule(context->GetLogicalDevice(), vertexShaderModule, nullptr);
