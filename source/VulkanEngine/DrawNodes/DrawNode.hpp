@@ -9,7 +9,7 @@
 
 namespace NVulkanEngine
 {
-	enum class EDrawPasses : uint32_t
+	enum class EDrawNodes : uint32_t
 	{
 		Geometry     = 0,
 		Shadows      = 1,
