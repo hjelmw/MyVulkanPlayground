@@ -1,4 +1,4 @@
-#include "GeometryPass.hpp"
+#include "GeometryNode.hpp"
 #include <imgui.h>
 
 namespace NVulkanEngine
@@ -10,7 +10,7 @@ namespace NVulkanEngine
 		glm::mat4 m_ProjectionMat = glm::identity<glm::mat4>();
 	};
 
-	void CGeometryPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CGeometryNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
@@ -45,7 +45,7 @@ namespace NVulkanEngine
 		m_GeometryPipeline->CreatePipeline(context, modelDescriptorSetLayout); 
 	}
 
-	void CGeometryPass::UpdateGeometryBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CGeometryNode::UpdateGeometryBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		CCamera* camera = managers->m_InputManager->GetCamera();
 
@@ -65,7 +65,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CGeometryPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CGeometryNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
 
@@ -101,7 +101,7 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CGeometryPass::CleanupPass(CGraphicsContext* context)
+	void CGeometryNode::Cleanup(CGraphicsContext* context)
 	{
 		m_GeometryPipeline->Cleanup(context);
 	}

@@ -1,8 +1,4 @@
-#include "ShadowPass.hpp"
-#include "GeometryPass.hpp"
-
-#include <Managers/InputManager.hpp>
-#include <Managers/ModelManager.hpp>
+#include "ShadowNode.hpp"
 
 #include <imgui.h>
 
@@ -10,7 +6,7 @@
 
 namespace NVulkanEngine
 {
-	glm::mat4 CShadowPass::s_LightMatrix = glm::identity<glm::mat4>();
+	glm::mat4 CShadowNode::s_LightMatrix = glm::identity<glm::mat4>();
 
 	struct SShadowUniformBuffer
 	{
@@ -19,7 +15,7 @@ namespace NVulkanEngine
 		glm::mat4 m_ProjectionMatrix;
 	};
 
-	void CShadowPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CShadowNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
@@ -44,7 +40,7 @@ namespace NVulkanEngine
 		m_ShadowPipeline->CreatePipeline(context, modelDescriptorSetLayout);
 	}
 
-	void CShadowPass::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
@@ -96,7 +92,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CShadowPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CShadowNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
 		SRenderAttachment shadowmapAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -125,7 +121,7 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CShadowPass::CleanupPass(CGraphicsContext* context)
+	void CShadowNode::Cleanup(CGraphicsContext* context)
 	{
 		vkDestroyBuffer(context->GetLogicalDevice(), m_ShadowBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_ShadowBufferMemory, nullptr);

@@ -1,15 +1,15 @@
-#include "DrawPass.hpp"
+#include "DrawNode.hpp"
 
 #include "VulkanGraphicsEngineUtils.hpp"
 
 namespace NVulkanEngine
 {
 	/* Implemented by derived class */
-	void CDrawPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers) { }
-	void CDrawPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
-	void CDrawPass::CleanupPass(CGraphicsContext* context) { }
+	void CDrawNode::Init(CGraphicsContext* context, SGraphicsManagers* managers) { }
+	void CDrawNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
+	void CDrawNode::Cleanup(CGraphicsContext* context) { }
 
-	void CDrawPass::GenerateMipmaps(CGraphicsContext* context, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
+	void CDrawNode::GenerateMipmaps(CGraphicsContext* context, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
 	{
 		// Check if image format supports linear blitting
 		VkFormatProperties formatProperties;
@@ -103,7 +103,7 @@ namespace NVulkanEngine
 		EndSingleTimeCommands(context, commandBuffer);
 	}
 
-	void CDrawPass::BeginRendering(
+	void CDrawNode::BeginRendering(
 		const std::string              markerName,
 		CGraphicsContext*              context,
 		VkCommandBuffer                commandBuffer,
@@ -139,7 +139,7 @@ namespace NVulkanEngine
 		vkCmdBeginRendering(commandBuffer, &renderInfo);
 	}
 
-	void CDrawPass::EndRendering(CGraphicsContext* context, VkCommandBuffer commandBuffer)
+	void CDrawNode::EndRendering(CGraphicsContext* context, VkCommandBuffer commandBuffer)
 	{
 		vkCmdEndRendering(commandBuffer);
 		EndMarker(context->GetVulkanInstance(), commandBuffer);

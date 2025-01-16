@@ -3,7 +3,7 @@
 #include <VulkanGraphicsEngineUtils.hpp>
 #include <GraphicsContext.hpp>
 #include <Managers/Texture.hpp>
-#include <DrawPasses/BindingTable.hpp>
+#include <DrawNodes/BindingTable.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>

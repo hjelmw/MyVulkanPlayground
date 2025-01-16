@@ -1,6 +1,4 @@
-#include "LightingPass.hpp"
-
-#include <Managers/InputManager.hpp>
+#include "LightingNode.hpp"
 
 #include <imgui.h>
 
@@ -26,7 +24,7 @@ namespace NVulkanEngine
 		float     m_Pad1;
 	};
 
-	void CLightingPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CLightingNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		const SRenderAttachment positionsAttachment    = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Positions);
 		const SRenderAttachment normalsAttachment      = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Normals);
@@ -59,7 +57,7 @@ namespace NVulkanEngine
 		m_DeferredPipeline->CreatePipeline(context, m_DeferredTable->GetDescriptorSetLayout());
 	}
 
-	void CLightingPass::UpdateLightBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CLightingNode::UpdateLightBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		SDeferredLightingUniformBuffer deferredLightingUbo{};
 		deferredLightingUbo.m_Lights[0].m_LightColor     = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -76,7 +74,7 @@ namespace NVulkanEngine
 		vkUnmapMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory);
 	}
 
-	void CLightingPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CLightingNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		UpdateLightBuffers(context, managers);
 
@@ -102,7 +100,7 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CLightingPass::CleanupPass(CGraphicsContext* context)
+	void CLightingNode::Cleanup(CGraphicsContext* context)
 	{
 		vkDestroyBuffer(context->GetLogicalDevice(), m_DeferredUniformBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory, nullptr);

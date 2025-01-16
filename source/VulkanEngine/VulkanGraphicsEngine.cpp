@@ -1,11 +1,11 @@
 #include "VulkanGraphicsEngine.hpp"
 #include "VulkanGraphicsEngineUtils.hpp"
 
-#include <DrawPasses/GeometryPass.hpp>
-#include <DrawPasses/LightingPass.hpp>
-#include <DrawPasses/TerrainPass.hpp>
-#include <DrawPasses/SkyPass.hpp>
-#include <DrawPasses/ShadowPass.hpp>
+#include <DrawNodes/GeometryNode.hpp>
+#include <DrawNodes/LightingNode.hpp>
+#include <DrawNodes/TerrainNode.hpp>
+#include <DrawNodes/SkyNode.hpp>
+#include <DrawNodes/ShadowNode.hpp>
 
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>
@@ -226,7 +226,7 @@ namespace NVulkanEngine
 	{
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
-			m_DrawPasses[i]->CleanupPass(m_Context);
+			m_DrawPasses[i]->Cleanup(m_Context);
 		}
 	}
 
@@ -846,11 +846,11 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::InitDrawPasses()
 	{
-		m_DrawPasses[(uint32_t)EDrawPasses::Geometry]     = new CGeometryPass();
-		m_DrawPasses[(uint32_t)EDrawPasses::Shadows]      = new CShadowPass();
-		m_DrawPasses[(uint32_t)EDrawPasses::Terrain]      = new CTerrainPass();
-		m_DrawPasses[(uint32_t)EDrawPasses::Skybox]       = new CSkyPass();
-		m_DrawPasses[(uint32_t)EDrawPasses::Lighting]     = new CLightingPass();
+		m_DrawPasses[(uint32_t)EDrawPasses::Geometry]     = new CGeometryNode();
+		m_DrawPasses[(uint32_t)EDrawPasses::Shadows]      = new CShadowNode();
+		m_DrawPasses[(uint32_t)EDrawPasses::Terrain]      = new CTerrainNode();
+		m_DrawPasses[(uint32_t)EDrawPasses::Skybox]       = new CSkyNode();
+		m_DrawPasses[(uint32_t)EDrawPasses::Lighting]     = new CLightingNode();
 
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
@@ -859,9 +859,9 @@ namespace NVulkanEngine
 
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
-			CDrawPass* drawPass = m_DrawPasses[i];
+			CDrawNode* drawPass = m_DrawPasses[i];
 			if (drawPass)
-				drawPass->InitPass(m_Context, &managers);
+				drawPass->Init(m_Context, &managers);
 		}
 	}
 
@@ -881,9 +881,9 @@ namespace NVulkanEngine
 
 		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
 		{
-			CDrawPass* drawPass = m_DrawPasses[i];
+			CDrawNode* drawPass = m_DrawPasses[i];
 			if (drawPass)
-				drawPass->DrawPass(m_Context, &managers, commandBuffer);
+				drawPass->Draw(m_Context, &managers, commandBuffer);
 		}
 	}
 

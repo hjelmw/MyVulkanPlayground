@@ -1,20 +1,20 @@
 #pragma once
 
-#include <DrawPasses/DrawPass.hpp>
-#include <DrawPasses/Pipeline.hpp>
-#include <DrawPasses/BindingTable.hpp>
+#include <DrawNodes/DrawNode.hpp>
+#include <DrawNodes/Pipeline.hpp>
+#include <DrawNodes/BindingTable.hpp>
 
 namespace NVulkanEngine
 {
-	class CTerrainPass : public CDrawPass
+	class CTerrainNode : public CDrawNode
 	{
 	public:
-		CTerrainPass() = default;
-		~CTerrainPass() = default;
+		CTerrainNode() = default;
+		~CTerrainNode() = default;
 
-		virtual void InitPass(CGraphicsContext* context, SGraphicsManagers* managers)  override;
-		virtual void DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
-		virtual void CleanupPass(CGraphicsContext* context) override;
+		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers)  override;
+		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
+		virtual void Cleanup(CGraphicsContext* context) override;
 
 	private:
 		void UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers);

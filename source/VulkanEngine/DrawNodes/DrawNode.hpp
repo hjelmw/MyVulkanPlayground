@@ -7,8 +7,6 @@
 #include <Managers/ModelManager.hpp>
 #include <Managers/AttachmentManager.hpp>
 
-#include <Swapchain.hpp>
-
 namespace NVulkanEngine
 {
 	enum class EDrawPasses : uint32_t
@@ -38,12 +36,12 @@ namespace NVulkanEngine
 
 	};
 
-	class CDrawPass
+	class CDrawNode
 	{
 	public:
-		virtual void InitPass(CGraphicsContext* context, SGraphicsManagers* managers);
-		virtual void DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer);
-		virtual void CleanupPass(CGraphicsContext* context);
+		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers);
+		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer);
+		virtual void Cleanup(CGraphicsContext* context);
 
 	protected:
 		void GenerateMipmaps(

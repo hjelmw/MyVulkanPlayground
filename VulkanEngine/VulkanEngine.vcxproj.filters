@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\DrawPasses">
-      <UniqueIdentifier>{2a157a9e-e327-45c5-bcf0-2e439aab7619}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\DrawPasses">
-      <UniqueIdentifier>{9a514dec-4fe9-43a7-8af1-041b6e22bd95}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{55a3c1cb-d3d7-4e2b-b1eb-1e34cabf7751}</UniqueIdentifier>
     </Filter>
@@ -31,17 +25,14 @@
     <Filter Include="Source Files\Managers">
       <UniqueIdentifier>{af6f00e4-1e9f-4451-b2e5-420024cb53c9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\DrawNodes">
+      <UniqueIdentifier>{9a514dec-4fe9-43a7-8af1-041b6e22bd95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DrawNodes">
+      <UniqueIdentifier>{2a157a9e-e327-45c5-bcf0-2e439aab7619}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\GeometryPass.cpp">
-      <Filter>Source Files\DrawPasses</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\LightingPass.cpp">
-      <Filter>Source Files\DrawPasses</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\ShadowPass.cpp">
-      <Filter>Source Files\DrawPasses</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\VulkanGraphicsEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,9 +66,6 @@
     <ClCompile Include="..\vendor\imgui-docking\imgui_widgets.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\SkyPass.cpp">
-      <Filter>Source Files\DrawPasses</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\Managers\InputManager.cpp">
       <Filter>Source Files\Managers</Filter>
     </ClCompile>
@@ -93,32 +81,35 @@
     <ClCompile Include="..\source\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\DrawPass.cpp">
-      <Filter>Source Files\DrawPasses</Filter>
-    </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\Pipeline.cpp">
-      <Filter>Source Files\DrawPasses</Filter>
-    </ClCompile>
     <ClCompile Include="..\source\VulkanEngine\Managers\AttachmentManager.cpp">
       <Filter>Source Files\Managers</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\BindingTable.cpp">
-      <Filter>Source Files\DrawPasses</Filter>
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\LightingNode.cpp">
+      <Filter>Source Files\DrawNodes</Filter>
     </ClCompile>
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\TerrainPass.cpp">
-      <Filter>Source Files\DrawPasses</Filter>
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\ShadowNode.cpp">
+      <Filter>Source Files\DrawNodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\TerrainNode.cpp">
+      <Filter>Source Files\DrawNodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\SkyNode.cpp">
+      <Filter>Source Files\DrawNodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\GeometryNode.cpp">
+      <Filter>Source Files\DrawNodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\Pipeline.cpp">
+      <Filter>Source Files\DrawNodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\DrawNode.cpp">
+      <Filter>Source Files\DrawNodes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\BindingTable.cpp">
+      <Filter>Source Files\DrawNodes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\GeometryPass.hpp">
-      <Filter>Header Files\DrawPasses</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\LightingPass.hpp">
-      <Filter>Header Files\DrawPasses</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\ShadowPass.hpp">
-      <Filter>Header Files\DrawPasses</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\VulkanGraphicsEngine.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -149,9 +140,6 @@
     <ClInclude Include="..\vendor\imgui-docking\imconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\SkyPass.hpp">
-      <Filter>Header Files\DrawPasses</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\Managers\InputManager.hpp">
       <Filter>Header Files\Managers</Filter>
     </ClInclude>
@@ -164,20 +152,32 @@
     <ClInclude Include="..\source\VulkanEngine\Managers\Texture.hpp">
       <Filter>Header Files\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\DrawPass.hpp">
-      <Filter>Header Files\DrawPasses</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\Pipeline.hpp">
-      <Filter>Header Files\DrawPasses</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\VulkanEngine\Managers\AttachmentManager.hpp">
       <Filter>Header Files\Managers</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\BindingTable.hpp">
-      <Filter>Header Files\DrawPasses</Filter>
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\GeometryNode.hpp">
+      <Filter>Header Files\DrawNodes</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\TerrainPass.hpp">
-      <Filter>Header Files\DrawPasses</Filter>
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\ShadowNode.hpp">
+      <Filter>Header Files\DrawNodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\TerrainNode.hpp">
+      <Filter>Header Files\DrawNodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\SkyNode.hpp">
+      <Filter>Header Files\DrawNodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\DrawNode.hpp">
+      <Filter>Header Files\DrawNodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\LightingNode.hpp">
+      <Filter>Header Files\DrawNodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\BindingTable.hpp">
+      <Filter>Header Files\DrawNodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\Pipeline.hpp">
+      <Filter>Header Files\DrawNodes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

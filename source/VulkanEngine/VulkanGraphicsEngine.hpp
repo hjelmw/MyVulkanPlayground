@@ -11,8 +11,8 @@
 #include <GLFW/glfw3.h>
 
 #include <VulkanGraphicsEngineUtils.hpp>
-#include <DrawPasses/DrawPass.hpp>
-#include <DrawPasses/Pipeline.hpp>
+#include <DrawNodes/DrawNode.hpp>
+#include <DrawNodes/Pipeline.hpp>
 #include <Swapchain.hpp>
 
 #include "GraphicsContext.hpp"
@@ -95,7 +95,7 @@ namespace NVulkanEngine
         bool m_NeedsResize = false;
 
         // Draw passes specifies render order
-        std::array<CDrawPass*, (uint32_t)EDrawPasses::Count> m_DrawPasses               = {};
+        std::array<CDrawNode*, (uint32_t)EDrawPasses::Count> m_DrawPasses               = {};
 
         CGraphicsContext* m_Context   = nullptr;
         CSwapchain*       m_Swapchain = nullptr;

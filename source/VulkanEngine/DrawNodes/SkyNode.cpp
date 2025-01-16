@@ -1,4 +1,4 @@
-#include "SkyPass.hpp"
+#include "SkyNode.hpp"
 
 #include <imgui.h>
 
@@ -66,7 +66,7 @@ namespace NVulkanEngine
 		glm::vec2     m_Pad0                  = glm::vec2(0xdeadbeef, 0xdeadbeef);
 	};
 
-	void CSkyPass::InitPass(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CSkyNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		const SRenderAttachment atmosphericsAttachment  = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox);
 		const SRenderAttachment depthAttachment         = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth);
@@ -88,7 +88,7 @@ namespace NVulkanEngine
 		m_AtmosphericsPipeline->CreatePipeline(context, m_AtmosphericsTable->GetDescriptorSetLayout());
 	}
 
-	void CSkyPass::UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CSkyNode::UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		CCamera* camera = managers->m_InputManager->GetCamera();
 		float cameraNear = camera->GetNear();
@@ -125,7 +125,7 @@ namespace NVulkanEngine
 		vkUnmapMemory(context->GetLogicalDevice(), m_AtmosphericsBufferMemory);
 	}
 
-	void CSkyPass::DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CSkyNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		ImGui::Begin("Atmospherics");
 		ImGui::SliderFloat("Atmosphere Radius", &g_AtmosphereScale, 0.0f, 1.0f);
@@ -162,7 +162,7 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CSkyPass::CleanupPass(CGraphicsContext* context)
+	void CSkyNode::Cleanup(CGraphicsContext* context)
 	{
 		VkDevice device = context->GetLogicalDevice();
 

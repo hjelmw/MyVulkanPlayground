@@ -2,21 +2,21 @@
 
 #include <vulkan/vulkan.h>
 
-#include <DrawPasses/DrawPass.hpp>
-#include <DrawPasses/Pipeline.hpp>
+#include <DrawNodes/DrawNode.hpp>
+#include <DrawNodes/Pipeline.hpp>
 #include <Managers/Model.hpp>
 
 namespace NVulkanEngine
 {
-	class CShadowPass : public CDrawPass
+	class CShadowNode : public CDrawNode
 	{
 	public:
-		CShadowPass() = default;
-		~CShadowPass() = default;
+		CShadowNode() = default;
+		~CShadowNode() = default;
 
-		virtual void InitPass(CGraphicsContext* context, SGraphicsManagers* managers)  override;
-		virtual void DrawPass(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
-		virtual void CleanupPass(CGraphicsContext* context) override;
+		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers)  override;
+		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
+		virtual void Cleanup(CGraphicsContext* context) override;
 
 		static glm::mat4 GetLightMatrix() { return s_LightMatrix; };
 

@@ -21,14 +21,14 @@
   <ItemGroup>
     <ClCompile Include="..\source\Main.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Camera.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\SkyPass.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\BindingTable.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\DrawPass.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\GeometryPass.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\LightingPass.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\Pipeline.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\ShadowPass.cpp" />
-    <ClCompile Include="..\source\VulkanEngine\DrawPasses\TerrainPass.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\BindingTable.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\DrawNode.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\GeometryNode.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\LightingNode.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\Pipeline.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\ShadowNode.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\SkyNode.cpp" />
+    <ClCompile Include="..\source\VulkanEngine\DrawNodes\TerrainNode.cpp" />
     <ClCompile Include="..\source\VulkanEngine\GraphicsContext.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Managers\AttachmentManager.cpp" />
     <ClCompile Include="..\source\VulkanEngine\Managers\InputManager.cpp" />
@@ -61,14 +61,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\source\VulkanEngine\Camera.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\SkyPass.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\BindingTable.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\DrawPass.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\GeometryPass.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\LightingPass.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\Pipeline.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\ShadowPass.hpp" />
-    <ClInclude Include="..\source\VulkanEngine\DrawPasses\TerrainPass.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\BindingTable.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\DrawNode.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\GeometryNode.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\LightingNode.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\Pipeline.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\ShadowNode.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\SkyNode.hpp" />
+    <ClInclude Include="..\source\VulkanEngine\DrawNodes\TerrainNode.hpp" />
     <ClInclude Include="..\source\VulkanEngine\GraphicsContext.hpp" />
     <ClInclude Include="..\source\VulkanEngine\Managers\AttachmentManager.hpp" />
     <ClInclude Include="..\source\VulkanEngine\Managers\InputManager.hpp" />
