@@ -85,7 +85,7 @@ namespace NVulkanEngine
 	{
 		CreateModels();
 		CreateAttachments();
-		InitDrawPasses();
+		InitDrawNodes();
 
 		m_IsRunning = true;
 	}
@@ -94,7 +94,7 @@ namespace NVulkanEngine
 	{
 		vkDeviceWaitIdle(m_VulkanDevice);
 
-		CleanupDrawPasses();
+		CleanupDrawNodes();
 		CleanupManagers();
 		CleanupImGui();
 		CleanupVulkan();
@@ -112,7 +112,7 @@ namespace NVulkanEngine
 
 		// These do depend on resolution
 		m_AttachmentManager->Cleanup(m_Context);
-		CleanupDrawPasses();
+		CleanupDrawNodes();
 
 		g_DisplayWidth  = m_NewRenderResolution.width;
 		g_DisplayHeight = m_NewRenderResolution.height;
@@ -120,7 +120,7 @@ namespace NVulkanEngine
 
 		// Order of init important here
 		CreateAttachments();
-		InitDrawPasses();
+		InitDrawNodes();
 
 		m_NeedsResize = false;
 	}
@@ -222,11 +222,11 @@ namespace NVulkanEngine
 	};
 
 
-	void CVulkanGraphicsEngine::CleanupDrawPasses()
+	void CVulkanGraphicsEngine::CleanupDrawNodes()
 	{
-		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
+		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
 		{
-			m_DrawPasses[i]->Cleanup(m_Context);
+			m_DrawNodes[i]->Cleanup(m_Context);
 		}
 	}
 
@@ -844,46 +844,45 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CVulkanGraphicsEngine::InitDrawPasses()
+	void CVulkanGraphicsEngine::InitDrawNodes()
 	{
-		m_DrawPasses[(uint32_t)EDrawPasses::Geometry]     = new CGeometryNode();
-		m_DrawPasses[(uint32_t)EDrawPasses::Shadows]      = new CShadowNode();
-		m_DrawPasses[(uint32_t)EDrawPasses::Terrain]      = new CTerrainNode();
-		m_DrawPasses[(uint32_t)EDrawPasses::Skybox]       = new CSkyNode();
-		m_DrawPasses[(uint32_t)EDrawPasses::Lighting]     = new CLightingNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Geometry] = new CGeometryNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Shadows]  = new CShadowNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Terrain]  = new CTerrainNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Skybox]   = new CSkyNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Lighting] = new CLightingNode();
 
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
 		managers.m_AttachmentManager = m_AttachmentManager;
 
-		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
+		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
 		{
-			CDrawNode* drawPass = m_DrawPasses[i];
-			if (drawPass)
-				drawPass->Init(m_Context, &managers);
+			CDrawNode* drawNode = m_DrawNodes[i];
+			if (drawNode)
+				drawNode->Init(m_Context, &managers);
 		}
 	}
 
-	void CVulkanGraphicsEngine::RecordDrawPasses(VkCommandBuffer commandBuffer)
+	void CVulkanGraphicsEngine::RecordDrawNodes(VkCommandBuffer commandBuffer)
 	{
 		SGraphicsContext context{};
-		context.m_VulkanDevice        = m_Context->GetLogicalDevice();
-		context.m_RenderResolution    = m_Context->GetRenderResolution();
-		context.m_DeltaTime           = m_Context->GetDeltaTime();
-		context.m_FrameIndex          = m_Context->GetFrameIndex();
-		context.m_SwapchainImageIndex = m_Context->GetSwapchainImageIndex();
-
+		context.m_VulkanInstance      = m_VulkanInstance;
+		context.m_VulkanDevice        = m_VulkanDevice;
+		context.m_RenderResolution    = VkExtent2D(g_DisplayWidth, g_DisplayHeight);
+		context.m_FrameIndex          = m_FrameIndex;
+	
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
 		managers.m_AttachmentManager = m_AttachmentManager;
 
-		for (uint32_t i = 0; i < m_DrawPasses.size(); i++)
+		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
 		{
-			CDrawNode* drawPass = m_DrawPasses[i];
-			if (drawPass)
-				drawPass->Draw(m_Context, &managers, commandBuffer);
+			CDrawNode* drawNode = m_DrawNodes[i];
+			if (drawNode)
+				drawNode->Draw(m_Context, &managers, commandBuffer);
 		}
 	}
 
@@ -1080,7 +1079,7 @@ namespace NVulkanEngine
 
 		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		BeginMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex], "Main Rendering", mainRenderMarkerColor);
-		RecordDrawPasses(m_CommandBuffers[m_FrameIndex]);
+		RecordDrawNodes(m_CommandBuffers[m_FrameIndex]);
 		EndMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex]);
 
 		const float ImGuiMarkerColor[4] = { 0.8f, 0.8f, 0.0f, 1.0f };

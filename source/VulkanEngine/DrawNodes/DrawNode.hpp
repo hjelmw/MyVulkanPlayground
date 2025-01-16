@@ -21,11 +21,10 @@ namespace NVulkanEngine
 
 	struct SGraphicsContext
 	{
+		VkInstance        m_VulkanInstance      = VK_NULL_HANDLE;
 		VkDevice          m_VulkanDevice        = VK_NULL_HANDLE;
 		VkExtent2D        m_RenderResolution    = { 0,0 };
-		float             m_DeltaTime           = 0.0f;
 		uint32_t          m_FrameIndex          = 0;
-		uint32_t          m_SwapchainImageIndex = 0;
 	};
 
 	struct SGraphicsManagers

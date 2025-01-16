@@ -64,11 +64,11 @@ namespace NVulkanEngine
 
         // Create scene
         void CreateModels();
-        void InitDrawPasses();
+        void InitDrawNodes();
         void InitManagers();
 
         void CleanupManagers();
-        void CleanupDrawPasses();
+        void CleanupDrawNodes();
         void CleanupSyncObjects();
         void CleanupVulkan();
         void CleanupWindow();
@@ -87,7 +87,7 @@ namespace NVulkanEngine
         void     ProcessGLFWMouseInput(GLFWwindow* window, int button, int action, int mods);
         void     ResizeGLFWFrame(GLFWwindow* window, int newWidth, int newHeight);
 
-        void     RecordDrawPasses(VkCommandBuffer commandBuffer);
+        void     RecordDrawNodes(VkCommandBuffer commandBuffer);
         void	 RenderImGuiDrawData(uint32_t imageIndex);
         void     DoImGuiViewport();
 
@@ -95,7 +95,7 @@ namespace NVulkanEngine
         bool m_NeedsResize = false;
 
         // Draw passes specifies render order
-        std::array<CDrawNode*, (uint32_t)EDrawPasses::Count> m_DrawPasses               = {};
+        std::array<CDrawNode*, (uint32_t)EDrawNodes::Count> m_DrawNodes               = {};
 
         CGraphicsContext* m_Context   = nullptr;
         CSwapchain*       m_Swapchain = nullptr;

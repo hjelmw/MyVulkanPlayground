@@ -134,8 +134,8 @@ namespace NVulkanEngine
 		renderInfo.pColorAttachments    = colorAttachmentInfos.data();
 		renderInfo.pDepthAttachment     = hasDepthAttachment ? &depthAttachmentInfo : nullptr;
 
-		const float drawPassMarkerColor[4] = { 0.4f, 0.6f, 0.3f, 1.0f };
-		BeginMarker(context->GetVulkanInstance(), commandBuffer, markerName, drawPassMarkerColor);
+		const float drawNodeMarkerColor[4] = { 0.4f, 0.6f, 0.3f, 1.0f };
+		BeginMarker(context->GetVulkanInstance(), commandBuffer, markerName, drawNodeMarkerColor);
 		vkCmdBeginRendering(commandBuffer, &renderInfo);
 	}
 
