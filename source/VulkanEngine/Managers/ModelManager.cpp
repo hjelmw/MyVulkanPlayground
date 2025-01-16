@@ -66,16 +66,8 @@ namespace NVulkanEngine
 		return (uint32_t)m_Models.size();
 	}
 
-	void CModelManager::AllocateModelDescriptorPool(CGraphicsContext* context)
-	{
-		/* Allocate 2 sets per frame in flight per model consisting of a single uniform buffer and combined image sampler descriptor */
-		AllocateDescriptorPool(context, m_DescriptorPool, (uint32_t) m_Models.size() * 2, 1, 1);
-	}
-
 	void CModelManager::Cleanup(CGraphicsContext* context)
 	{
-		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
-
 		for (int i = 0; i < m_Models.size(); i++)
 		{
 			m_Models[i]->Cleanup(context);

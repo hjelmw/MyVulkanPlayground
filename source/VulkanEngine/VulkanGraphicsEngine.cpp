@@ -825,8 +825,6 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CreateModels()
 	{
-		m_ModelManager->AllocateModelDescriptorPool(m_Context);
-
 		for (uint32_t i = 0; i < m_ModelManager->GetNumModels(); i++)
 		{
 			CModel* model = m_ModelManager->GetModel(i);

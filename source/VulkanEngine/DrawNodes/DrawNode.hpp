@@ -32,7 +32,6 @@ namespace NVulkanEngine
 		CInputManager*      m_InputManager      = nullptr;
 		CModelManager*      m_Modelmanager      = nullptr;
 		CAttachmentManager* m_AttachmentManager = nullptr;
-
 	};
 
 	class CDrawNode

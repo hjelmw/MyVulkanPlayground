@@ -8,7 +8,6 @@
 #include "Model.hpp"
 #include "GraphicsContext.hpp"
 
-
 namespace NVulkanEngine
 {
 	class CModelManager
@@ -28,14 +27,8 @@ namespace NVulkanEngine
 		CModel*  GetModel(uint32_t index);
 
 		const uint32_t GetNumModels();
-
-		void AllocateModelDescriptorPool(CGraphicsContext* context);
-		VkDescriptorPool GetModelDescriptorPool() { return m_DescriptorPool; };
-
 	private:
 		std::vector<CModel*> m_Models{};
 		int m_CurrentModelIndex = -1;
-
-		VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
 	};
 };
