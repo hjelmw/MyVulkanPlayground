@@ -3,18 +3,20 @@
 
 namespace NVulkanEngine
 {
-	  class CRenderLayer
+	  class CDrawLayer
 	  {
-			CRenderLayer() = default;
-			~CRenderLayer() = default;
+			CDrawLayer() = default;
+			~CDrawLayer() = default;
 
 public:
 			void Init();
-			void AddNode();
+			void AddDrawNode(CDrawNode* drawNode);
+			void AddDrawInstance(uint32_t drawNodeSlot);
 			void Draw();
 			void Cleanup();
 private:
-			std::vector<CDrawNode*> m_RenderNodes = {};			
+			std::vector<CDrawNode*> m_RenderNodes = {};
+			std__vectoruint32_t
 	  };
 
 };
