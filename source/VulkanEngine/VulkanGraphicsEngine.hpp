@@ -94,7 +94,7 @@ namespace NVulkanEngine
         bool m_IsRunning = false;
         bool m_NeedsResize = false;
 
-        // Draw passes specifies render order
+        // Draw nodes specifies render order
         std::array<CDrawNode*, (uint32_t)EDrawNodes::Count> m_DrawNodes               = {};
 
         CGraphicsContext* m_Context   = nullptr;
