@@ -1,7 +1,7 @@
 #include <vulkan/vulkan.h>
 
 #include "GraphicsContext.hpp"
-#include "stbi_image.h"
+#include <stb_image.h>
 #include <string>
 
 namespace NVulkanEngine

@@ -32,7 +32,7 @@ namespace NVulkanEngine
 		m_ShadowPipeline = new CPipeline();
 		m_ShadowPipeline->SetVertexShader("shaders/shadow.vert.spv");
 		m_ShadowPipeline->SetFragmentShader("shaders/shadow.frag.spv");
-		m_ShadowPipeline->SetCullingMode(VK_CULL_MODE_BACK_BIT);
+		m_ShadowPipeline->SetCullingMode(VK_CULL_MODE_NONE);
 		m_ShadowPipeline->SetVertexInput(sizeof(SModelVertex), VK_VERTEX_INPUT_RATE_VERTEX);
 		m_ShadowPipeline->AddVertexAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SModelVertex, m_Position));
 		m_ShadowPipeline->AddDepthAttachment(shadowMapFormat);
@@ -42,33 +42,30 @@ namespace NVulkanEngine
 
 	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
+		static float left   = -500.0f;
+		static float right  =  2000.0f;
+		static float bottom = -1000.0f;
+		static float top    =  2000.0f;
+		static float near   =  500.0f;
+		static float far    =  3000.0f;
+
+		ImGui::Begin("Shadow Pass");
+		ImGui::SliderFloat("Left",   &left,   -4000.0f, 4000.0f);
+		ImGui::SliderFloat("Right",  &right,  -4000.0f, 4000.0f);
+		ImGui::SliderFloat("Bottom", &bottom, -4000.0f, 4000.0f);
+		ImGui::SliderFloat("Top",    &top,    -4000.0f, 4000.0f);
+		ImGui::SliderFloat("Near",   &near,   -4000.0f, 4000.0f);
+		ImGui::SliderFloat("Far",    &far,    -4000.0f, 4000.0f);
+		ImGui::End();
 
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 
-			glm::vec3 lightPosition  = glm::vec3(0.0f, 1000.0f, 30.0f);
-			glm::vec3 lightDirection = normalize(-lightPosition);
+			glm::vec3 lightPosition  = glm::vec3(0.0f, 2000.0f, 0.0f);
+			glm::vec3 lightDirection = normalize(glm::vec3(0.0f, -1.0f, 0.0f));
 
-			static float left   = 0.0f;
-			static float right  = 0.0f;
-			static float bottom = 0.0f;
-			static float top    = 0.0f;
-			static float near   = 0.0f;
-			static float far    = 0.0f;
-
-			//ImGui::Begin("Shadow Pass");
-			//ImGui::SliderFloat("Left",   &left,   -1000.0f, 1000.0f);
-			//ImGui::SliderFloat("Right",  &right,  -1000.0f, 1000.0f);
-			//ImGui::SliderFloat("Bottom", &bottom, -1000.0f, 1000.0f);
-			//ImGui::SliderFloat("Top",    &top,    -1000.0f, 1000.0f);
-			//ImGui::SliderFloat("Near",   &near,   -1000.0f, 1000.0f);
-			//ImGui::SliderFloat("Far",    &far,    -1000.0f, 1000.0f);
-			//ImGui::End();
-
-			glm::mat4 perspectiveMatrix = glm::ortho(left, right, bottom, top, near, far);
-
-			//orthoMatrix[1][1] *= -1; // Some vulkan requirement
+			glm::mat4 orthoMatrix = glm::ortho(left, right, bottom, top, near, far);
 
 			glm::mat4 lookAtMatrix = glm::lookAt(
 				lightPosition,
@@ -76,13 +73,13 @@ namespace NVulkanEngine
 				glm::vec3(0.0f, 1.0f, 0.0f)
 			);	
 
-			s_LightMatrix = perspectiveMatrix * lookAtMatrix;
+			s_LightMatrix = orthoMatrix * lookAtMatrix;
 
 			glm::mat4 modelMatrix = model->GetTransform();
 			
 			SShadowUniformBuffer uboShadow{};
 			uboShadow.m_ViewMatrix       = lookAtMatrix;
-			uboShadow.m_ProjectionMatrix = perspectiveMatrix;
+			uboShadow.m_ProjectionMatrix = orthoMatrix;
 			uboShadow.m_ModelMatrix      = modelMatrix;
 
 			void* data;
@@ -95,10 +92,10 @@ namespace NVulkanEngine
 	void CShadowNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
-		SRenderAttachment shadowmapAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		SRenderAttachment shadowmapAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-		if (true)
-			return;
+		VkExtent2D prevRenderResolution = context->GetRenderResolution();
+		context->SetRenderResolution(VkExtent2D(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION));
 
 		BeginRendering("Shadow Map", context, commandBuffer, {shadowmapAttachment});
 		UpdateShadowBuffers(context, managers);
@@ -119,6 +116,8 @@ namespace NVulkanEngine
 		}
 
 		EndRendering(context, commandBuffer);
+
+		context->SetRenderResolution(prevRenderResolution);
 	}
 
 	void CShadowNode::Cleanup(CGraphicsContext* context)

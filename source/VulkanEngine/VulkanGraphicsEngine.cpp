@@ -918,7 +918,7 @@ namespace NVulkanEngine
 				ImGui::Text("Name: %s", attachment.m_DebugName);
 				static float brightness = 1.0f;
 				ImGui::SliderFloat("Brightness", &brightness, 0.0f, 1.0f);
-				ImGui::Image(attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.0f), ImVec2(0.0f , 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f * brightness, 1.0f * brightness, 1.0f * brightness, 1.0f) );
+				ImGui::Image((ImTextureID)attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.0f), ImVec2(0.0f , 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f * brightness, 1.0f * brightness, 1.0f * brightness, 1.0f) );
 				if (ImGui::Button("Remove Selection"))
 				{
 					selected[selectedId] = false;
@@ -1074,8 +1074,7 @@ namespace NVulkanEngine
 
 		// Light green
 		const float mainRenderMarkerColor[4] = { 0.5f, 0.75f, 0.35f, 1.0f };
-
-		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		BeginMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex], "Main Rendering", mainRenderMarkerColor);
 		RecordDrawNodes(m_CommandBuffers[m_FrameIndex]);
 		EndMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex]);
@@ -1083,6 +1082,9 @@ namespace NVulkanEngine
 		const float ImGuiMarkerColor[4] = { 0.8f, 0.8f, 0.0f, 1.0f };
 
 		BeginMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex], "ImGui Viewport", ImGuiMarkerColor);
+		ImGuiIO& io = ImGui::GetIO();
+		io.FontGlobalScale = 2.0f;
+
 		DoImGuiViewport();
 		RenderImGuiDrawData(imageIndex);
 		EndMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex]);

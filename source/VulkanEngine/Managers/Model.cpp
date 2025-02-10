@@ -416,6 +416,7 @@ namespace NVulkanEngine
 	{
 		m_ShadowTable = new CBindingTable();
 		m_ShadowTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, m_ShadowBuffer.m_Buffer, m_ShadowBufferSize);
+		m_ShadowTable->AddSampledImageBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, VK_NULL_HANDLE, VK_FORMAT_UNDEFINED, context->GetLinearRepeatSampler());
 		m_ShadowTable->CreateBindings(context);
 	}
 

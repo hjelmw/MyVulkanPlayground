@@ -1,4 +1,4 @@
-#include "VulkanGraphicsEngine.hpp"
+#include "VulkanEngine/VulkanGraphicsEngine.hpp"
 
 void SetupScene(NVulkanEngine::CVulkanGraphicsEngine& graphicsEngine)
 {
