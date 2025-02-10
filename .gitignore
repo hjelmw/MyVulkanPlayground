@@ -37,3 +37,20 @@ x64/
 
 # Compiled shaders
 shaders/*.spv
+
+# Vendor folder
+vendor/
+
+# Bin folder
+bin/
+
+build/
+
+obj/
+
+scripts/__pycache__
+
+.sln
+.vcxproj
+.vcxproj.filters
+.vcxproj.users
