@@ -113,7 +113,7 @@ void main()
 			}
 
 			fragColor = diffuse + specular;
-			//fragColor *= shadow;
+			fragColor *= shadow;
 		}
 		
 
