@@ -1,4 +1,3 @@
-![alt text](engine.png)
 # MyVulkanPlayground
 This repository contains the code and assets for my hobby graphics engine where I experiment with implementing modern rendering techniques and systems. It's written in C++ and uses Vulkan for the graphics API and GLSL for shaders.
 
@@ -9,6 +8,8 @@ There are helpers for handling keyboard/mouse inputs, resource state tracking, p
 
 You can have a look under [source/VulkanEngine/DrawNodes/](https://github.com/hjelmw/MyVulkanPlayground/tree/main/source/VulkanEngine/DrawNodes
 ) to see what rendering techniques have currently been implemented.
+
+![alt text](engine.png)
 
 # Setup
 1. Install [VulkanSDK](https://vulkan.lunarg.com/) from Lunarg  (Version 1.4 or above should work)
