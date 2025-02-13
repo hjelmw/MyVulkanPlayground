@@ -1,4 +1,5 @@
 import DownloadUtils
+import os
 
 vulkanSDKVersion     = "1.4.304.0"
 premakeVersion       = "5.0.0-beta4"
@@ -18,9 +19,9 @@ stbiGithubURL          = "https://github.com/nothings/stb/archive/refs/heads/mas
 vulkanIsInstalled = False
 
 def CheckAll():
-    vendorDirectoryExists = os.path.exists("./vendor/)
+    vendorDirectoryExists = os.path.exists("./vendor/")
     if (vendorDirectoryExists is False):
-        os.mkdir("./vendor)
+        os.mkdir("./vendor")
     
     itemsChecked = 0
     totalItemsToCheck = 7
