@@ -7,7 +7,7 @@ void SetupScene(NVulkanEngine::CVulkanGraphicsEngine& graphicsEngine)
 	graphicsEngine.SetModelPosition(0.0f, 60.0f, -200.0f);
 	graphicsEngine.SetModelRotation(45.0f, 0.0f, 45.0f);
 	graphicsEngine.SetModelScaling(40.0f, 40.0f, 40.0f);
-	graphicsEngine.AddModel("models/box.obj");
+	graphicsEngine.AddModel("models/Box.obj");
 	graphicsEngine.SetModelTexture("textures/statue.jpg");
 	graphicsEngine.SetModelPosition(150.0f, 120.0f, 500.0f);
 	graphicsEngine.SetModelRotation(45.0f, 0.0f, 45.0f);

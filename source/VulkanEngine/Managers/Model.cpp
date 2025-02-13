@@ -14,7 +14,7 @@ namespace NVulkanEngine
 	void CModel::SetModelFilepath(const std::string& modelFilepath, const std::string materialSearchPath)
 	{
 		m_ModelFilepath = modelFilepath;
-		m_MaterialFilepath = materialSearchPath;
+		m_MaterialFilepath = materialSearchPath; // Unused currently. See CreateModelMeshes()
 	}
 
 	void CModel::SetModelTexturePath(const std::string& modelTexturePath)
@@ -30,7 +30,7 @@ namespace NVulkanEngine
 
 	void CModel::CreateModelMeshes(CGraphicsContext* context)
 	{
-		LoadModel(m_ModelFilepath, m_MaterialFilepath);
+		LoadModel(m_ModelFilepath, ""); // Place .obj next to .mtl
 		CreateVertexBuffer(context);
 		CreateIndexBuffer(context);
 

@@ -4,12 +4,14 @@ workspace "MyVulkanPlayground"
     startproject "VulkanEngine"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
+debugdir = "./"
 
 project "VulkanEngine"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++20"
     targetdir "build/%{cfg.buildcfg}"
+    objdir "build/%{cfg.buildcfg}/obj"
 
     files { "./source/**.cpp", "./source/**.hpp" }
     files { "./shaders/*.vert", "shaders/*.frag" }
@@ -61,10 +63,10 @@ project "VulkanEngine"
 
     filter "files:shaders/**.vert"
         buildmessage "Compiling vertex shader"
-        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -V -o $(SolutionDir)shaders\\%(Identity).spv %(Identity)"
-        buildoutputs "$(SolutionDir)shaders\\%(Identity).spv"
+        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
+        buildoutputs "$(SolutionDir)\\%(Identity).spv"
 
     filter "files:shaders/**.frag"
         buildmessage "Compiling fragment shader"
-        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -V -o $(SolutionDir)shaders\\%(Identity).spv %(Identity)"
-        buildoutputs "$(SolutionDir)shaders\\%(Identity).spv"
+        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
+        buildoutputs "$(SolutionDir)\\%(Identity).spv"

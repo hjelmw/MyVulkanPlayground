@@ -29,10 +29,13 @@ def DownloadGithubDependency(packageURL, packageName, packageVersion):
 def CheckVulkanInstalled(printNum, printTotal):
     vulkanSDKEnv = os.environ.get("VULKAN_SDK")
     if vulkanSDKEnv is None:
-        PrintColor(Colors.WARNING, "({}, {})Did not find any active vulkan install. Please visit https://vulkan.lunarg.com/ and install the latest Vulkan SDK. The installer will still work but you will likely not be able to compile the code if this is not fixed. ...".format(printNum, printTotal))
+        PrintColor(Colors.WARNING, "({}, {})Did not find any active vulkan install. " 
+                   + "Please visit https://vulkan.lunarg.com/ and install the latest Vulkan SDK. "
+                   + "The installer will still work but you will likely not be able to compile the code if this is not fixed. ...".format(printNum, printTotal))
         return False
     else:
         PrintColor(Colors.OKBLUE, "({}, {}) Found active Vulkan install, skipped".format(printNum, printTotal))
+        return True
 
 
 def CheckAndDownloadGithubDependency(dependencyName, dependencyVersion, dependencyURL, printNum, printTotal):
