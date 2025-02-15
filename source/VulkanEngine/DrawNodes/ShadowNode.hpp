@@ -6,6 +6,10 @@
 #include <DrawNodes/Pipeline.hpp>
 #include <Managers/Model.hpp>
 
+/* 
+	Draw geometry into shadow map depth buffer
+*/
+
 namespace NVulkanEngine
 {
 	class CShadowNode : public CDrawNode

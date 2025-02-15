@@ -8,6 +8,10 @@
 #include "Model.hpp"
 #include "GraphicsContext.hpp"
 
+/*
+	Stores all the models so render nodes can easily access them (geometry & shadow currently)
+*/
+
 namespace NVulkanEngine
 {
 	class CModelManager

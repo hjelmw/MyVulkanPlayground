@@ -5,6 +5,10 @@
 
 #include <vector>
 
+/*
+	Simplifies shader resource binding. Used by the draw nodes
+*/
+
 namespace NVulkanEngine
 {
 	class CBindingTable

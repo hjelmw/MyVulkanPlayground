@@ -20,6 +20,10 @@
 class CModelManager;
 class CInputManager;
 
+/*
+    The main class whatchamacallit. It has most of the rendering code right now
+*/
+
 namespace NVulkanEngine
 {
     class CVulkanGraphicsEngine

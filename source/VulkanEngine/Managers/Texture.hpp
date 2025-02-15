@@ -4,6 +4,11 @@
 #include <stb_image.h>
 #include <string>
 
+/*
+	An image loaded from disk that a shader can read from.
+	render targets or textures created by the graphics engine do not use this class currently
+*/
+
 namespace NVulkanEngine
 {
 	class CTexture

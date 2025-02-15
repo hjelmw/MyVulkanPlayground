@@ -7,6 +7,11 @@
 #include <Managers/ModelManager.hpp>
 #include <Managers/AttachmentManager.hpp>
 
+/*
+	Draw nodes. Used for drawing everything in this engine.
+	See all the other *Node.hpp files
+*/
+
 namespace NVulkanEngine
 {
 	enum class EDrawNodes : uint32_t

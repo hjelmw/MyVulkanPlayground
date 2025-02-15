@@ -4,6 +4,10 @@
 #include <DrawNodes/Pipeline.hpp>
 #include <DrawNodes/BindingTable.hpp>
 
+/*
+	Draw heightmap terrain. Implementation TBD so currently does nothing hihi
+*/
+
 namespace NVulkanEngine
 {
 	class CTerrainNode : public CDrawNode

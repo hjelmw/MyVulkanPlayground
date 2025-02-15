@@ -4,6 +4,10 @@
 #include <DrawNodes/Pipeline.hpp>
 #include <DrawNodes/BindingTable.hpp>
 
+/* 
+	Draw scene geometry into G-Buffers
+*/
+
 namespace NVulkanEngine
 {
 	class CGeometryNode : public CDrawNode

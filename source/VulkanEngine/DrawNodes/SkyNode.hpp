@@ -4,6 +4,10 @@
 #include <DrawNodes/Pipeline.hpp>
 #include <DrawNodes/BindingTable.hpp>
 
+/* 
+	Draw stuff on the sky. Currently an atmospheric scattering raymarcher
+*/
+
 namespace NVulkanEngine
 {
 	class CSkyNode : public CDrawNode

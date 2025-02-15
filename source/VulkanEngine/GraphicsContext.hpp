@@ -3,6 +3,10 @@
 #include <vulkan/vulkan.h>
 #include "GLFW/glfw3.h"
 
+/*
+	Stores a bunch of useful members for the draw nodes. Might need to prune this a bit later
+*/
+
 namespace NVulkanEngine
 {
 	static uint32_t g_DisplayWidth      = 1920;

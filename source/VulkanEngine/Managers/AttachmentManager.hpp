@@ -6,6 +6,10 @@
 #include <GraphicsContext.hpp>
 #include <VulkanGraphicsEngineUtils.hpp>
 
+/*
+	Attachment manager holds all the rendertargets and keeps track of their states for you
+*/
+
 enum class EAttachmentIndices : uint32_t
 {
 	Positions          = 0,

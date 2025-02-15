@@ -10,6 +10,10 @@
 
 #include <vector>
 
+/* 
+	A model is a collection of meshes with vertices to be rendered. One material per mesh
+*/
+
 struct SModelVertex
 {
 	glm::vec3 m_Position = glm::vec3(0.0f, 0.0f, 0.0f);

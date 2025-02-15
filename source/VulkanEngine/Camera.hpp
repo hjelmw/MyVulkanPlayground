@@ -6,6 +6,10 @@
 
 #include <GraphicsContext.hpp>
 
+/* 
+	Container for camera matrices
+*/
+
 namespace NVulkanEngine
 {
 	class CCamera

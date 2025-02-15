@@ -15,6 +15,10 @@
 
 #include "GraphicsContext.hpp"
 
+/*
+	Just a bunch of nice to have helper functions for rendering 
+*/
+
 namespace NVulkanEngine
 {
 	static const std::vector<const char*> g_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };

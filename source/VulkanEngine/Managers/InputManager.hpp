@@ -5,6 +5,10 @@
 #include "Camera.hpp"
 #include "GraphicsContext.hpp"
 
+/*
+	Input manager keeps track of the camera and updates based on keyboard/mouse input
+*/
+
 namespace NVulkanEngine
 {
 	class CInputManager

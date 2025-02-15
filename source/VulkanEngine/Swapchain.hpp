@@ -2,6 +2,10 @@
 
 #include <VulkanGraphicsEngineUtils.hpp>
 
+/*
+	The swapchain. I.e the queue of images that we draw into for presenting
+*/
+
 namespace NVulkanEngine
 {
 	class CSwapchain

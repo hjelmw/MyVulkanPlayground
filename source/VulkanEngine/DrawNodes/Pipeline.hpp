@@ -7,6 +7,10 @@
 #include <string>
 #include <vector>
 
+/*
+	Just a wrapper for simplifying creation of the VkPipeline
+*/
+
 namespace NVulkanEngine
 {
 	class CPipeline
