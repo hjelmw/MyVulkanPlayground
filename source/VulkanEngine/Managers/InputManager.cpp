@@ -172,8 +172,8 @@ namespace NVulkanEngine
 
 		m_Camera.SetPosition(cameraPosition);
 		m_Camera.SetDirection(cameraFront);
-		m_Camera.SetNear(0.1f);
-		m_Camera.SetFar(10000.0f);
+		m_Camera.SetNear(10.0f);
+		m_Camera.SetFar(3000.0f);
 		m_Camera.UpdateCamera(context);
 	}
 

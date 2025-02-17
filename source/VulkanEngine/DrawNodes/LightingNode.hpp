@@ -4,6 +4,10 @@
 #include <DrawNodes/Pipeline.hpp>
 #include <DrawNodes/BindingTable.hpp>
 
+/*
+	Does deferred lighting
+*/
+
 namespace NVulkanEngine
 {
 	class CLightingNode : public CDrawNode
