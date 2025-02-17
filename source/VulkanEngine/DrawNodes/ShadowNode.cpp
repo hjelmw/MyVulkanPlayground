@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 
-#define SHADOWMAP_RESOLUTION 1024
+#define SHADOWMAP_RESOLUTION 2048
 
 namespace NVulkanEngine
 {
@@ -42,44 +42,84 @@ namespace NVulkanEngine
 
 	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		static float left   = -500.0f;
-		static float right  =  2000.0f;
-		static float bottom = -1000.0f;
-		static float top    =  2000.0f;
-		static float near   =  500.0f;
-		static float far    =  3000.0f;
+		glm::vec3 cameraPosition = managers->m_InputManager->GetCamera()->GetPosition();
+		glm::vec3 lightPosition = glm::vec3(0.0f, 1500.0f, 0.0f);
+		glm::vec3 lightDirection = normalize(glm::vec3(0.0f, -1.0f, 0.0f));
+
+		glm::mat4 lightLookAt = glm::lookAt(
+			lightPosition,
+			lightDirection,
+			glm::vec3(0.0f, 0.0f, 1.0f)
+		);
+
+		glm::mat4 cameraLookAt = managers->m_InputManager->GetCamera()->GetLookAtMatrix();
+		glm::mat4 cameraProjection = managers->m_InputManager->GetCamera()->GetProjectionMatrix();
+		glm::mat4 invCameraViewProjection = glm::inverse(cameraProjection * cameraLookAt);
+
+		// The 8 corners of the camera view frustum in NDC space
+		glm::vec4 corners[8] =
+		{
+			glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f), glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),
+			glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),  glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),
+			glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),  glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),
+			glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),   glm::vec4(1.0f, 1.0f, -1.0f, 1.0f)
+		};
+
+		for (uint32_t i = 0; i < 8; i++)
+		{
+			corners[i] = lightLookAt * invCameraViewProjection * corners[i];
+			corners[i] /= corners[i].w; // Perspective divide
+		}
+
+		float minX = corners[0].x;
+		float minY = corners[0].y;
+		float minZ = corners[0].z;
+		float maxX = corners[0].x;
+		float maxY = corners[0].y;
+		float maxZ = corners[0].z;
+
+		// Find the min and max values
+		for (uint32_t i = 0; i < 8; i++)
+		{
+			if (corners[i].x < minX)
+				minX = corners[i].x;
+			if (corners[i].x > maxX)
+				maxX = corners[i].x;
+			if (corners[i].y < minY)
+				minY = corners[i].y;
+			if (corners[i].y > maxY)
+				maxY = corners[i].y;
+			if (corners[i].z < minZ)
+				minZ = corners[i].z;
+			if (corners[i].z > maxZ)
+				maxZ = corners[i].z;
+		}
+
+		//glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 10.0f, 2000.0f);
+		glm::mat4 lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, -maxZ, -minZ);
+		lightOrthoMatrix[1][1] *= -1; // Vulkan requirement
 
 		ImGui::Begin("Shadow Pass");
-		ImGui::SliderFloat("Left",   &left,   -4000.0f, 4000.0f);
-		ImGui::SliderFloat("Right",  &right,  -4000.0f, 4000.0f);
-		ImGui::SliderFloat("Bottom", &bottom, -4000.0f, 4000.0f);
-		ImGui::SliderFloat("Top",    &top,    -4000.0f, 4000.0f);
-		ImGui::SliderFloat("Near",   &near,   -4000.0f, 4000.0f);
-		ImGui::SliderFloat("Far",    &far,    -4000.0f, 4000.0f);
+		ImGui::Text("Left: %f", minX);
+		ImGui::Text("Right: %f", maxX);
+		ImGui::Text("Bottom: %f", minY);
+		ImGui::Text("Top: %f", maxY);
+		ImGui::Text("Near: %f", -maxZ);
+		ImGui::Text("Far: %f", -minZ);
 		ImGui::End();
+
+		s_LightMatrix = lightOrthoMatrix * lightLookAt;
+
 
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 
-			glm::vec3 lightPosition  = glm::vec3(0.0f, 2000.0f, 0.0f);
-			glm::vec3 lightDirection = normalize(glm::vec3(0.0f, -1.0f, 0.0f));
-
-			glm::mat4 orthoMatrix = glm::ortho(left, right, bottom, top, near, far);
-
-			glm::mat4 lookAtMatrix = glm::lookAt(
-				lightPosition,
-				lightDirection,
-				glm::vec3(0.0f, 1.0f, 0.0f)
-			);	
-
-			s_LightMatrix = orthoMatrix * lookAtMatrix;
-
 			glm::mat4 modelMatrix = model->GetTransform();
 			
 			SShadowUniformBuffer uboShadow{};
-			uboShadow.m_ViewMatrix       = lookAtMatrix;
-			uboShadow.m_ProjectionMatrix = orthoMatrix;
+			uboShadow.m_ViewMatrix       = lightLookAt;
+			uboShadow.m_ProjectionMatrix = lightOrthoMatrix;
 			uboShadow.m_ModelMatrix      = modelMatrix;
 
 			void* data;
@@ -87,6 +127,8 @@ namespace NVulkanEngine
 			memcpy(data, &uboShadow, sizeof(uboShadow));
 			vkUnmapMemory(context->GetLogicalDevice(), model->GetShadowMemoryBuffer().m_Memory);
 		}
+
+
 	}
 
 	void CShadowNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)

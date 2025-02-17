@@ -723,8 +723,8 @@ namespace NVulkanEngine
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			(uint32_t)1024,
-			(uint32_t)1024);
+			(uint32_t)2048,
+			(uint32_t)2048);
 
 		m_AttachmentManager->AddAttachment(
 			m_Context,
@@ -916,15 +916,15 @@ namespace NVulkanEngine
 			{
 				SRenderAttachment attachment = m_AttachmentManager->GetAttachment((EAttachmentIndices)selectedId);
 				ImGui::Text("Name: %s", attachment.m_DebugName);
-				static float brightness = 1.0f;
-				ImGui::SliderFloat("Brightness", &brightness, 0.0f, 1.0f);
-				ImGui::Image((ImTextureID)attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2.0f), ImVec2(0.0f , 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f * brightness, 1.0f * brightness, 1.0f * brightness, 1.0f) );
+				static float brightness[3] = { 1.0f, 1.0f, 1.0f };
+				ImGui::SliderFloat3("Brightness", &brightness[0], 0.0f, 1.0f);
 				if (ImGui::Button("Remove Selection"))
 				{
 					selected[selectedId] = false;
 					selectedId = -1;
 				}
 
+				ImGui::Image((ImTextureID)attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x - 40.0f, ImGui::GetContentRegionAvail().y - 40.0f), ImVec2(0.0f , 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f * brightness[0], 1.0f * brightness[1], 1.0f * brightness[2], 1.0f));
 			}
 		}
 

@@ -137,6 +137,23 @@ namespace NVulkanEngine
 		const float drawNodeMarkerColor[4] = { 0.4f, 0.6f, 0.3f, 1.0f };
 		BeginMarker(context->GetVulkanInstance(), commandBuffer, markerName, drawNodeMarkerColor);
 		vkCmdBeginRendering(commandBuffer, &renderInfo);
+
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = (float)context->GetRenderResolution().width;
+		viewport.height = (float)context->GetRenderResolution().height;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = context->GetRenderResolution();
+
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
 	void CDrawNode::EndRendering(CGraphicsContext* context, VkCommandBuffer commandBuffer)
