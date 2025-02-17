@@ -12,7 +12,12 @@ project "VulkanEngine"
     cppdialect "C++20"
     targetdir "build/%{cfg.buildcfg}"
     objdir "build/%{cfg.buildcfg}/obj"
-
+    
+    postbuildcommands 
+    {
+         "{COPYFILE} %[build/%{cfg.buildcfg}/VulkanEngine.exe] %[./VulkanEngine_%{cfg.buildcfg}.exe]"
+    }
+    
     files { "./source/**.cpp", "./source/**.hpp" }
     files { "./shaders/*.vert", "shaders/*.frag" }
 
@@ -63,10 +68,11 @@ project "VulkanEngine"
 
     filter "files:shaders/**.vert"
         buildmessage "Compiling vertex shader"
-        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
+        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
         buildoutputs "$(SolutionDir)\\%(Identity).spv"
 
     filter "files:shaders/**.frag"
         buildmessage "Compiling fragment shader"
-        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
+        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
         buildoutputs "$(SolutionDir)\\%(Identity).spv"
+
