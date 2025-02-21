@@ -122,7 +122,7 @@ namespace NVulkanEngine
 				nextMaterialId           = -1;
 				nextMaterialStartingFace = -1;
 				
-				SMesh mesh{};
+				SMaterialMesh mesh{};
 				mesh.m_MaterialId = currentMaterialId;
 				mesh.m_StartIndex = verticesSoFar;
 
@@ -384,7 +384,7 @@ namespace NVulkanEngine
 		return (uint32_t)m_Meshes.size();
 	}
 
-	SMesh CModel::GetMesh(uint32_t index)
+	SMaterialMesh CModel::GetMesh(uint32_t index)
 	{
 		return m_Meshes[index];
 	}

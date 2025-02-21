@@ -43,8 +43,10 @@ namespace NVulkanEngine
 	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
 		glm::vec3 cameraPosition = managers->m_InputManager->GetCamera()->GetPosition();
-		glm::vec3 lightPosition = glm::vec3(0.0f, 1500.0f, 0.0f);
-		glm::vec3 lightDirection = normalize(glm::vec3(0.0f, -1.0f, 0.0f));
+
+		//SLightSource sunLight    = managers->m_LightManager->GetSunlight();
+		glm::vec3 lightPosition  = glm::vec3(0.0f, 1500.0f, 0.0f);//sunLight.m_Position;
+		glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);//sunLight.m_Direction;
 
 		glm::mat4 lightLookAt = glm::lookAt(
 			lightPosition,
@@ -67,7 +69,7 @@ namespace NVulkanEngine
 
 		for (uint32_t i = 0; i < 8; i++)
 		{
-			corners[i] = lightLookAt * invCameraViewProjection * corners[i];
+			corners[i] = invCameraViewProjection * corners[i];
 			corners[i] /= corners[i].w; // Perspective divide
 		}
 
@@ -81,6 +83,8 @@ namespace NVulkanEngine
 		// Find the min and max values
 		for (uint32_t i = 0; i < 8; i++)
 		{
+			corners[i] = lightLookAt * corners[i];
+
 			if (corners[i].x < minX)
 				minX = corners[i].x;
 			if (corners[i].x > maxX)
@@ -95,8 +99,8 @@ namespace NVulkanEngine
 				maxZ = corners[i].z;
 		}
 
-		//glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 10.0f, 2000.0f);
-		glm::mat4 lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, -maxZ, -minZ);
+		glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 500.0f, 2000.0f);
+		//glm::mat4 lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, -maxZ, -minZ);
 		lightOrthoMatrix[1][1] *= -1; // Vulkan requirement
 
 		ImGui::Begin("Shadow Pass");
@@ -114,14 +118,12 @@ namespace NVulkanEngine
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
-
-			glm::mat4 modelMatrix = model->GetTransform();
 			
 			SShadowUniformBuffer uboShadow{};
 			uboShadow.m_ViewMatrix       = lightLookAt;
 			uboShadow.m_ProjectionMatrix = lightOrthoMatrix;
-			uboShadow.m_ModelMatrix      = modelMatrix;
-
+			uboShadow.m_ModelMatrix      = model->GetTransform();
+			
 			void* data;
 			vkMapMemory(context->GetLogicalDevice(), model->GetShadowMemoryBuffer().m_Memory, 0, sizeof(SShadowUniformBuffer), 0, &data);
 			memcpy(data, &uboShadow, sizeof(uboShadow));
@@ -152,7 +154,7 @@ namespace NVulkanEngine
 			model->BindShadowTable(context, commandBuffer, m_ShadowPipeline->GetPipelineLayout());
 			for (uint32_t j = 0; j < model->GetNumMeshes(); j++)
 			{
-				SMesh modelMesh = model->GetMesh(j);
+				SMaterialMesh modelMesh = model->GetMesh(j);
 				vkCmdDrawIndexed(commandBuffer, modelMesh.m_NumVertices, 1, modelMesh.m_StartIndex, 0, 0);
 			}
 		}

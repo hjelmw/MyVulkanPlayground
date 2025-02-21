@@ -1,8 +1,8 @@
 #pragma once
 
 #include <DrawNodes/DrawNode.hpp>
-#include <DrawNodes/Pipeline.hpp>
-#include <DrawNodes/BindingTable.hpp>
+#include <DrawNodes/Utils/Pipeline.hpp>
+#include <DrawNodes/Utils/BindingTable.hpp>
 
 /* 
 	Draw stuff on the sky. Currently an atmospheric scattering raymarcher

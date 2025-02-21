@@ -11,8 +11,9 @@
 #include <GLFW/glfw3.h>
 
 #include <VulkanGraphicsEngineUtils.hpp>
+#include <Managers/LightManager.hpp> // Need ELightType
 #include <DrawNodes/DrawNode.hpp>
-#include <DrawNodes/Pipeline.hpp>
+#include <DrawNodes/Utils/Pipeline.hpp>
 #include <Swapchain.hpp>
 
 #include "GraphicsContext.hpp"
@@ -34,11 +35,19 @@ namespace NVulkanEngine
 
         void Initialize();
 
-        void AddModel(const std::string& modelpath);
+        void AddModelFilepath(const std::string& modelpath);
         void SetModelTexture(const std::string& texturepath);
         void SetModelPosition(float x, float y, float z);
         void SetModelRotation(float x, float y, float z);
         void SetModelScaling(float x, float y, float z);
+        void PushModel();
+
+        void AddLightSource(ELightType lightType);
+        void SetLightPosition(float x, float y, float z);
+        void SetLightDirection(float x, float y, float z);
+        void SetLightIntensity(float intensity);
+        void PushLight();
+
         void CreateScene();
 
         void DrawFrame();
@@ -107,6 +116,7 @@ namespace NVulkanEngine
         // Managers
         CInputManager*                      m_InputManager             = nullptr;
         CModelManager*                      m_ModelManager             = nullptr;
+        CLightManager*                      m_LightManager             = nullptr;
         CAttachmentManager*                 m_AttachmentManager        = nullptr;
 
         /* Vulkan Primitives */

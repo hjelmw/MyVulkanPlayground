@@ -1,8 +1,8 @@
 #pragma once
 
 #include <DrawNodes/DrawNode.hpp>
-#include <DrawNodes/Pipeline.hpp>
-#include <DrawNodes/BindingTable.hpp>
+#include <DrawNodes/Utils/Pipeline.hpp>
+#include <DrawNodes/Utils/BindingTable.hpp>
 
 /*
 	Draw heightmap terrain. Implementation TBD so currently does nothing hihi

@@ -6,6 +6,7 @@
 #include <DrawNodes/TerrainNode.hpp>
 #include <DrawNodes/SkyNode.hpp>
 #include <DrawNodes/ShadowNode.hpp>
+#include <DrawNodes/DebugNode.hpp>
 
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>
@@ -190,6 +191,7 @@ namespace NVulkanEngine
 	{
 		m_InputManager = new CInputManager();
 		m_ModelManager = new CModelManager();
+		m_LightManager = new CLightManager();
 		m_AttachmentManager = new CAttachmentManager(m_VulkanInstance);
 
 		// For mouse and keyboard callbacks
@@ -542,6 +544,7 @@ namespace NVulkanEngine
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		deviceFeatures.robustBufferAccess = VK_TRUE;
+		deviceFeatures.wideLines = VK_TRUE;
 		//deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
@@ -849,6 +852,7 @@ namespace NVulkanEngine
 		m_DrawNodes[(uint32_t)EDrawNodes::Terrain]  = new CTerrainNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Skybox]   = new CSkyNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Lighting] = new CLightingNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Debug]    = new CDebugNode();
 
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
@@ -981,36 +985,70 @@ namespace NVulkanEngine
 		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainAttachment, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
 	}
 
-	void CVulkanGraphicsEngine::AddModel(const std::string& modelpath)
+	void CVulkanGraphicsEngine::AddModelFilepath(const std::string& modelpath)
 	{
-		m_ModelManager->AddModel(modelpath);
+		m_ModelManager->AddModelFilepath(modelpath);
 	}
 
 	void CVulkanGraphicsEngine::SetModelTexture(const std::string& texturePath)
 	{
-		m_ModelManager->AddTexturePath(m_ModelManager->GetCurrentModelIndex(), texturePath);
+		m_ModelManager->AddTexturePath(texturePath);
 	}
 
 
 	void CVulkanGraphicsEngine::SetModelPosition(float x, float y, float z)
 	{
-		glm::vec3 translation = glm::vec3(x, y, z);
+		glm::vec3 modelTranslation = glm::vec3(x, y, z);
 
-		m_ModelManager->AddPosition(m_ModelManager->GetCurrentModelIndex(), translation);
+		m_ModelManager->AddPosition(modelTranslation);
 	}
 
 	void CVulkanGraphicsEngine::SetModelRotation(float x, float y, float z)
 	{
-		glm::vec3 rotation = glm::vec3(x, y, z);
+		glm::vec3 modelRotation = glm::vec3(x, y, z);
 
-		m_ModelManager->AddRotation(m_ModelManager->GetCurrentModelIndex(), rotation);
+		m_ModelManager->AddRotation(modelRotation);
 	}
 
 	void CVulkanGraphicsEngine::SetModelScaling(float x, float y, float z)
 	{
-		glm::vec3 scaling = glm::vec3(x, y, z);
+		glm::vec3 modelScaling = glm::vec3(x, y, z);
 
-		m_ModelManager->AddScaling(m_ModelManager->GetCurrentModelIndex(), scaling);
+		m_ModelManager->AddScaling(modelScaling);
+	}
+
+	void CVulkanGraphicsEngine::PushModel()
+	{
+		m_ModelManager->PushModel();
+	}
+
+	void CVulkanGraphicsEngine::AddLightSource(ELightType lightType)
+	{
+		m_LightManager->AddLightSource(lightType);
+	}
+
+	void CVulkanGraphicsEngine::SetLightPosition(float x, float y, float z)
+	{
+		glm::vec3 lightPosition = glm::vec3(x, y, z);
+
+		m_LightManager->AddPosition(lightPosition);
+	}
+
+	void CVulkanGraphicsEngine::SetLightDirection(float x, float y, float z)
+	{
+		glm::vec3 lightDirection = glm::vec3(x, y, z);
+
+		m_LightManager->AddDirection(lightDirection);
+	}
+
+	void CVulkanGraphicsEngine::SetLightIntensity(float intensity)
+	{
+		m_LightManager->AddIntensity(intensity);
+	}
+
+	void CVulkanGraphicsEngine::PushLight()
+	{
+		m_LightManager->PushLight();
 	}
 
 	bool CVulkanGraphicsEngine::IsRunning()

@@ -1,4 +1,5 @@
 #include "LightingNode.hpp"
+#include "ShadowNode.hpp"
 
 #include <imgui.h>
 
@@ -64,7 +65,7 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_Lights[0].m_LightPosition  = glm::vec3(0.0f, 1000.0f, 30.0f);
 		deferredLightingUbo.m_Lights[0].m_LightRadius    = g_LightRadius;
 		deferredLightingUbo.m_Lights[0].m_LightIntensity = 100.0f;
-		deferredLightingUbo.m_Lights[0].m_LightMatrix    = glm::identity<glm::mat4>();
+		deferredLightingUbo.m_Lights[0].m_LightMatrix    = CShadowNode::GetLightMatrix();
 		deferredLightingUbo.m_ViewPos                    = managers->m_InputManager->GetCamera()->GetPosition();
 		deferredLightingUbo.m_Pad1                       = 0.0f;
 

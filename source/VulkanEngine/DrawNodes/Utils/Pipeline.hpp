@@ -25,6 +25,8 @@ namespace NVulkanEngine
 		void SetVertexInput(uint32_t stride, VkVertexInputRate vertexInputRate);
 		void AddVertexAttribute(uint32_t locationSlot, VkFormat format, uint32_t offset);
 
+		void SetPrimitiveTopology(VkPrimitiveTopology primitiveTopology);
+
 		void SetCullingMode(VkCullModeFlagBits cullMode);
 		void AddPushConstantSlot(VkShaderStageFlags shaderStage, size_t constantsSize, size_t offset);
 		void AddColorAttachment(VkFormat colorFormat);
@@ -54,6 +56,8 @@ namespace NVulkanEngine
 		VkCullModeFlagBits    m_CullMode               = VK_CULL_MODE_BACK_BIT;
 
 		VkPushConstantRange   m_PushConstantsRanges    = {};
+
+		VkPrimitiveTopology   m_PrimitiveTopology      = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 		VkPipelineLayout      m_PipelineLayout         = VK_NULL_HANDLE;
 		VkPipeline		      m_Pipeline               = VK_NULL_HANDLE;

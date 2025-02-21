@@ -5,6 +5,7 @@
 
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>
+#include <Managers/LightManager.hpp>
 #include <Managers/AttachmentManager.hpp>
 
 /*
@@ -21,6 +22,7 @@ namespace NVulkanEngine
 		Terrain      = 2,
 		Skybox       = 3,
 		Lighting     = 4,
+		Debug        = 5,
 		Count
 	};
 
@@ -36,6 +38,7 @@ namespace NVulkanEngine
 	{
 		CInputManager*      m_InputManager      = nullptr;
 		CModelManager*      m_Modelmanager      = nullptr;
+		CLightManager*      m_LightManager      = nullptr;
 		CAttachmentManager* m_AttachmentManager = nullptr;
 	};
 

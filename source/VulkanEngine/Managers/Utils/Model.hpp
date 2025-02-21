@@ -3,7 +3,7 @@
 #include <VulkanGraphicsEngineUtils.hpp>
 #include <GraphicsContext.hpp>
 #include <Managers/Texture.hpp>
-#include <DrawNodes/BindingTable.hpp>
+#include <DrawNodes/Utils/BindingTable.hpp>
 
 #include <glm/glm.hpp>
 
@@ -56,7 +56,7 @@ struct SUniformMemoryBuffer
 };
 
 // A mesh is a subset of polygons inside the model. Model is split up this way to handle multiple materials per mdel
-struct SMesh
+struct SMaterialMesh
 {
 	int      m_MaterialId = -1;
 	uint32_t m_StartIndex = 0;
@@ -117,7 +117,7 @@ namespace NVulkanEngine
 		VkDescriptorSetLayout GetModelDescriptorSetLayout();
 
 		uint32_t           GetNumMeshes();
-		SMesh              GetMesh(const uint32_t index);
+		SMaterialMesh              GetMesh(const uint32_t index);
 		
 		uint32_t           GetNumIndices();
 
@@ -136,8 +136,8 @@ namespace NVulkanEngine
 		std::string            m_MaterialFilepath   = {};
 		std::string            m_ModelTexturePath   = {};
 
-		std::vector<SMesh>          m_Meshes        = {};
-		std::vector<SModelMaterial> m_Materials     = {};
+		std::vector<SMaterialMesh>          m_Meshes        = {};
+		std::vector<SModelMaterial>         m_Materials     = {};
 			
 		std::vector<SModelVertex>   m_Vertices      = {};
 		std::vector<uint32_t>       m_Indices       = {};

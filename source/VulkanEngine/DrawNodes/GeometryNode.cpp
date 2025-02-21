@@ -89,7 +89,7 @@ namespace NVulkanEngine
 			model->BindGeometryTable(context, commandBuffer, m_GeometryPipeline->GetPipelineLayout());
 			for (uint32_t j = 0; j < model->GetNumMeshes(); j++)
 			{
-				SMesh modelMesh = model->GetMesh(j);
+				SMaterialMesh modelMesh = model->GetMesh(j);
 				SModelMaterial material     = model->GetMaterial(modelMesh.m_MaterialId);
 				material.m_UseAlbedoTexture = model->GetModelTexture() != nullptr;
 

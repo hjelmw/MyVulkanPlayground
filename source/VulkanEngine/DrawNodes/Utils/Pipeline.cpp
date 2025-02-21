@@ -53,6 +53,11 @@ namespace NVulkanEngine
 		m_VertexAttributeDescriptions.push_back(vertexAttributeDescription);
 	}
 
+	void CPipeline::SetPrimitiveTopology(VkPrimitiveTopology primitiveTopology)
+	{
+		m_PrimitiveTopology = primitiveTopology; // VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST by default
+	}
+
 	void CPipeline::AddColorAttachment(VkFormat colorFormat)
 	{
 		m_ColorAttachmentFormats.push_back(colorFormat);
@@ -106,7 +111,7 @@ namespace NVulkanEngine
 
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.topology = m_PrimitiveTopology;
 		inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 		VkPipelineViewportStateCreateInfo viewportState{};
@@ -169,10 +174,11 @@ namespace NVulkanEngine
 		colorBlending.blendConstants[2] = 0.0f;
 		colorBlending.blendConstants[3] = 0.0f;
 
-		std::vector<VkDynamicState> dynamicStates =
+		std::array<VkDynamicState, 3> dynamicStates =
 		{
 			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR
+			VK_DYNAMIC_STATE_SCISSOR,
+			VK_DYNAMIC_STATE_LINE_WIDTH
 		};
 
 		VkPipelineDynamicStateCreateInfo dynamicState{};

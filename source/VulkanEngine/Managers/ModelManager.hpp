@@ -5,7 +5,7 @@
 
 #include <glm/glm.hpp>
 
-#include "Model.hpp"
+#include "Utils/Model.hpp"
 #include "GraphicsContext.hpp"
 
 /*
@@ -20,11 +20,12 @@ namespace NVulkanEngine
 		CModelManager()  = default;
 		~CModelManager() = default;
 
-		void AddModel(const std::string& modelFilepath);
-		void AddPosition(uint32_t index, glm::vec3 position);
-		void AddRotation(uint32_t index, glm::vec3 rotation);
-		void AddScaling(uint32_t index,  glm::vec3 scaling);
-		void AddTexturePath(uint32_t index, const std::string& textureFilepath);
+		void AddModelFilepath(const std::string& modelFilepath);
+		void AddPosition(const glm::vec3& position);
+		void AddRotation(const glm::vec3& rotation);
+		void AddScaling(const glm::vec3& scaling);
+		void AddTexturePath(const std::string& textureFilepath);
+		void PushModel();
 		void Cleanup(CGraphicsContext* context);
 
 		uint32_t GetCurrentModelIndex();
@@ -33,6 +34,6 @@ namespace NVulkanEngine
 		const uint32_t GetNumModels();
 	private:
 		std::vector<CModel*> m_Models{};
-		int m_CurrentModelIndex = -1;
+		int m_CurrentModelIndex = 0;
 	};
 };

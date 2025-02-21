@@ -4,28 +4,27 @@
 
 namespace NVulkanEngine
 {
-	void CModelManager::AddModel(const std::string& modelFilepath)
+	void CModelManager::AddModelFilepath(const std::string& modelFilepath)
 	{
 		CModel* model = new CModel();
 
 		model->SetModelFilepath("./assets/" + modelFilepath, "./assets/models");
 
 		m_Models.push_back(model);
-		m_CurrentModelIndex++;
 	}
 
-	void CModelManager::AddPosition(uint32_t index, glm::vec3 position)
+	void CModelManager::AddPosition(const glm::vec3& position)
 	{
-		glm::mat4 modelMatrix = m_Models[index]->GetTransform();
+		glm::mat4 modelMatrix = m_Models[m_CurrentModelIndex]->GetTransform();
 
 		modelMatrix = glm::translate(modelMatrix, position);
 
 		m_Models[m_CurrentModelIndex]->SetTransform(modelMatrix);
 	}
 
-	void CModelManager::AddRotation(uint32_t index, glm::vec3 rotation)
+	void CModelManager::AddRotation(const glm::vec3& rotation)
 	{
-		glm::mat4 modelMatrix = m_Models[index]->GetTransform();
+		glm::mat4 modelMatrix = m_Models[m_CurrentModelIndex]->GetTransform();
 
 		modelMatrix = glm::rotate(modelMatrix, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
 		modelMatrix = glm::rotate(modelMatrix, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -34,18 +33,23 @@ namespace NVulkanEngine
 		m_Models[m_CurrentModelIndex]->SetTransform(modelMatrix);
 	}
 
-	void CModelManager::AddScaling(uint32_t index, glm::vec3 scaling)
+	void CModelManager::AddScaling(const glm::vec3& scaling)
 	{
-		glm::mat4 modelMatrix = m_Models[index]->GetTransform();
+		glm::mat4 modelMatrix = m_Models[m_CurrentModelIndex]->GetTransform();
 
 		modelMatrix = glm::scale(modelMatrix, scaling);
 
 		m_Models[m_CurrentModelIndex]->SetTransform(modelMatrix);
 	}
 
-	void CModelManager::AddTexturePath(uint32_t index, const std::string& textureFilepath)
+	void CModelManager::AddTexturePath(const std::string& textureFilepath)
 	{
 		m_Models[m_CurrentModelIndex]->SetModelTexturePath("./assets/" + textureFilepath);
+	}
+
+	void CModelManager::PushModel()
+	{
+		m_CurrentModelIndex++;
 	}
 
 	uint32_t CModelManager::GetCurrentModelIndex()
@@ -72,5 +76,7 @@ namespace NVulkanEngine
 		{
 			m_Models[i]->Cleanup(context);
 		}
+
+		m_Models.clear();
 	}
 }
