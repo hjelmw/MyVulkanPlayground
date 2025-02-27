@@ -12,7 +12,8 @@ project "VulkanEngine"
     cppdialect "C++20"
     targetdir "build/%{cfg.buildcfg}"
     objdir "build/%{cfg.buildcfg}/obj"
-    
+    flags "MultiProcessorCompile"
+
     postbuildcommands 
     {
          "{COPYFILE} %[build/%{cfg.buildcfg}/VulkanEngine.exe] %[./VulkanEngine_%{cfg.buildcfg}.exe]"
@@ -28,7 +29,8 @@ project "VulkanEngine"
         "./vendor/imgui-docking/backends/imgui_impl_vulkan.hpp",
         "./vendor/imgui-docking/imgui*.cpp",
         "./vendor/imgui-docking/backends/imgui_impl_glfw.cpp",
-        "./vendor/imgui-docking/backends/imgui_impl_vulkan.cpp"
+        "./vendor/imgui-docking/backends/imgui_impl_vulkan.cpp",
+        "./vendor/glm-aabb-master/glm-aabb/AABB.cpp"
     }
 
     -- Setup the filters. Splits the files into header and source but keeps original folder structure
@@ -37,6 +39,14 @@ project "VulkanEngine"
         ["headers/*"] = { "./source/**.hpp" },
         ["source/*"] = { "./source/**.cpp" },
         ["imgui/*"] = {"./vendor/imgui-docking/.**cpp" }
+    }
+
+    defines 
+    {
+        "GLM_ENABLE_EXPERIMENTAL",
+        "GLM_FORCE_RADIANS",
+        "GLM_FORCE_DEPTH_ZERO_TO_ONE",
+        "GLM_FORCE_XYZW_ONLY"
     }
 
     -- Returns complete name of dependency, i.e glm-3.2.1 etc  
@@ -55,6 +65,7 @@ project "VulkanEngine"
         "$(VULKAN_SDK)/Include",
         "$(SolutionDir)" .. find_dependency("vendor/glfw*") .. "/include",
         "$(SolutionDir)" .. find_dependency("vendor/glm*"),
+        "$(SolutionDir)" .. find_dependency("vendor/glm-aabb*"),
         "$(SolutionDir)" .. find_dependency("vendor/imgui*"),
         "$(SolutionDir)" .. find_dependency("vendor/stb*"),
         "$(SolutionDir)" .. find_dependency("vendor/tinyobjloader*")

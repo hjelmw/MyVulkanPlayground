@@ -18,12 +18,14 @@ def UnzipFile(newName, zipFilePath, unzipPath):
 def DownloadGithubDependency(packageURL, packageName, packageVersion):
     githubInstallURL  = packageURL
     githubFolderName = "{}-{}".format(packageName, packageVersion)
-    githubInstallPath = "./vendor/{}.zip".format(githubFolderName)
+    fileExtension = "zip" if packageURL[-3:] == "zip" else "exe"
+    githubInstallPath = "./vendor/{}.{}".format(packageName, fileExtension)
     print("Attempting download of {}...".format(packageURL))
     DownloadFile(packageURL, githubInstallPath)
-    print("Extracting .zip into ./vendor/{}...".format(githubFolderName))
-    UnzipFile(githubFolderName, githubInstallPath, "./vendor")
-    print("Done! Deleting .zip...")
+    if(fileExtension == "zip"):
+        print("Extracting .zip into ./vendor/{}...".format(githubFolderName))
+        UnzipFile(githubFolderName, githubInstallPath, "./vendor")
+        print("Done! Deleting .zip...")
     os.remove(githubInstallPath)
 
 def CheckVulkanInstalled(printNum, printTotal):

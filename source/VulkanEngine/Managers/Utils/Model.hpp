@@ -6,8 +6,6 @@
 #include <DrawNodes/Utils/BindingTable.hpp>
 
 #include <glm/glm.hpp>
-
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 #include <vector>

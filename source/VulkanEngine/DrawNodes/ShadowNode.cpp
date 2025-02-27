@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include <glm-aabb/AABB.hpp>
+
 #define SHADOWMAP_RESOLUTION 2048
 
 namespace NVulkanEngine
@@ -54,17 +56,24 @@ namespace NVulkanEngine
 			glm::vec3(0.0f, 0.0f, 1.0f)
 		);
 
+		glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 500.0f, 2000.0f);
+		lightOrthoMatrix[1][1] *= -1; // Vulkan requirement
+
 		glm::mat4 cameraLookAt = managers->m_InputManager->GetCamera()->GetLookAtMatrix();
 		glm::mat4 cameraProjection = managers->m_InputManager->GetCamera()->GetProjectionMatrix();
-		glm::mat4 invCameraViewProjection = glm::inverse(cameraProjection * cameraLookAt);
+		glm::mat4 invCameraViewProjection = glm::inverse(lightOrthoMatrix);
 
 		// The 8 corners of the camera view frustum in NDC space
 		glm::vec4 corners[8] =
 		{
-			glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f), glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),
-			glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),  glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),
-			glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),  glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),
-			glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),   glm::vec4(1.0f, 1.0f, -1.0f, 1.0f)
+			glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),
+			glm::vec4(-1.0f, -1.0f,  1.0f, 1.0f),
+			glm::vec4( 1.0f, -1.0f, -1.0f, 1.0f),
+			glm::vec4( 1.0f, -1.0f,  1.0f, 1.0f),
+			glm::vec4(-1.0f,  1.0f, -1.0f, 1.0f),
+			glm::vec4(-1.0f,  1.0f,  1.0f, 1.0f), 
+			glm::vec4( 1.0f,  1.0f, -1.0f, 1.0f),
+			glm::vec4( 1.0f,  1.0f,  1.0f, 1.0f) 
 		};
 
 		for (uint32_t i = 0; i < 8; i++)
@@ -72,6 +81,8 @@ namespace NVulkanEngine
 			corners[i] = invCameraViewProjection * corners[i];
 			corners[i] /= corners[i].w; // Perspective divide
 		}
+
+		glm::vec3 debugLineColor = glm::vec3(1.0f, 0.0f, 0.0f);
 
 		float minX = corners[0].x;
 		float minY = corners[0].y;
@@ -99,9 +110,14 @@ namespace NVulkanEngine
 				maxZ = corners[i].z;
 		}
 
-		glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 500.0f, 2000.0f);
+		glm::AABB testAABB = glm::AABB(glm::vec3(-200.0f, -200.0f, -200.0f), glm::vec3(200.0f, 200.0f, 200.0f));
+
+		managers->m_DebugManager->DrawDebugAABB(testAABB.getMin(), testAABB.getMax(), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		//managers->m_DebugManager->DrawDebugAABB(glm::vec3(minX, minY, minZ), glm::vec3(maxX, maxY, maxZ), glm::vec3(1.0f, 0.0f, 0.0f));
+		managers->m_DebugManager->DrawDebugAABB(glm::vec3(minX, minY, -maxZ), glm::vec3(maxX, maxY, -minZ), glm::vec3(1.0f, 0.0f, 0.0f));
+
 		//glm::mat4 lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, -maxZ, -minZ);
-		lightOrthoMatrix[1][1] *= -1; // Vulkan requirement
 
 		ImGui::Begin("Shadow Pass");
 		ImGui::Text("Left: %f", minX);
@@ -135,6 +151,8 @@ namespace NVulkanEngine
 
 	void CShadowNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
+		CDebugManager* debugManager = managers->m_DebugManager;
+
 		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
 		SRenderAttachment shadowmapAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 

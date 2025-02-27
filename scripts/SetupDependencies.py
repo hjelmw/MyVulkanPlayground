@@ -5,16 +5,21 @@ vulkanSDKVersion     = "1.4.304.0"
 premakeVersion       = "5.0.0-beta4"
 glfwVersion          = "3.4"
 glmVersion           = "1.0.1"
+glmaabbVersion       = "master"
 imguiVersion         = "docking" #"1.91.8"
 tinyobjloaderVersion = "2.0"
 stbiVersion          = "master" # Repo does not do releases
+vsWhereVersion       = "3.1.7"
+
 
 premakeGithubURL       = "https://github.com/premake/premake-core/releases/download/v{}/premake-{}-windows.zip".format(premakeVersion, premakeVersion)
 glfwGithubURL          = "https://github.com/glfw/glfw/releases/download/{}/glfw-{}.bin.WIN64.zip".format(glfwVersion, glfwVersion)
 glmGithubURL           = "https://github.com/g-truc/glm/releases/download/{}/glm-{}-light.zip".format(glmVersion, glmVersion)
-imguiGithubURL         = "https://github.com/ocornut/imgui/archive/refs/heads/docking.zip"#"https://github.com/ocornut/imgui/archive/refs/tags/v{}.zip".format(imguiVersion)
+glmaabbGithubURL       = "https://github.com/hjelmw/glm-aabb/archive/refs/heads/master.zip" # Repo does not do releases
+imguiGithubURL         = "https://github.com/ocornut/imgui/archive/refs/heads/docking.zip"
 tinyobjloaderGithubURL = "https://github.com/tinyobjloader/tinyobjloader/archive/refs/tags/v{}-rc1.zip".format(tinyobjloaderVersion)
 stbiGithubURL          = "https://github.com/nothings/stb/archive/refs/heads/master.zip" # Repro does not do releases
+vsWhereGithubURL       = "https://github.com/microsoft/vswhere/releases/download/{}/vswhere.exe".format(vsWhereVersion)
 
 vulkanIsInstalled = False
 
@@ -42,6 +47,9 @@ def CheckAll():
     DownloadUtils.CheckAndDownloadGithubDependency("glm", glmVersion, glmGithubURL, itemsChecked, totalItemsToCheck)
     itemsChecked +=1
 
+    DownloadUtils.CheckAndDownloadGithubDependency("glm-aabb", glmaabbVersion, glmaabbGithubURL, itemsChecked, totalItemsToCheck)
+    itemsChecked +=1
+
     # 5. Check ImGui
     DownloadUtils.CheckAndDownloadGithubDependency("imgui", imguiVersion, imguiGithubURL, itemsChecked, totalItemsToCheck)
     itemsChecked +=1
@@ -53,3 +61,7 @@ def CheckAll():
     # 7. Check stbi_image
     DownloadUtils.CheckAndDownloadGithubDependency("stbi", stbiVersion, stbiGithubURL, itemsChecked, totalItemsToCheck)
     itemsChecked +=1
+
+    #8. Check VSWhere
+    #DownloadUtils.CheckAndDownloadGithubDependency("vswhere", vsWhereVersion, vsWhereGithubURL, itemsChecked, totalItemsToCheck)
+    #itemsChecked +=1
