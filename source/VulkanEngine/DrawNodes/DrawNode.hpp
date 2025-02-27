@@ -6,6 +6,7 @@
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>
 #include <Managers/LightManager.hpp>
+#include <Managers/DebugManager.hpp>
 #include <Managers/AttachmentManager.hpp>
 
 /*
@@ -39,6 +40,7 @@ namespace NVulkanEngine
 		CInputManager*      m_InputManager      = nullptr;
 		CModelManager*      m_Modelmanager      = nullptr;
 		CLightManager*      m_LightManager      = nullptr;
+		CDebugManager*      m_DebugManager      = nullptr;
 		CAttachmentManager* m_AttachmentManager = nullptr;
 	};
 

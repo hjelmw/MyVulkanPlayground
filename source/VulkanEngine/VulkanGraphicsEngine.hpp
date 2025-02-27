@@ -5,24 +5,28 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_XYZW_ONLY
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 
 #include <GLFW/glfw3.h>
 
 #include <VulkanGraphicsEngineUtils.hpp>
-#include <Managers/LightManager.hpp> // Need ELightType
+
 #include <DrawNodes/DrawNode.hpp>
 #include <DrawNodes/Utils/Pipeline.hpp>
+
+#include <GraphicsContext.hpp>
 #include <Swapchain.hpp>
 
-#include "GraphicsContext.hpp"
+#include <Managers/LightManager.hpp> // Need ELightType in header
+#include <Managers/DebugManager.hpp>
 
 class CModelManager;
 class CInputManager;
 
 /*
-    The main class whatchamacallit. It has most of the rendering code right now
+    The main engine whatchamacallit. It has most of the rendering code right now
 */
 
 namespace NVulkanEngine
@@ -117,6 +121,7 @@ namespace NVulkanEngine
         CInputManager*                      m_InputManager             = nullptr;
         CModelManager*                      m_ModelManager             = nullptr;
         CLightManager*                      m_LightManager             = nullptr;
+        CDebugManager*                      m_DebugManager             = nullptr;
         CAttachmentManager*                 m_AttachmentManager        = nullptr;
 
         /* Vulkan Primitives */

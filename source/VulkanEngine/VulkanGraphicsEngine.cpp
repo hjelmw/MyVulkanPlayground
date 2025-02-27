@@ -10,6 +10,7 @@
 
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>
+#include <Managers/DebugManager.hpp>
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -192,6 +193,7 @@ namespace NVulkanEngine
 		m_InputManager = new CInputManager();
 		m_ModelManager = new CModelManager();
 		m_LightManager = new CLightManager();
+		m_DebugManager = new CDebugManager();
 		m_AttachmentManager = new CAttachmentManager(m_VulkanInstance);
 
 		// For mouse and keyboard callbacks
@@ -217,9 +219,11 @@ namespace NVulkanEngine
 	{
 		m_ModelManager->Cleanup(m_Context);
 		m_AttachmentManager->Cleanup(m_Context);
+		m_DebugManager->Cleanup(m_Context);
 
 		delete m_InputManager;
 		delete m_ModelManager;
+		delete m_DebugManager;
 		delete m_AttachmentManager;
 	};
 
@@ -879,13 +883,18 @@ namespace NVulkanEngine
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
 		managers.m_AttachmentManager = m_AttachmentManager;
+		managers.m_DebugManager      = m_DebugManager;
 
-		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
+		for (uint32_t i = 0; i < (uint32_t)EDrawNodes::Debug; i++)
 		{
 			CDrawNode* drawNode = m_DrawNodes[i];
 			if (drawNode)
 				drawNode->Draw(m_Context, &managers, commandBuffer);
 		}
+
+		// Debug rendering happens after main rendering
+		m_DebugManager->Update(m_Context);
+		m_DrawNodes[(uint32_t)EDrawNodes::Debug]->Draw(m_Context, &managers, commandBuffer);
 	}
 
 	void CVulkanGraphicsEngine::DoImGuiViewport()
@@ -1109,13 +1118,16 @@ namespace NVulkanEngine
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
-		// Light green
-		const float mainRenderMarkerColor[4] = { 0.5f, 0.75f, 0.35f, 1.0f };
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
+		// ---- Main Rendering ----
+		const float mainRenderMarkerColor[4] = { 0.5f, 0.75f, 0.35f, 1.0f };
 		BeginMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex], "Main Rendering", mainRenderMarkerColor);
+
 		RecordDrawNodes(m_CommandBuffers[m_FrameIndex]);
+
 		EndMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex]);
+		// ---- Main Rendering End ----
 
 		const float ImGuiMarkerColor[4] = { 0.8f, 0.8f, 0.0f, 1.0f };
 
