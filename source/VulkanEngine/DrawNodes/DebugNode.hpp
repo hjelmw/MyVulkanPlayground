@@ -22,18 +22,11 @@ namespace NVulkanEngine
 		virtual void Cleanup(CGraphicsContext* context) override;
 
 	private:
-		void UpdateDebugBuffers(CGraphicsContext* context, SGraphicsManagers* managers);
-
-		std::vector<SDescriptorSets> m_DescriptorSetsDebug = { };
-
-		VkBuffer					  m_VertexBuffer       = VK_NULL_HANDLE;
-		VkDeviceMemory				  m_VertexBufferMemory = VK_NULL_HANDLE;
+		void UpdateDebugUniformBuffer(CGraphicsContext* context, SGraphicsManagers* managers);
 
 		// Shadow Uniform Buffer
 		VkBuffer					  m_DebugUniformBuffer       = VK_NULL_HANDLE;
 		VkDeviceMemory				  m_DebuguniformBufferMemory = VK_NULL_HANDLE;
-
-		static glm::mat4              s_LightMatrix;
 
 		CPipeline* m_DebugPipeline  = nullptr;
 		CBindingTable* m_DebugTable = nullptr;
