@@ -19,20 +19,8 @@ namespace NVulkanEngine
 
 	void CDebugManager::DrawDebugAABB(glm::vec3 min, glm::vec3 max, glm::vec3 color)
 	{
-		//std::array<glm::vec3, 8> corners;
-
-		//corners[0] = glm::vec3(min.x, min.y, min.z);
-		//corners[1] = glm::vec3(min.x, min.y, max.z);
-		//corners[2] = glm::vec3(max.x, min.y, min.z);
-		//corners[3] = glm::vec3(max.x, min.y, max.z);
-		//corners[4] = glm::vec3(min.x, max.y, min.z);
-		//corners[5] = glm::vec3(min.x, max.y, max.z);
-		//corners[6] = glm::vec3(max.x, max.y, min.z);
-		//corners[7] = glm::vec3(max.x, max.y, max.z);
-
-
 		// Bottom part of box
-		m_DebugVertexLinesAddList.push_back({glm::vec3(min.x, min.y, min.z), color});
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, min.z), color });
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, min.z), color });
 
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, min.z), color });
