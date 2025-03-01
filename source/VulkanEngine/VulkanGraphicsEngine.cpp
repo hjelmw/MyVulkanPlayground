@@ -24,6 +24,7 @@
 #include <chrono>
 #include <thread>
 
+static float g_ImGuiGlobalFontSize = 1.0f;
 
 static void check_vk_result(VkResult err)
 {
@@ -900,6 +901,43 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::DoImGuiViewport()
 	{
 		ImGui::Begin("Viewport");
+		ImGui::BeginMainMenuBar();
+		float currentAvailableContentRegion = ImGui::GetContentRegionAvail().x;
+		if (ImGui::BeginMenu("Tools"))
+		{
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Options"))
+		{
+			ImGui::InputFloat("Font Size", &g_ImGuiGlobalFontSize);
+			ImGui::EndMenu();
+		}
+
+		const glm::vec3 cameraPosition = m_InputManager->GetCamera()->GetPosition();
+		const glm::vec3 cameraDirection = m_InputManager->GetCamera()->GetDirection();
+		const float deltatTime = m_Context->GetDeltaTime();
+		const float framerate = 1.0f / deltatTime;
+
+		const std::string cameraPositionStr = std::format("[ Camera Position (X: {:5.0f}, Y: {:5.0f}, Z: {:5.0f}), ", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+		const std::string cameraDirectionStr = std::format("Direction (X: {:3.2f}, Y: {:3.2f}, Z: {:3.2f} ]", cameraDirection.x, cameraDirection.y, cameraDirection.z);
+		const std::string framerateStr = std::format("FPS: {:3.0f} ({:3.2f} ms)", 1.0f / m_Context->GetDeltaTime(), m_Context->GetDeltaTime());
+
+		float camInfoSize = ImGui::CalcTextSize((framerateStr + cameraPositionStr + cameraPositionStr).c_str()).x;
+		float currentCursorPos = ImGui::GetCursorPos().x;
+		float wantedCursorPos = currentAvailableContentRegion - camInfoSize + 40.0f;
+		ImGui::SetCursorPosX(wantedCursorPos);
+
+		ImVec4 framerateColor = 
+				framerate > 60.0f ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) 
+			:	framerate > 30.0f ? ImVec4(1.0f, 1.0f, 0.0f, 1.0f) 
+			:	ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+		ImVec4 cameraColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+
+		ImGui::TextColored(framerateColor, framerateStr.c_str());
+		ImGui::TextColored(cameraColor, cameraPositionStr.c_str());
+		ImGui::TextColored(cameraColor, cameraDirectionStr.c_str());
+		ImGui::SetCursorPosX(currentCursorPos);
+		ImGui::EndMainMenuBar();
 		VkDescriptorSet sceneColorDescriptor = m_AttachmentManager->TransitionAttachment(m_CommandBuffers[m_FrameIndex], EAttachmentIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
 		ImGui::Image((ImTextureID)sceneColorDescriptor, ImGui::GetContentRegionAvail());
 		ImGui::End();
@@ -942,6 +980,9 @@ namespace NVulkanEngine
 		}
 
 		ImGui::End();
+
+		ImGuiIO& io = ImGui::GetIO();
+		io.FontGlobalScale = g_ImGuiGlobalFontSize;
 	}
 
 	void CVulkanGraphicsEngine::RenderImGuiDrawData(uint32_t imageIndex)
@@ -1132,8 +1173,6 @@ namespace NVulkanEngine
 		const float ImGuiMarkerColor[4] = { 0.8f, 0.8f, 0.0f, 1.0f };
 
 		BeginMarker(m_VulkanInstance, m_CommandBuffers[m_FrameIndex], "ImGui Viewport", ImGuiMarkerColor);
-		ImGuiIO& io = ImGui::GetIO();
-		io.FontGlobalScale = 2.0f;
 
 		DoImGuiViewport();
 		RenderImGuiDrawData(imageIndex);
