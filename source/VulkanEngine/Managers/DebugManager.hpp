@@ -3,6 +3,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm-aabb/AABB.hpp>
 #include <GraphicsContext.hpp>
 
 /*
@@ -24,7 +25,8 @@ namespace NVulkanEngine
 		~CDebugManager() = default;
 
 		void DrawDebugLine(glm::vec3 from, glm::vec3 to, glm::vec3 color);
-		void DrawDebugAABB(glm::vec3 from, glm::vec3 to, glm::vec3 color);
+		void DrawDebugAABB(glm::AABB boundingBox, glm::vec3 color);
+		void DrawDebugAABB(glm::vec3 min, glm::vec3 max, glm::vec3 color);
 
 		VkBuffer GetDebugLinesVertexBuffer();
 		const uint32_t GetNumDebugLines();

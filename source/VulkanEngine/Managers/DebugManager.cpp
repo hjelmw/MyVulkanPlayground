@@ -17,6 +17,14 @@ namespace NVulkanEngine
 		m_DebugVertexLinesAddList.push_back(debugLineTo);
 	}
 
+	void CDebugManager::DrawDebugAABB(glm::AABB boundingBox, glm::vec3 color)
+	{
+		glm::vec3 min = boundingBox.getMin();
+		glm::vec3 max = boundingBox.getMax();
+
+		DrawDebugAABB(min, max, color);
+	}
+
 	void CDebugManager::DrawDebugAABB(glm::vec3 min, glm::vec3 max, glm::vec3 color)
 	{
 		// Bottom part of box
