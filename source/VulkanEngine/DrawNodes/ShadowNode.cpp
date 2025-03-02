@@ -65,8 +65,8 @@ namespace NVulkanEngine
 			sceneBounds.getMax().x,
 			sceneBounds.getMin().z,
 			sceneBounds.getMax().z,
-			-sceneBounds.getMax().y,
-			-sceneBounds.getMin().y);
+			-sceneBounds.getMax().y + lightPosition.y,
+			-sceneBounds.getMin().y + lightPosition.y);
 		//glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1100.0f, 1800.0f);
 		lightOrthoMatrix[1][1] *= -1; // Vulkan requirement
 
