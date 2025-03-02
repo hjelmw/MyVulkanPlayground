@@ -103,6 +103,13 @@ namespace NVulkanEngine
 		std::unordered_map<SModelVertex, uint32_t> uniqueVertices{};
 		uint32_t verticesSoFar = 0;
 
+		float minX = FLT_MAX;
+		float minY = FLT_MAX;  
+		float minZ = FLT_MAX;
+		float maxX = -FLT_MAX;
+		float maxY = -FLT_MAX;
+		float maxZ = -FLT_MAX;
+
 		// Loop over shapes
 		for (size_t s = 0; s < shapes.size(); s++)
 		{
@@ -209,6 +216,16 @@ namespace NVulkanEngine
 
 							if (uniqueVertices.count(newVertex) == 0) 
 							{
+								glm::vec4 worldPosition = m_Transform * glm::vec4(newVertex.m_Position, 1.0f);
+
+								minX = worldPosition.x < minX ? worldPosition.x : minX;
+								minY = worldPosition.y < minY ? worldPosition.y : minY;
+								minZ = worldPosition.z < minZ ? worldPosition.z : minZ;
+
+								maxX = worldPosition.x > maxX ? worldPosition.x : maxX;
+								maxY = worldPosition.y > maxY ? worldPosition.y : maxY;
+								maxZ = worldPosition.z > maxZ ? worldPosition.z : maxZ;
+
 								uniqueVertices[newVertex] = static_cast<uint32_t>(m_Vertices.size());
 								m_Vertices.push_back(newVertex);
 							}
@@ -223,6 +240,8 @@ namespace NVulkanEngine
 				m_Meshes.push_back(mesh);
 			}
 		}
+
+		m_ModelAABB = glm::AABB(glm::vec3(minX, minY, minZ), glm::vec3(maxX, maxY, maxZ));
 
 #if defined(_DEBUG)
 		const uint32_t nVertices  = static_cast<uint32_t>(m_Vertices.size());
@@ -353,10 +372,14 @@ namespace NVulkanEngine
 		return m_Transform;
 	}
 
-
 	void CModel::SetTransform(glm::mat4 transform)
 	{
 		m_Transform = transform;
+	}
+
+	glm::AABB CModel::GetAABB()
+	{
+		return m_ModelAABB;
 	}
 
 	CTexture* CModel::GetModelTexture()

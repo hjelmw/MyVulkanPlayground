@@ -70,6 +70,16 @@ namespace NVulkanEngine
 		return (uint32_t)m_Models.size();
 	}
 
+	void CModelManager::SetSceneBounds(glm::AABB sceneBounds)
+	{
+		m_SceneBounds = sceneBounds;
+	}
+
+	glm::AABB CModelManager::GetSceneBounds()
+	{
+		return m_SceneBounds;
+	}
+
 	void CModelManager::Cleanup(CGraphicsContext* context)
 	{
 		for (int i = 0; i < m_Models.size(); i++)

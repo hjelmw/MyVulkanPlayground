@@ -6,6 +6,9 @@
 
 #define SHADOWMAP_RESOLUTION 2048
 
+static float nearPlane = 500.0f;
+static float farPlane = 2000.0f;
+
 namespace NVulkanEngine
 {
 	glm::mat4 CShadowNode::s_LightMatrix = glm::identity<glm::mat4>();
@@ -56,23 +59,31 @@ namespace NVulkanEngine
 			glm::vec3(0.0f, 0.0f, 1.0f)
 		);
 
-		glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 500.0f, 2000.0f);
+		glm::AABB sceneBounds = managers->m_Modelmanager->GetSceneBounds();
+		glm::mat4 lightOrthoMatrix = glm::ortho(
+			sceneBounds.getMin().x,
+			sceneBounds.getMax().x,
+			sceneBounds.getMin().z,
+			sceneBounds.getMax().z,
+			-sceneBounds.getMax().y,
+			-sceneBounds.getMin().y);
+		//glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1100.0f, 1800.0f);
 		lightOrthoMatrix[1][1] *= -1; // Vulkan requirement
 
 		glm::mat4 cameraLookAt = managers->m_InputManager->GetCamera()->GetLookAtMatrix();
 		glm::mat4 cameraProjection = managers->m_InputManager->GetCamera()->GetProjectionMatrix();
-		glm::mat4 invCameraViewProjection = glm::inverse(lightOrthoMatrix);
+		glm::mat4 invCameraViewProjection = glm::inverse(lightOrthoMatrix * lightLookAt);
 
 		// The 8 corners of the camera view frustum in NDC space
 		glm::vec4 corners[8] =
 		{
-			glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),
+			glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),
 			glm::vec4(-1.0f, -1.0f,  1.0f, 1.0f),
-			glm::vec4( 1.0f, -1.0f, -1.0f, 1.0f),
+			glm::vec4( 1.0f, -1.0f, 0.0f, 1.0f),
 			glm::vec4( 1.0f, -1.0f,  1.0f, 1.0f),
-			glm::vec4(-1.0f,  1.0f, -1.0f, 1.0f),
+			glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
 			glm::vec4(-1.0f,  1.0f,  1.0f, 1.0f), 
-			glm::vec4( 1.0f,  1.0f, -1.0f, 1.0f),
+			glm::vec4( 1.0f,  1.0f, 0.0f, 1.0f),
 			glm::vec4( 1.0f,  1.0f,  1.0f, 1.0f) 
 		};
 
@@ -84,18 +95,16 @@ namespace NVulkanEngine
 
 		glm::vec3 debugLineColor = glm::vec3(1.0f, 0.0f, 0.0f);
 
-		float minX = corners[0].x;
-		float minY = corners[0].y;
-		float minZ = corners[0].z;
-		float maxX = corners[0].x;
-		float maxY = corners[0].y;
-		float maxZ = corners[0].z;
+		float minX = INFINITY;
+		float minY = INFINITY;
+		float minZ = INFINITY;
+		float maxX = -INFINITY;
+		float maxY = -INFINITY;
+		float maxZ = -INFINITY;
 
 		// Find the min and max values
 		for (uint32_t i = 0; i < 8; i++)
 		{
-			corners[i] = lightLookAt * corners[i];
-
 			if (corners[i].x < minX)
 				minX = corners[i].x;
 			if (corners[i].x > maxX)
@@ -110,16 +119,20 @@ namespace NVulkanEngine
 				maxZ = corners[i].z;
 		}
 
-		glm::AABB testAABB = glm::AABB(glm::vec3(-200.0f, -200.0f, -200.0f), glm::vec3(200.0f, 200.0f, 200.0f));
-
-		managers->m_DebugManager->DrawDebugAABB(testAABB.getMin(), testAABB.getMax(), glm::vec3(0.0f, 1.0f, 0.0f));
+		//glm::AABB testAABB = glm::AABB(glm::vec3(-400.0f, -100.0f, -200.0f), glm::vec3(300.0f, 400.0f, 200.0f));
+		//managers->m_DebugManager->DrawDebugAABB(testAABB.getMin(), testAABB.getMax(), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		//managers->m_DebugManager->DrawDebugAABB(glm::vec3(minX, minY, minZ), glm::vec3(maxX, maxY, maxZ), glm::vec3(1.0f, 0.0f, 0.0f));
 		managers->m_DebugManager->DrawDebugAABB(glm::vec3(minX, minY, -maxZ), glm::vec3(maxX, maxY, -minZ), glm::vec3(1.0f, 0.0f, 0.0f));
 
 		//glm::mat4 lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, -maxZ, -minZ);
 
+
+
 		ImGui::Begin("Shadow Pass");
+		ImGui::SliderFloat("Near Plane", &nearPlane, 0.0f, 10000.0f);
+		ImGui::SliderFloat("Far Plane", &farPlane, 0.0f, 10000.0f);
+
 		ImGui::Text("Left: %f", minX);
 		ImGui::Text("Right: %f", maxX);
 		ImGui::Text("Bottom: %f", minY);

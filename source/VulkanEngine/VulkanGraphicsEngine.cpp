@@ -833,6 +833,8 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CreateModels()
 	{
+
+		glm::AABB sceneBounds = glm::AABB();
 		for (uint32_t i = 0; i < m_ModelManager->GetNumModels(); i++)
 		{
 			CModel* model = m_ModelManager->GetModel(i);
@@ -847,7 +849,11 @@ namespace NVulkanEngine
 			}
 
 			model->CreateModelMeshes(m_Context);
+
+			sceneBounds.extend(model->GetAABB());
 		}
+
+		m_ModelManager->SetSceneBounds(sceneBounds);
 	}
 
 	void CVulkanGraphicsEngine::InitDrawNodes()
@@ -905,6 +911,8 @@ namespace NVulkanEngine
 		float currentAvailableContentRegion = ImGui::GetContentRegionAvail().x;
 		if (ImGui::BeginMenu("Tools"))
 		{
+			ImGui::Text("Textures");
+			ImGui::Text("Models");
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Options"))
@@ -920,7 +928,7 @@ namespace NVulkanEngine
 
 		const std::string cameraPositionStr = std::format("[ Camera Position (X: {:5.0f}, Y: {:5.0f}, Z: {:5.0f}), ", cameraPosition.x, cameraPosition.y, cameraPosition.z);
 		const std::string cameraDirectionStr = std::format("Direction (X: {:3.2f}, Y: {:3.2f}, Z: {:3.2f} ]", cameraDirection.x, cameraDirection.y, cameraDirection.z);
-		const std::string framerateStr = std::format("FPS: {:3.0f} ({:3.2f} ms)", 1.0f / m_Context->GetDeltaTime(), m_Context->GetDeltaTime());
+		const std::string framerateStr = std::format("FPS: {:3.0f} ({:3.2f} ms)", framerate, deltatTime);
 
 		float camInfoSize = ImGui::CalcTextSize((framerateStr + cameraPositionStr + cameraPositionStr).c_str()).x;
 		float currentCursorPos = ImGui::GetCursorPos().x;

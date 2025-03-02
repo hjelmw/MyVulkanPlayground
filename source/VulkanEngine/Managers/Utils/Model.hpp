@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
+#include <glm-aabb/AABB.hpp>
 
 #include <vector>
 
@@ -96,6 +97,8 @@ namespace NVulkanEngine
 		glm::mat4          GetTransform();
 		void               SetTransform(glm::mat4 transform);
 
+		glm::AABB          GetAABB();
+
 		void               SetUsesModelTexture(bool uses_texture);
 		bool               UsesModelTexture();
 
@@ -115,7 +118,7 @@ namespace NVulkanEngine
 		VkDescriptorSetLayout GetModelDescriptorSetLayout();
 
 		uint32_t           GetNumMeshes();
-		SMaterialMesh              GetMesh(const uint32_t index);
+		SMaterialMesh      GetMesh(const uint32_t index);
 		
 		uint32_t           GetNumIndices();
 
@@ -141,6 +144,7 @@ namespace NVulkanEngine
 		std::vector<uint32_t>       m_Indices       = {};
 
 		glm::mat4              m_Transform          = glm::identity<glm::mat4>();
+		glm::AABB              m_ModelAABB      = {};
 
 		SDescriptorSets        m_DescriptorSets     = {};
 
