@@ -1,19 +1,31 @@
 import os
 import zipfile
 import urllib.request
+import shutil
 
 from PrintUtils import Colors, PrintColor
 
 def DownloadFile(packageURL, installPath):
     urllib.request.urlretrieve(packageURL, installPath)
 
-def UnzipFile(newName, zipFilePath, unzipPath):
+def UnzipFile(packageName, packageNameWithVersion, zipFilePath, unzipPath):
     with zipfile.ZipFile(zipFilePath, 'r') as zipRef:
         oldZipName = zipRef.infolist()[0].filename[:-1] # Skip last trailing "/" character
-        print(oldZipName)
         zipRef.extractall(unzipPath)
+
+        # Rename folder to {packageName}-{version}, e.g glm-1.0.1
         if (os.path.isdir("./vendor/" + oldZipName)):
-            os.rename("./vendor/{}".format(oldZipName), "./vendor/{}".format(newName))
+            os.rename("./vendor/{}".format(oldZipName), "./vendor/{}".format(packageNameWithVersion))
+
+        # Add a root folder with only the package name and copy all files there if it does not exist
+        # So that includes in vs can look like #include <glm/glm.hpp> instead of #include <glm-1.0.1/glm.hpp>
+        if(not os.path.isdir("./vendor" + packageNameWithVersion + "/" + packageName)):
+            filesInCurrentDir = os.listdir("./vendor/" + packageNameWithVersion)
+            os.mkdir("./vendor/" + packageNameWithVersion + "/" + packageName)      
+            for fileInCurrentDir in filesInCurrentDir:
+                filenameToMove = os.path.join("./vendor/" + packageNameWithVersion + "/", fileInCurrentDir)
+                shutil.move(filenameToMove, "./vendor/" + packageNameWithVersion + "/" + packageName + "/" + fileInCurrentDir)
+
 
 def DownloadGithubDependency(packageURL, packageName, packageVersion):
     githubInstallURL  = packageURL
@@ -24,19 +36,17 @@ def DownloadGithubDependency(packageURL, packageName, packageVersion):
     DownloadFile(packageURL, githubInstallPath)
     if(fileExtension == "zip"):
         print("Extracting .zip into ./vendor/{}...".format(githubFolderName))
-        UnzipFile(githubFolderName, githubInstallPath, "./vendor")
+        UnzipFile(packageName, githubFolderName, githubInstallPath, "./vendor")
         print("Done! Deleting .zip...")
     os.remove(githubInstallPath)
 
 def CheckVulkanInstalled(printNum, printTotal):
     vulkanSDKEnv = os.environ.get("VULKAN_SDK")
     if vulkanSDKEnv is None:
-        PrintColor(Colors.WARNING, "({}, {})Did not find any active vulkan install. " 
-                   + "Please visit https://vulkan.lunarg.com/ and install the latest Vulkan SDK. "
-                   + "The installer will still work but you will likely not be able to compile the code if this is not fixed. ...".format(printNum, printTotal))
+        PrintColor(Colors.WARNING, "Error Did not find any active vulkan install.")
         return False
     else:
-        PrintColor(Colors.OKBLUE, "({}, {}) Found active Vulkan install, skipped".format(printNum, printTotal))
+        PrintColor(Colors.OKBLUE, "({}, {}) Found active Vulkan install.".format(printNum, printTotal))
         return True
 
 

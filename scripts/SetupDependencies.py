@@ -32,7 +32,7 @@ def CheckAll():
     totalItemsToCheck = 7
 
     # 1. Check Vulkan SDK
-    DownloadUtils.CheckVulkanInstalled(itemsChecked, totalItemsToCheck)
+    vulkanIsInstalled = DownloadUtils.CheckVulkanInstalled(itemsChecked, totalItemsToCheck)
     itemsChecked += 1
 
     # 2. Check premake

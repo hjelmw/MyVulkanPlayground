@@ -30,6 +30,7 @@ project "VulkanEngine"
         "./vendor/imgui-docking/imgui*.cpp",
         "./vendor/imgui-docking/backends/imgui_impl_glfw.cpp",
         "./vendor/imgui-docking/backends/imgui_impl_vulkan.cpp",
+        "./vendor/glm-aabb-master/glm-aabb/AABB.hpp",
         "./vendor/glm-aabb-master/glm-aabb/AABB.cpp"
     }
 
@@ -58,6 +59,8 @@ project "VulkanEngine"
             return nil
         end
     end
+
+
 
     includedirs
     {
