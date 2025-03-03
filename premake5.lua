@@ -64,14 +64,14 @@ project "VulkanEngine"
 
     includedirs
     {
-        "./source/VulkanEngine",
-        "$(VULKAN_SDK)/Include",
         "$(SolutionDir)" .. find_dependency("vendor/glfw*") .. "/include",
         "$(SolutionDir)" .. find_dependency("vendor/glm*"),
         "$(SolutionDir)" .. find_dependency("vendor/glm-aabb*"),
         "$(SolutionDir)" .. find_dependency("vendor/imgui*"),
         "$(SolutionDir)" .. find_dependency("vendor/stb*"),
-        "$(SolutionDir)" .. find_dependency("vendor/tinyobjloader*")
+        "$(SolutionDir)" .. find_dependency("vendor/tinyobjloader*"),
+        "$(VULKAN_SDK)/Include",
+        "./source/VulkanEngine",
     }
 
     links 
