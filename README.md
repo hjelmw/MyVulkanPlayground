@@ -18,10 +18,10 @@ You can have a look under [source/VulkanEngine/DrawNodes/](https://github.com/hj
 5. Open in Visual Studio 2022 (have not tested older versions but it might still work)
 
 
-**Note:** When installing the Vulkan SDK you can optionally choose to install GLM math library but if you did not, the build script will download a working version for you
+**Note:** When installing the Vulkan SDK you can optionally choose to install the GLM math library but regardless the build script will download and use its own version
 
 ## Dependencies
-* Vulkan SDK (Your graphics driver needs to support `VK_KHR_DYNAMIC_RENDERING`)
+* Vulkan SDK (Your graphics driver needs to support `VK_KHR_DYNAMIC_RENDERING` and '')
 * Python3
 * Premake5
 * GLFW
