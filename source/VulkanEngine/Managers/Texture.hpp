@@ -1,7 +1,7 @@
 #include <vulkan/vulkan.h>
 
 #include "GraphicsContext.hpp"
-#include <stb_image.h>
+#include <stbi/stb_image.h>
 #include <string>
 
 /*

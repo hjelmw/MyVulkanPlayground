@@ -17,9 +17,19 @@ def UnzipFile(packageName, packageNameWithVersion, zipFilePath, unzipPath):
         if (os.path.isdir("./vendor/" + oldZipName)):
             os.rename("./vendor/{}".format(oldZipName), "./vendor/{}".format(packageNameWithVersion))
 
+
+        fileIsExecutable = os.path.exists("./vendor/{}.exe".format(packageName))
+        packageHasNestedFolder = os.path.isdir("./vendor/" + packageNameWithVersion + "/" + packageName)
+
+        print("./vendor/{}.exe".format(packageNameWithVersion))
+        print("./vendor" + packageNameWithVersion + "/" + packageName)
+
+        print(fileIsExecutable)
+        print(packageHasNestedFolder)
+
         # Add a root folder with only the package name and copy all files there if it does not exist
         # So that includes in vs can look like #include <glm/glm.hpp> instead of #include <glm-1.0.1/glm.hpp>
-        if(not os.path.isdir("./vendor" + packageNameWithVersion + "/" + packageName)):
+        if( not fileIsExecutable and not packageHasNestedFolder ):
             filesInCurrentDir = os.listdir("./vendor/" + packageNameWithVersion)
             os.mkdir("./vendor/" + packageNameWithVersion + "/" + packageName)      
             for fileInCurrentDir in filesInCurrentDir:

@@ -1,7 +1,7 @@
 #include "Model.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include <tinyobjloader/tiny_obj_loader.h>
 
 #include <cstdlib>
 #include <iostream>

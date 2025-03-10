@@ -24,12 +24,12 @@ project "VulkanEngine"
 
     files 
     { 
-        "./vendor/imgui-docking/imgui*.h",
-        "./vendor/imgui-docking/backends/imgui_impl_glfw.hpp",
-        "./vendor/imgui-docking/backends/imgui_impl_vulkan.hpp",
-        "./vendor/imgui-docking/imgui*.cpp",
-        "./vendor/imgui-docking/backends/imgui_impl_glfw.cpp",
-        "./vendor/imgui-docking/backends/imgui_impl_vulkan.cpp",
+        "./vendor/imgui-docking/imgui/imgui*.h",
+        "./vendor/imgui-docking/imgui/backends/imgui_impl_glfw.hpp",
+        "./vendor/imgui-docking/imgui/backends/imgui_impl_vulkan.hpp",
+        "./vendor/imgui-docking/imgui/imgui*.cpp",
+        "./vendor/imgui-docking/imgui/backends/imgui_impl_glfw.cpp",
+        "./vendor/imgui-docking/imgui/backends/imgui_impl_vulkan.cpp",
         "./vendor/glm-aabb-master/glm-aabb/AABB.hpp",
         "./vendor/glm-aabb-master/glm-aabb/AABB.cpp"
     }
@@ -39,12 +39,13 @@ project "VulkanEngine"
     {
         ["headers/*"] = { "./source/**.hpp" },
         ["source/*"] = { "./source/**.cpp" },
-        ["imgui/*"] = {"./vendor/imgui-docking/.**cpp" }
+        ["imgui/*"] = {"./vendor/imgui-docking/imgui/.**cpp" }
     }
 
     defines 
     {
         "GLM_ENABLE_EXPERIMENTAL",
+        "GLM_FORCE_CXX20",
         "GLM_FORCE_RADIANS",
         "GLM_FORCE_DEPTH_ZERO_TO_ONE",
         "GLM_FORCE_XYZW_ONLY"
@@ -64,11 +65,11 @@ project "VulkanEngine"
 
     includedirs
     {
-        "$(SolutionDir)" .. find_dependency("vendor/glfw*") .. "/include",
+        "$(SolutionDir)" .. find_dependency("vendor/glfw*") .. "/glfw/include",
         "$(SolutionDir)" .. find_dependency("vendor/glm*"),
         "$(SolutionDir)" .. find_dependency("vendor/glm-aabb*"),
-        "$(SolutionDir)" .. find_dependency("vendor/imgui*"),
-        "$(SolutionDir)" .. find_dependency("vendor/stb*"),
+        "$(SolutionDir)" .. find_dependency("vendor/imgui*") .. "/imgui", -- This is needed because the backend does relative includes :(
+        "$(SolutionDir)" .. find_dependency("vendor/stbi*"),
         "$(SolutionDir)" .. find_dependency("vendor/tinyobjloader*"),
         "$(VULKAN_SDK)/Include",
         "./source/VulkanEngine",
@@ -77,7 +78,7 @@ project "VulkanEngine"
     links 
     {
         "$(VULKAN_SDK)/Lib/vulkan-1.lib",
-        "$(SolutionDir)" .. find_dependency("vendor/glfw*") .. "/lib-vc2022/glfw3.lib",
+        "$(SolutionDir)" .. find_dependency("vendor/glfw*") .. "/glfw/lib-vc2022/glfw3.lib",
     }
 
     filter "files:shaders/**.vert"

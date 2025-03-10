@@ -23,7 +23,7 @@
 #include <optional>
 #include <chrono>
 #include <thread>
-
+static float testvar = 0.0f;
 static float g_ImGuiGlobalFontSize = 1.0f;
 
 static void check_vk_result(VkResult err)

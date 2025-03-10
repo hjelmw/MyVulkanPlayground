@@ -1,5 +1,5 @@
 #include <vulkan/vulkan.h>
-#include <GLFW/glfw3.h>
+#include <glfw/glfw3.h>
 
 #include <VulkanGraphicsEngineUtils.hpp>
 #include <Swapchain.hpp>
