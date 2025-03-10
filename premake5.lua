@@ -14,6 +14,11 @@ project "VulkanEngine"
     objdir "build/%{cfg.buildcfg}/obj"
     flags "MultiProcessorCompile"
 
+    buildoptions 
+    {
+        "/Zc:__cplusplus" -- Changes __cplusplus macro so glm stops complaining about C++ version (MSVC defines it as 199711L regardless of actual version)
+    }
+
     postbuildcommands 
     {
          "{COPYFILE} %[build/%{cfg.buildcfg}/VulkanEngine.exe] %[./VulkanEngine_%{cfg.buildcfg}.exe]"
@@ -45,7 +50,7 @@ project "VulkanEngine"
     defines 
     {
         "GLM_ENABLE_EXPERIMENTAL",
-        "GLM_FORCE_CXX20",
+        "GLM_FORCE_CXX17",
         "GLM_FORCE_RADIANS",
         "GLM_FORCE_DEPTH_ZERO_TO_ONE",
         "GLM_FORCE_XYZW_ONLY"
