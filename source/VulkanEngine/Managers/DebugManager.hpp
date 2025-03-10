@@ -27,6 +27,7 @@ namespace NVulkanEngine
 		void DrawDebugLine(glm::vec3 from, glm::vec3 to, glm::vec3 color);
 		void DrawDebugAABB(glm::AABB boundingBox, glm::vec3 color);
 		void DrawDebugAABB(glm::vec3 min, glm::vec3 max, glm::vec3 color);
+		void DrawDebugOBB(glm::AABB aabb, glm::mat4 transformMatrix, glm::vec3 color);
 
 		VkBuffer GetDebugLinesVertexBuffer();
 		const uint32_t GetNumDebugLines();

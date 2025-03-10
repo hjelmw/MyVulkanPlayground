@@ -983,7 +983,7 @@ namespace NVulkanEngine
 					selectedId = -1;
 				}
 
-				ImGui::Image((ImTextureID)attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x - 40.0f, ImGui::GetContentRegionAvail().y - 40.0f), ImVec2(0.0f , 0.0f), ImVec2(1.0f, 1.0f));
+				ImGui::Image((ImTextureID)attachment.m_ImguiDescriptor, ImVec2(ImGui::GetContentRegionAvail().x - 40.0f, ImGui::GetContentRegionAvail().y - 40.0f), ImVec2(0.0f , 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f * brightness[0], 1.0f * brightness[1], 1.0f * brightness[2], 1.0f));
 			}
 		}
 

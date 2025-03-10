@@ -27,19 +27,6 @@ namespace NVulkanEngine
 
 	void CDebugManager::DrawDebugAABB(glm::vec3 min, glm::vec3 max, glm::vec3 color)
 	{
-		// Bottom part of box
-		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, min.z), color });
-		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, min.z), color });
-
-		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, min.z), color });
-		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, max.z), color });
-
-		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, max.z), color });
-		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, max.z), color });
-
-		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, max.z), color });
-		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, min.z), color });
-
 		// Top part of box
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, max.y, min.z), color });
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, max.y, min.z), color });
@@ -52,6 +39,19 @@ namespace NVulkanEngine
 
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, max.y, max.z), color });
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, max.y, min.z), color });
+
+		// Bottom part of box
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, min.z), color });
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, min.z), color });
+
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, min.z), color });
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, max.z), color });
+
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, max.z), color });
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, max.z), color });
+
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, max.z), color });
+		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, min.z), color });
 
 		// Sides of box
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(min.x, min.y, min.z), color });
@@ -66,6 +66,58 @@ namespace NVulkanEngine
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, min.y, max.z), color });
 		m_DebugVertexLinesAddList.push_back({ glm::vec3(max.x, max.y, max.z), color });
 	}
+
+	void CDebugManager::DrawDebugOBB(glm::AABB aabb, glm::mat4 transformMatrix, glm::vec3 color)
+	{
+
+		glm::vec4 AABBMinCorner = glm::vec4(aabb.getMin(), 1.0f);
+		glm::vec4 AABBMaxCorner = glm::vec4(aabb.getMax(), 1.0f);
+
+		const float diffMaxMinX = AABBMaxCorner.x - AABBMinCorner.x;
+		const float diffMaxMinY = AABBMaxCorner.y - AABBMinCorner.y;
+		const float diffMinMaxX = AABBMinCorner.x - AABBMaxCorner.x;
+		const float diffMinMaxY = AABBMinCorner.y - AABBMaxCorner.y;
+
+		std::array<glm::vec3, 8> orientedCorners = {};
+		orientedCorners[0] = transformMatrix *  AABBMinCorner;
+		orientedCorners[1] = transformMatrix * (AABBMinCorner + glm::vec4(diffMaxMinX, 0.0f,        0.0f, 1.0f));
+		orientedCorners[2] = transformMatrix * (AABBMinCorner + glm::vec4(diffMaxMinX, diffMaxMinY, 0.0f, 1.0f));
+		orientedCorners[3] = transformMatrix * (AABBMinCorner + glm::vec4(0.0f,        diffMaxMinY, 0.0f, 1.0f));
+
+		orientedCorners[4] = transformMatrix *  AABBMaxCorner;
+		orientedCorners[5] = transformMatrix * (AABBMaxCorner + glm::vec4(diffMinMaxX, 0.0f,        0.0f, 1.0f));
+		orientedCorners[6] = transformMatrix * (AABBMaxCorner + glm::vec4(diffMinMaxX, diffMinMaxY, 0.0f, 1.0f));
+		orientedCorners[7] = transformMatrix * (AABBMaxCorner + glm::vec4(0.0f,        diffMinMaxY, 0.0f, 1.0f));
+
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[0], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[1], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[0], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[3], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[2], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[1], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[2], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[3], color });
+
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[4], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[5], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[4], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[7], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[6], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[5], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[6], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[7], color });
+
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[0], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[6], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[1], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[7], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[2], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[4], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[3], color });
+		m_DebugVertexLinesAddList.push_back({ orientedCorners[5], color });
+
+	}
+
 
 	VkBuffer CDebugManager::GetDebugLinesVertexBuffer()
 	{

@@ -6,8 +6,11 @@
 
 #define SHADOWMAP_RESOLUTION 2048
 
-static float nearPlane = 500.0f;
-static float farPlane = 2000.0f;
+static float g_SunZenithDegrees  = 0.0f;
+static float g_SunAzimuthDegrees = 0.0f;
+static float g_TestRotationXDegrees = 0.0f;
+static float g_TestRotationYDegrees = 0.0f;
+static float g_TestRotationZDegrees = 2.0f;
 
 namespace NVulkanEngine
 {
@@ -45,111 +48,176 @@ namespace NVulkanEngine
 		m_ShadowPipeline->CreatePipeline(context, modelDescriptorSetLayout);
 	}
 
-	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
+	glm::mat4 GetZenithAzimuthRotationMatrix(float zenithRadians, float azimuthRadians)
 	{
-		glm::vec3 cameraPosition = managers->m_InputManager->GetCamera()->GetPosition();
+		glm::mat4 rotationZenith = glm::identity<glm::mat4>();
+		glm::mat4 rotationAzimuth= glm::identity<glm::mat4>();
+		rotationZenith  = glm::rotate(rotationZenith, zenithRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		rotationAzimuth = glm::rotate(rotationAzimuth, azimuthRadians, glm::vec3(1.0f, 0.0f, 0.0f));
 
-		//SLightSource sunLight    = managers->m_LightManager->GetSunlight();
-		glm::vec3 lightPosition  = glm::vec3(0.0f, 1500.0f, 0.0f);//sunLight.m_Position;
-		glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);//sunLight.m_Direction;
+		glm::mat4 rotationMatrix = rotationZenith * rotationAzimuth;
+		return rotationMatrix;
+	}
 
-		glm::mat4 lightLookAt = glm::lookAt(
-			lightPosition,
-			lightDirection,
-			glm::vec3(0.0f, 0.0f, 1.0f)
+	void GetSunlightFrustum(const SGraphicsManagers* managers, glm::mat4& lookatMatrix, glm::mat4& projectionMatrix)
+	{
+		glm::AABB sceneBounds = managers->m_Modelmanager->GetSceneBounds();
+
+		managers->m_DebugManager->DrawDebugAABB(sceneBounds.getMin(), sceneBounds.getMax(), glm::vec3(0.0f, 0.0f, 1.0f));
+
+		glm::mat4 sunlightrotationMatrix = glm::identity<glm::mat4>();
+		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_TestRotationXDegrees), glm::vec3(1.0f, 0.0f, 0.0f));
+		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_TestRotationYDegrees), glm::vec3(0.0f, 1.0f, 0.0f));
+		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_TestRotationZDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
+		sceneBounds.transformCorners(glm::inverse(sunlightrotationMatrix));
+
+		glm::vec3 sunlightlightDirection = -(sunlightrotationMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f));
+
+		glm::vec3 sunlightAxisVector = glm::cross(sunlightlightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+
+		// If vectors are parallel cross product is not defined
+		if (glm::length(sunlightAxisVector) < 1e-6f)
+			sunlightAxisVector = glm::vec3(0.1f, 1.0f, 0.0f);
+
+		sunlightAxisVector = -glm::normalize(sunlightAxisVector);
+		glm::vec3 sunlightUpDirection = -glm::cross(sunlightlightDirection, -sunlightAxisVector);
+
+		glm::mat4 sunlightViewMatrix = glm::mat4(
+			glm::vec4(sunlightAxisVector, 0.0f),
+			glm::vec4(sunlightUpDirection, 0.0f),
+			glm::vec4(sunlightlightDirection, 0.0f),
+			glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
 		);
 
-		glm::AABB sceneBounds = managers->m_Modelmanager->GetSceneBounds();
-		glm::mat4 lightOrthoMatrix = glm::ortho(
-			sceneBounds.getMin().x,
+		// DO ortho of center
+		glm::mat4 sunlightOrthoMatrix = glm::ortho(
+			sceneBounds.getDiagonal().x,
 			sceneBounds.getMax().x,
-			sceneBounds.getMin().z,
-			sceneBounds.getMax().z,
-			-sceneBounds.getMax().y + lightPosition.y,
-			-sceneBounds.getMin().y + lightPosition.y);
-		//glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1100.0f, 1800.0f);
-		lightOrthoMatrix[1][1] *= -1; // Vulkan requirement
+			sceneBounds.getDiagonal().y,
+			sceneBounds.getMax().y,
+			-sceneBounds.getMax().z,
+			-sceneBounds.getMin().z);
+		//glm::mat4 sunlightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1100.0f, 1800.0f);
 
-		glm::mat4 cameraLookAt = managers->m_InputManager->GetCamera()->GetLookAtMatrix();
-		glm::mat4 cameraProjection = managers->m_InputManager->GetCamera()->GetProjectionMatrix();
-		glm::mat4 invCameraViewProjection = glm::inverse(lightOrthoMatrix * lightLookAt);
+		glm::vec3 sunlightlightPosition = sunlightrotationMatrix * glm::vec4(0.0f, sceneBounds.getDiagonal().y, 0.0f, 1.0f);
+		glm::vec3 debugLightDir = sunlightlightPosition - sunlightlightDirection * 100.0f;
+		glm::vec3 debugUpDir = sunlightlightPosition - sunlightUpDirection * 100.0f;
+		glm::vec3 debugAxisDir = sunlightlightPosition - sunlightAxisVector * 100.0f;
+		managers->m_DebugManager->DrawDebugOBB(sceneBounds, sunlightrotationMatrix, glm::vec3(1.0f, 0.0f, 0.0f));
+		managers->m_DebugManager->DrawDebugLine(sunlightlightPosition, debugLightDir, glm::vec3(1.0f, 0.0f, 0.0f));
+		managers->m_DebugManager->DrawDebugLine(sunlightlightPosition, debugUpDir, glm::vec3(0.0f, 1.0f, 0.0f));
+		managers->m_DebugManager->DrawDebugLine(sunlightlightPosition, debugAxisDir, glm::vec3(0.0f, 0.0f, 1.0f));
 
-		// The 8 corners of the camera view frustum in NDC space
-		glm::vec4 corners[8] =
-		{
-			glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),
-			glm::vec4(-1.0f, -1.0f,  1.0f, 1.0f),
-			glm::vec4( 1.0f, -1.0f, 0.0f, 1.0f),
-			glm::vec4( 1.0f, -1.0f,  1.0f, 1.0f),
-			glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
-			glm::vec4(-1.0f,  1.0f,  1.0f, 1.0f), 
-			glm::vec4( 1.0f,  1.0f, 0.0f, 1.0f),
-			glm::vec4( 1.0f,  1.0f,  1.0f, 1.0f) 
-		};
+		lookatMatrix = sunlightViewMatrix;
+		projectionMatrix = sunlightOrthoMatrix;
+	}
 
-		for (uint32_t i = 0; i < 8; i++)
-		{
-			corners[i] = invCameraViewProjection * corners[i];
-			corners[i] /= corners[i].w; // Perspective divide
-		}
+	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
+	{
+		//glm::vec3 cameraPosition = managers->m_InputManager->GetCamera()->GetPosition();
 
-		glm::vec3 debugLineColor = glm::vec3(1.0f, 0.0f, 0.0f);
+		//glm::mat4 sunlightRotationMatrix = GetZenithAzimuthRotationMatrix(glm::radians(g_SunZenithDegrees), glm::radians(g_SunAzimuthDegrees));
 
-		float minX = INFINITY;
-		float minY = INFINITY;
-		float minZ = INFINITY;
-		float maxX = -INFINITY;
-		float maxY = -INFINITY;
-		float maxZ = -INFINITY;
+		//glm::vec3 sunlightlightPosition  = sunlightRotationMatrix * glm::vec4(0.0f, 1500.0f, 0.0f, 1.0f);
+		//glm::vec3 sunlightlightDirection = glm::normalize(-sunlightlightPosition);
+		//glm::vec3 sunlightUpDirection    = sunlightRotationMatrix * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
-		// Find the min and max values
-		for (uint32_t i = 0; i < 8; i++)
-		{
-			if (corners[i].x < minX)
-				minX = corners[i].x;
-			if (corners[i].x > maxX)
-				maxX = corners[i].x;
-			if (corners[i].y < minY)
-				minY = corners[i].y;
-			if (corners[i].y > maxY)
-				maxY = corners[i].y;
-			if (corners[i].z < minZ)
-				minZ = corners[i].z;
-			if (corners[i].z > maxZ)
-				maxZ = corners[i].z;
-		}
+		//glm::mat4 sunlightLookAt = glm::lookAt(
+		//	sunlightlightPosition,
+		//	sunlightlightDirection,
+		//	sunlightUpDirection
+		//);
 
-		//glm::AABB testAABB = glm::AABB(glm::vec3(-400.0f, -100.0f, -200.0f), glm::vec3(300.0f, 400.0f, 200.0f));
-		//managers->m_DebugManager->DrawDebugAABB(testAABB.getMin(), testAABB.getMax(), glm::vec3(0.0f, 1.0f, 0.0f));
+		//glm::AABB sceneBounds = managers->m_Modelmanager->GetSceneBounds();
+
+		//glm::mat4 lightOrthoMatrix = glm::ortho(
+		//	sceneBounds.getMin().x,
+		//	sceneBounds.getMax().x,
+		//	sceneBounds.getMin().z,
+		//	sceneBounds.getMax().z,
+		//	-sceneBounds.getMax().y + sunlightlightPosition.y,
+		//	-sceneBounds.getMin().y + sunlightlightPosition.y);
+		////glm::mat4 lightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1100.0f, 1800.0f);
+		//lightOrthoMatrix[1][1] *= -1; // Vulkan requirement
+
+		//glm::mat4 cameraLookAt = managers->m_InputManager->GetCamera()->GetLookAtMatrix();
+		//glm::mat4 cameraProjection = managers->m_InputManager->GetCamera()->GetProjectionMatrix();
+		//glm::mat4 invCameraViewProjection = glm::inverse(lightOrthoMatrix * sunlightLookAt);
+
+		//// The 8 corners of the camera view frustum in NDC space
+		//glm::vec4 corners[8] =
+		//{
+		//	glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),
+		//	glm::vec4(-1.0f, -1.0f,  1.0f, 1.0f),
+		//	glm::vec4( 1.0f, -1.0f, 0.0f, 1.0f),
+		//	glm::vec4( 1.0f, -1.0f,  1.0f, 1.0f),
+		//	glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f),
+		//	glm::vec4(-1.0f,  1.0f,  1.0f, 1.0f), 
+		//	glm::vec4( 1.0f,  1.0f, 0.0f, 1.0f),
+		//	glm::vec4( 1.0f,  1.0f,  1.0f, 1.0f) 
+		//};
+
+		//for (uint32_t i = 0; i < 8; i++)
+		//{
+		//	corners[i] = invCameraViewProjection * corners[i];
+		//	corners[i] /= corners[i].w; // Perspective divide
+		//}
+
+		//glm::vec3 debugLineColor = glm::vec3(1.0f, 0.0f, 0.0f);
+
+		//float minX = INFINITY;
+		//float minY = INFINITY;
+		//float minZ = INFINITY;
+		//float maxX = -INFINITY;
+		//float maxY = -INFINITY;
+		//float maxZ = -INFINITY;
+
+		//// Find the min and max values
+		//for (uint32_t i = 0; i < 8; i++)
+		//{
+		//	if (corners[i].x < minX)
+		//		minX = corners[i].x;
+		//	if (corners[i].x > maxX)
+		//		maxX = corners[i].x;
+		//	if (corners[i].y < minY)
+		//		minY = corners[i].y;
+		//	if (corners[i].y > maxY)
+		//		maxY = corners[i].y;
+		//	if (corners[i].z < minZ)
+		//		minZ = corners[i].z;
+		//	if (corners[i].z > maxZ)
+		//		maxZ = corners[i].z;
+		//}
+
 
 		//managers->m_DebugManager->DrawDebugAABB(glm::vec3(minX, minY, minZ), glm::vec3(maxX, maxY, maxZ), glm::vec3(1.0f, 0.0f, 0.0f));
-		managers->m_DebugManager->DrawDebugAABB(glm::vec3(minX, minY, -maxZ), glm::vec3(maxX, maxY, -minZ), glm::vec3(1.0f, 0.0f, 0.0f));
+		//managers->m_DebugManager->DrawDebugAABB(glm::vec3(minX, minY, -maxZ), glm::vec3(maxX, maxY, -minZ), glm::vec3(1.0f, 0.0f, 0.0f));
 
 		//glm::mat4 lightOrthoMatrix = glm::ortho(minX, maxX, minY, maxY, -maxZ, -minZ);
 
-
+		static float sunZenithAndAzimuth[2] = { g_SunZenithDegrees, g_SunAzimuthDegrees };
 
 		ImGui::Begin("Shadow Pass");
-		ImGui::SliderFloat("Near Plane", &nearPlane, 0.0f, 10000.0f);
-		ImGui::SliderFloat("Far Plane", &farPlane, 0.0f, 10000.0f);
-
-		ImGui::Text("Left: %f", minX);
-		ImGui::Text("Right: %f", maxX);
-		ImGui::Text("Bottom: %f", minY);
-		ImGui::Text("Top: %f", maxY);
-		ImGui::Text("Near: %f", -maxZ);
-		ImGui::Text("Far: %f", -minZ);
+		ImGui::SliderFloat2("Zenith & Azimuth", sunZenithAndAzimuth, 0.0f, 360.0f);
+		ImGui::SliderFloat("Test rotationX", &g_TestRotationXDegrees, 0.0f, 1500.0f);
+		ImGui::SliderFloat("Test rotationY", &g_TestRotationYDegrees, 0.0f, 1500.0f);
+		ImGui::SliderFloat("Test rotationZ", &g_TestRotationZDegrees, 0.0f, 1500.0f);
+		g_SunZenithDegrees = sunZenithAndAzimuth[0];
+		g_SunAzimuthDegrees = sunZenithAndAzimuth[1];
 		ImGui::End();
 
-		s_LightMatrix = lightOrthoMatrix * lightLookAt;
+		glm::mat4 sunlightLookAt   = glm::identity<glm::mat4>();
+		glm::mat4 lightOrthoMatrix = glm::identity<glm::mat4>();
+		GetSunlightFrustum(managers, sunlightLookAt, lightOrthoMatrix);
 
+		s_LightMatrix = lightOrthoMatrix * sunlightLookAt;
 
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 			
 			SShadowUniformBuffer uboShadow{};
-			uboShadow.m_ViewMatrix       = lightLookAt;
+			uboShadow.m_ViewMatrix       = sunlightLookAt;
 			uboShadow.m_ProjectionMatrix = lightOrthoMatrix;
 			uboShadow.m_ModelMatrix      = model->GetTransform();
 			
