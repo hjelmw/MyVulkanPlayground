@@ -50,7 +50,6 @@ project "VulkanEngine"
     defines 
     {
         "GLM_ENABLE_EXPERIMENTAL",
-        "GLM_FORCE_CXX17",
         "GLM_FORCE_RADIANS",
         "GLM_FORCE_DEPTH_ZERO_TO_ONE",
         "GLM_FORCE_XYZW_ONLY"
