@@ -22,6 +22,7 @@ namespace NVulkanEngine
 		virtual void Cleanup(CGraphicsContext* context) override;
 
 		static glm::mat4 GetLightMatrix() { return s_LightMatrix; };
+		static glm::vec3 GetSunlightDirection() { return s_SunlightDirection; };
 
 	private:
 		void UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers);
@@ -33,7 +34,7 @@ namespace NVulkanEngine
 		VkDeviceMemory				  m_ShadowBufferMemory = VK_NULL_HANDLE;
 
 		static glm::mat4              s_LightMatrix;
-
+		static glm::vec3			  s_SunlightDirection;
 		// Pipeline
 		CPipeline* m_ShadowPipeline = nullptr;
 	};

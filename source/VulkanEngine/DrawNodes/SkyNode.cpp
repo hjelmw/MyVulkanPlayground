@@ -1,4 +1,5 @@
 #include "SkyNode.hpp"
+#include "ShadowNode.hpp"
 
 #include <imgui.h>
 
@@ -96,7 +97,7 @@ namespace NVulkanEngine
 
 		glm::vec3 planetCameraPos = glm::vec3(0.0f, g_PlanetRadius + camera->GetPosition().y, 0.0f);
 		glm::vec3 planetCenter    = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 sunDirection    = -glm::vec3(0.0f, -1.0f, 0.0f);
+		glm::vec3 sunDirection    = CShadowNode::GetSunlightDirection();
 		glm::vec3 planetToSunDir  = sunDirection;
 
 		SAtmosphericsFragmentConstants atmosphericsUbo{};

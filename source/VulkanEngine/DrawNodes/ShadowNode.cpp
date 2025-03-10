@@ -4,7 +4,7 @@
 
 #include <glm-aabb/AABB.hpp>
 
-#define SHADOWMAP_RESOLUTION 2048
+#define SHADOWMAP_RESOLUTION 4096
 
 static float g_SunZenithDegrees  = 0.0f;
 static float g_SunAzimuthDegrees = 0.0f;
@@ -15,7 +15,7 @@ static float g_TestRotationZDegrees = 2.0f;
 namespace NVulkanEngine
 {
 	glm::mat4 CShadowNode::s_LightMatrix = glm::identity<glm::mat4>();
-
+	glm::vec3 CShadowNode::s_SunlightDirection = glm::vec3(0.0f, 0.0f, 0.0f);
 	struct SShadowUniformBuffer
 	{
 		glm::mat4 m_ModelMatrix;
@@ -59,17 +59,17 @@ namespace NVulkanEngine
 		return rotationMatrix;
 	}
 
-	void GetSunlightFrustum(const SGraphicsManagers* managers, glm::mat4& lookatMatrix, glm::mat4& projectionMatrix)
+	void GetSunlightFrustum(const SGraphicsManagers* managers, glm::vec3& sunlightDirection, glm::mat4& lookatMatrix, glm::mat4& projectionMatrix)
 	{
 		glm::AABB sceneBounds = managers->m_Modelmanager->GetSceneBounds();
 
 		managers->m_DebugManager->DrawDebugAABB(sceneBounds.getMin(), sceneBounds.getMax(), glm::vec3(0.0f, 0.0f, 1.0f));
 
 		glm::mat4 sunlightrotationMatrix = glm::identity<glm::mat4>();
-		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_TestRotationXDegrees), glm::vec3(1.0f, 0.0f, 0.0f));
-		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_TestRotationYDegrees), glm::vec3(0.0f, 1.0f, 0.0f));
-		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_TestRotationZDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
+		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_SunAzimuthDegrees), glm::vec3(0.0f, 1.0f, 0.0f));
+		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_SunZenithDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
 		sceneBounds.transformCorners(glm::inverse(sunlightrotationMatrix));
+		managers->m_DebugManager->DrawDebugAABB(sceneBounds.getMin(), sceneBounds.getMax(), glm::vec3(0.0f, 0.0f, 1.0f));
 
 		glm::vec3 sunlightlightDirection = -(sunlightrotationMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f));
 
@@ -89,20 +89,23 @@ namespace NVulkanEngine
 			glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
 		);
 
-		// DO ortho of center
+		sunlightViewMatrix = glm::inverse(sunlightViewMatrix);
+
 		glm::mat4 sunlightOrthoMatrix = glm::ortho(
-			sceneBounds.getDiagonal().x,
+			sceneBounds.getMin().x,
 			sceneBounds.getMax().x,
-			sceneBounds.getDiagonal().y,
+			sceneBounds.getMin().y,
 			sceneBounds.getMax().y,
 			-sceneBounds.getMax().z,
-			-sceneBounds.getMin().z);
+			-sceneBounds.getMin().z );
+		sunlightOrthoMatrix[1][1] *= -1;
+
 		//glm::mat4 sunlightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1100.0f, 1800.0f);
 
 		glm::vec3 sunlightlightPosition = sunlightrotationMatrix * glm::vec4(0.0f, sceneBounds.getDiagonal().y, 0.0f, 1.0f);
-		glm::vec3 debugLightDir = sunlightlightPosition - sunlightlightDirection * 100.0f;
-		glm::vec3 debugUpDir = sunlightlightPosition - sunlightUpDirection * 100.0f;
-		glm::vec3 debugAxisDir = sunlightlightPosition - sunlightAxisVector * 100.0f;
+		glm::vec3 debugLightDir = sunlightlightPosition + sunlightlightDirection * 100.0f;
+		glm::vec3 debugUpDir = sunlightlightPosition + sunlightUpDirection * 100.0f;
+		glm::vec3 debugAxisDir = sunlightlightPosition + sunlightAxisVector * 100.0f;
 		managers->m_DebugManager->DrawDebugOBB(sceneBounds, sunlightrotationMatrix, glm::vec3(1.0f, 0.0f, 0.0f));
 		managers->m_DebugManager->DrawDebugLine(sunlightlightPosition, debugLightDir, glm::vec3(1.0f, 0.0f, 0.0f));
 		managers->m_DebugManager->DrawDebugLine(sunlightlightPosition, debugUpDir, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -110,6 +113,7 @@ namespace NVulkanEngine
 
 		lookatMatrix = sunlightViewMatrix;
 		projectionMatrix = sunlightOrthoMatrix;
+		sunlightDirection = sunlightlightDirection;
 	}
 
 	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
@@ -199,26 +203,23 @@ namespace NVulkanEngine
 
 		ImGui::Begin("Shadow Pass");
 		ImGui::SliderFloat2("Zenith & Azimuth", sunZenithAndAzimuth, 0.0f, 360.0f);
-		ImGui::SliderFloat("Test rotationX", &g_TestRotationXDegrees, 0.0f, 1500.0f);
-		ImGui::SliderFloat("Test rotationY", &g_TestRotationYDegrees, 0.0f, 1500.0f);
-		ImGui::SliderFloat("Test rotationZ", &g_TestRotationZDegrees, 0.0f, 1500.0f);
 		g_SunZenithDegrees = sunZenithAndAzimuth[0];
 		g_SunAzimuthDegrees = sunZenithAndAzimuth[1];
 		ImGui::End();
 
-		glm::mat4 sunlightLookAt   = glm::identity<glm::mat4>();
-		glm::mat4 lightOrthoMatrix = glm::identity<glm::mat4>();
-		GetSunlightFrustum(managers, sunlightLookAt, lightOrthoMatrix);
+		glm::mat4 sunlightViewMatrix       = glm::identity<glm::mat4>();
+		glm::mat4 sunlightProjectionMatrix = glm::identity<glm::mat4>();
+		GetSunlightFrustum(managers, s_SunlightDirection, sunlightViewMatrix, sunlightProjectionMatrix);
 
-		s_LightMatrix = lightOrthoMatrix * sunlightLookAt;
+		s_LightMatrix = sunlightProjectionMatrix * sunlightViewMatrix;
 
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 			
 			SShadowUniformBuffer uboShadow{};
-			uboShadow.m_ViewMatrix       = sunlightLookAt;
-			uboShadow.m_ProjectionMatrix = lightOrthoMatrix;
+			uboShadow.m_ViewMatrix       = sunlightViewMatrix;
+			uboShadow.m_ProjectionMatrix = sunlightProjectionMatrix;
 			uboShadow.m_ModelMatrix      = model->GetTransform();
 			
 			void* data;

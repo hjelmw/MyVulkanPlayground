@@ -731,8 +731,8 @@ namespace NVulkanEngine
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			(uint32_t)2048,
-			(uint32_t)2048);
+			(uint32_t)4096,
+			(uint32_t)4096);
 
 		m_AttachmentManager->AddAttachment(
 			m_Context,
