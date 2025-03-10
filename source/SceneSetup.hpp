@@ -33,6 +33,17 @@ void SetupModels(NVulkanEngine::CVulkanGraphicsEngine& graphicsEngine)
 	graphicsEngine.SetModelPosition(0.0f, 150.0f, 200.0f);
 	graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
 	graphicsEngine.PushModel();
+
+	graphicsEngine.AddModelFilepath("models/NewShip.obj");
+	graphicsEngine.SetModelPosition(1800.0, 150.0f, -1000.0f);
+	graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
+	graphicsEngine.PushModel();
+
+	graphicsEngine.AddModelFilepath("models/NewShip.obj");
+	graphicsEngine.SetModelPosition(-2800.0, 800.0f, -1000.0f);
+	graphicsEngine.SetModelScaling(15.0f, 15.0f, 15.0f);
+	graphicsEngine.PushModel();
+
 }
 
 void SetupLights(NVulkanEngine::CVulkanGraphicsEngine& graphicsEngine)
