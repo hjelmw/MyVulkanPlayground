@@ -37,7 +37,7 @@ namespace NVulkanEngine
 		// Just get any descriptor set layout since they are the same for all the models atm
 		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();
 
-		m_ShadowPipeline = new CPipeline();
+		m_ShadowPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_ShadowPipeline->SetVertexShader("shaders/shadow.vert.spv");
 		m_ShadowPipeline->SetFragmentShader("shaders/shadow.frag.spv");
 		m_ShadowPipeline->SetCullingMode(VK_CULL_MODE_NONE);

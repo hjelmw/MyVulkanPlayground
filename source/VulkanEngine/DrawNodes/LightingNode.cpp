@@ -49,7 +49,7 @@ namespace NVulkanEngine
 		const VkFormat sceneColorAttachmentFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::SceneColor).m_Format;
 		const VkFormat depthFormat = depthAttachment.m_Format;
 
-		m_DeferredPipeline = new CPipeline();
+		m_DeferredPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_DeferredPipeline->SetVertexShader("shaders/deferred.vert.spv");
 		m_DeferredPipeline->SetFragmentShader("shaders/deferred.frag.spv");
 		m_DeferredPipeline->SetCullingMode(VK_CULL_MODE_FRONT_BIT);

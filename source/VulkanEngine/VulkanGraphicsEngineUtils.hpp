@@ -22,12 +22,12 @@
 namespace NVulkanEngine
 {
 	static const std::vector<const char*> g_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
-	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME };
+	static const std::vector<const char*> g_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME };
 	
 #if defined(_DEBUG)
 	static const bool g_EnableValidationLayers = true;
 #else
-	static const bool g_EnableValidationLayers = false;
+	static const bool g_EnableValidationLayers = true;
 #endif
 
 	struct SRenderAttachment

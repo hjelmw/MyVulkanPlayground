@@ -26,8 +26,6 @@ namespace NVulkanEngine
 		VkBuffer       m_AtmosphericsUniformBuffer = VK_NULL_HANDLE;
 		VkDeviceMemory m_AtmosphericsBufferMemory  = VK_NULL_HANDLE;
 
-		// Pipeline & shader binding
-		CBindingTable* m_AtmosphericsTable         = nullptr;
 		CPipeline*     m_AtmosphericsPipeline      = nullptr;
 	};
 }

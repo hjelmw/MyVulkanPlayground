@@ -27,7 +27,7 @@ namespace NVulkanEngine
 		// Just get any descriptor set layout since they are the same for all the models atm
 		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();
 
-		m_GeometryPipeline = new CPipeline();
+		m_GeometryPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_GeometryPipeline->SetVertexShader("shaders/geometry.vert.spv");
 		m_GeometryPipeline->SetFragmentShader("shaders/geometry.frag.spv");
 		m_GeometryPipeline->SetCullingMode(VK_CULL_MODE_BACK_BIT);

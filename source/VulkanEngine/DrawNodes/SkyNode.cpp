@@ -31,9 +31,7 @@ namespace NVulkanEngine
 {
 	struct SAtmosphericsVertexPushConstants
 	{
-		glm::mat4 m_ViewMat = glm::identity<glm::mat4>();
-		//
-		glm::mat4 m_ProjMat = glm::identity<glm::mat4>();
+		glm::mat4 m_InvViewProjectionMatrix = glm::identity<glm::mat4>();
 		//
 		float m_CameraFar   = 0.0f;
 	};
@@ -74,19 +72,16 @@ namespace NVulkanEngine
 
 		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentConstants));
 
-		m_AtmosphericsTable = new CBindingTable();
-		m_AtmosphericsTable->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView, depthAttachment.m_Format, context->GetLinearClampSampler());
-		m_AtmosphericsTable->AddUniformBufferBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_AtmosphericsUniformBuffer, sizeof(SAtmosphericsFragmentConstants));
-		m_AtmosphericsTable->CreateBindings(context);
-
-		m_AtmosphericsPipeline = new CPipeline();
+		m_AtmosphericsPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_AtmosphericsPipeline->SetVertexShader("shaders/atmospherics.vert.spv");
 		m_AtmosphericsPipeline->SetFragmentShader("shaders/atmospherics.frag.spv");
-		m_AtmosphericsPipeline->SetCullingMode(VK_CULL_MODE_FRONT_BIT);
+		m_AtmosphericsPipeline->SetCullingMode(VK_CULL_MODE_NONE);
+		m_AtmosphericsPipeline->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView, depthAttachment.m_Format, context->GetLinearClampSampler());
+		m_AtmosphericsPipeline->AddSampledBufferBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_AtmosphericsUniformBuffer, sizeof(SAtmosphericsFragmentConstants));
 		m_AtmosphericsPipeline->AddColorAttachment(atmosphericsAttachment.m_Format);
 		m_AtmosphericsPipeline->AddDepthAttachment(depthAttachment.m_Format);
 		m_AtmosphericsPipeline->AddPushConstantSlot(VK_SHADER_STAGE_VERTEX_BIT, sizeof(SAtmosphericsVertexPushConstants), 0);
-		m_AtmosphericsPipeline->CreatePipeline(context, m_AtmosphericsTable->GetDescriptorSetLayout());
+		m_AtmosphericsPipeline->CreatePipeline(context);
 	}
 
 	void CSkyNode::UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers)
@@ -140,9 +135,11 @@ namespace NVulkanEngine
 		glm::mat4 viewMatrix = camera->GetLookAtMatrix();
 		viewMatrix[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
+		glm::mat4 projectionMatrix = camera->GetProjectionMatrix();
+		glm::mat4 invViewProjectionMatrix = glm::inverse(projectionMatrix * viewMatrix);
+
 		SAtmosphericsVertexPushConstants vertexPushConstants{};
-		vertexPushConstants.m_ViewMat   = viewMatrix;
-		vertexPushConstants.m_ProjMat   = camera->GetProjectionMatrix();
+		vertexPushConstants.m_InvViewProjectionMatrix = invViewProjectionMatrix;
 		vertexPushConstants.m_CameraFar = camera->GetFar();
 
 		UpdateAtmosphericsConstants(context, managers);
@@ -154,8 +151,7 @@ namespace NVulkanEngine
 		std::vector<SRenderAttachment> inscatteringAttachments = { atmosphericsAttachment };
 		BeginRendering("Skybox", context, commandBuffer, inscatteringAttachments);
 
-		m_AtmosphericsTable->BindTable(context, commandBuffer, m_AtmosphericsPipeline->GetPipelineLayout());
-		m_AtmosphericsPipeline->BindPipeline(commandBuffer);
+		m_AtmosphericsPipeline->BindPipeline(context, commandBuffer);
 		m_AtmosphericsPipeline->PushConstants(commandBuffer, (void*)&vertexPushConstants);
 
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
@@ -170,10 +166,8 @@ namespace NVulkanEngine
 		vkDestroyBuffer(device, m_AtmosphericsUniformBuffer, nullptr);
 		vkFreeMemory(device, m_AtmosphericsBufferMemory, nullptr);
 
-		m_AtmosphericsTable->Cleanup(context);
 		m_AtmosphericsPipeline->Cleanup(context);
 
-		delete m_AtmosphericsTable;
 		delete m_AtmosphericsPipeline;
 	}
 

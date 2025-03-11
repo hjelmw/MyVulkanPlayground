@@ -23,6 +23,8 @@ namespace NVulkanEngine
 		void AddSampledImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler);
 		void CreateBindings(CGraphicsContext* context);
 
+		bool HasResourcesToBind() { return ((m_NumImageDescriptors + m_NumBufferDescriptors) > 0); };
+
 		VkDescriptorSetLayout GetDescriptorSetLayout() { return m_DescriptorSetLayout; };
 
 		void BindTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);

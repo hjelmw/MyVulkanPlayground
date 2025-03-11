@@ -5,9 +5,7 @@ layout (location = 1) out vec3 outCameraRayDir;
 
 layout( push_constant ) uniform constants
 {
-    mat4 m_ViewMat;
-	//
-	mat4 m_ProjMat;
+    mat4 m_InvViewProjectionMatrix;
 	//
 	float m_CameraFar;
 } SAtmosphericsVertexPushConstants;
@@ -19,7 +17,7 @@ void main()
 	vec4 position = vec4(outUV * 2.0f - 1.0f, 0.0f, 1.0f);
 	gl_Position = position;
 
-	mat4 invViewProj = inverse(SAtmosphericsVertexPushConstants.m_ProjMat * SAtmosphericsVertexPushConstants.m_ViewMat);
+	mat4 invViewProj = SAtmosphericsVertexPushConstants.m_InvViewProjectionMatrix;
 	
 	float cameraFar  = SAtmosphericsVertexPushConstants.m_CameraFar;
 

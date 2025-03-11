@@ -540,6 +540,8 @@ namespace NVulkanEngine
 		VkPhysicalDeviceRobustness2FeaturesEXT vulkanRobustnessFeatures{};
 		vulkanRobustnessFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
 		vulkanRobustnessFeatures.nullDescriptor = VK_TRUE;
+		vulkanRobustnessFeatures.robustImageAccess2 = VK_TRUE;
+		vulkanRobustnessFeatures.robustBufferAccess2 = VK_TRUE;
 
 		VkPhysicalDeviceVulkan13Features vulkan13Features{};
 		vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;

@@ -19,7 +19,7 @@ namespace NVulkanEngine
 		m_DebugTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, m_DebugUniformBuffer, sizeof(SDebugUniformUniformBuffer));
 		m_DebugTable->CreateBindings(context);
 
-		m_DebugPipeline = new CPipeline();
+		m_DebugPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_DebugPipeline->SetVertexShader("shaders/debug.vert.spv");
 		m_DebugPipeline->SetFragmentShader("shaders/debug.frag.spv");
 		m_DebugPipeline->SetPrimitiveTopology(VK_PRIMITIVE_TOPOLOGY_LINE_LIST);

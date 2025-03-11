@@ -3,9 +3,7 @@
 
 int main()
 {
-	using namespace NVulkanEngine;
-
-	CVulkanGraphicsEngine graphicsEngine;
+	NVulkanEngine::CVulkanGraphicsEngine graphicsEngine;
 
 	graphicsEngine.Initialize();
 	SetupScene(graphicsEngine);
