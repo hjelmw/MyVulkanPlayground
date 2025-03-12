@@ -6,11 +6,8 @@
 
 #define SHADOWMAP_RESOLUTION 4096
 
-static float g_SunZenithDegrees  = 0.0f;
-static float g_SunAzimuthDegrees = 0.0f;
-static float g_TestRotationXDegrees = 0.0f;
-static float g_TestRotationYDegrees = 0.0f;
-static float g_TestRotationZDegrees = 2.0f;
+static float g_SunZenithDegrees  = 88.0f;
+static float g_SunAzimuthDegrees = 45.0f;
 
 namespace NVulkanEngine
 {
@@ -59,61 +56,51 @@ namespace NVulkanEngine
 		return rotationMatrix;
 	}
 
-	void GetSunlightFrustum(const SGraphicsManagers* managers, glm::vec3& sunlightDirection, glm::mat4& lookatMatrix, glm::mat4& projectionMatrix)
+	void GetSunlightTransformAndDirection(const SGraphicsManagers* managers, glm::vec3& sunlightDirection, glm::mat4& lookatMatrix, glm::mat4& projectionMatrix)
 	{
 		glm::AABB sceneBounds = managers->m_Modelmanager->GetSceneBounds();
-
-		managers->m_DebugManager->DrawDebugAABB(sceneBounds.getMin(), sceneBounds.getMax(), glm::vec3(0.0f, 0.0f, 1.0f));
 
 		glm::mat4 sunlightrotationMatrix = glm::identity<glm::mat4>();
 		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_SunAzimuthDegrees), glm::vec3(0.0f, 1.0f, 0.0f));
 		sunlightrotationMatrix = glm::rotate(sunlightrotationMatrix, glm::radians(g_SunZenithDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
-		sceneBounds.transformCorners(glm::inverse(sunlightrotationMatrix));
-		managers->m_DebugManager->DrawDebugAABB(sceneBounds.getMin(), sceneBounds.getMax(), glm::vec3(0.0f, 0.0f, 1.0f));
 
-		glm::vec3 sunlightlightDirection = -(sunlightrotationMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f));
-
-		glm::vec3 sunlightAxisVector = glm::cross(sunlightlightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3 sunlightForwardVector = -(sunlightrotationMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f));
+		glm::vec3 sunlightRightVector = glm::cross(sunlightForwardVector, glm::vec3(0.0f, 1.0f, 0.0f));
 
 		// If vectors are parallel cross product is not defined
-		if (glm::length(sunlightAxisVector) < 1e-6f)
-			sunlightAxisVector = glm::vec3(0.1f, 1.0f, 0.0f);
+		if (glm::length(sunlightRightVector) < 1e-6f)
+			sunlightRightVector = glm::vec3(0.1f, 1.0f, 0.0f);
 
-		sunlightAxisVector = -glm::normalize(sunlightAxisVector);
-		glm::vec3 sunlightUpDirection = -glm::cross(sunlightlightDirection, -sunlightAxisVector);
+		sunlightRightVector = -glm::normalize(sunlightRightVector);
+		glm::vec3 sunlightUpVector = -glm::cross(sunlightForwardVector, -sunlightRightVector);
 
+		float viewMatrixTranslationX    = glm::dot(sceneBounds.getCenter(), sunlightRightVector);
+		float viewMatrixTranslationY    = glm::dot(sceneBounds.getCenter(), sunlightUpVector);
+		float viewMatrixTranslationZ    = glm::dot(sceneBounds.getCenter(), sunlightForwardVector);
+		glm::vec3 viewMatrixTranslation = glm::vec3(viewMatrixTranslationX, viewMatrixTranslationY, viewMatrixTranslationZ);
+
+		// This is just a look at matrix really
 		glm::mat4 sunlightViewMatrix = glm::mat4(
-			glm::vec4(sunlightAxisVector, 0.0f),
-			glm::vec4(sunlightUpDirection, 0.0f),
-			glm::vec4(sunlightlightDirection, 0.0f),
-			glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
-		);
-
+			glm::vec4(sunlightRightVector, 0.0f),
+			glm::vec4(sunlightUpVector, 0.0f),
+			glm::vec4(sunlightForwardVector, 0.0f),
+			glm::vec4(viewMatrixTranslation, 1.0f));
 		sunlightViewMatrix = glm::inverse(sunlightViewMatrix);
-
+		sceneBounds.transformCorners(sunlightViewMatrix);
+		
+		// TODO: I think bounds are not tight enough
 		glm::mat4 sunlightOrthoMatrix = glm::ortho(
 			sceneBounds.getMin().x,
 			sceneBounds.getMax().x,
 			sceneBounds.getMin().y,
 			sceneBounds.getMax().y,
 			-sceneBounds.getMax().z,
-			-sceneBounds.getMin().z );
+			-sceneBounds.getMin().z);
 		sunlightOrthoMatrix[1][1] *= -1;
-
-		//glm::mat4 sunlightOrthoMatrix = glm::ortho(-2000.0f, 2000.0f, -2000.0f, 2000.0f, 1100.0f, 1800.0f);
-
-		glm::vec3 sunlightlightPosition = sunlightrotationMatrix * glm::vec4(0.0f, sceneBounds.getDiagonal().y, 0.0f, 1.0f);
-		glm::vec3 debugLightDir = sunlightlightPosition + sunlightlightDirection * 100.0f;
-		glm::vec3 debugUpDir = sunlightlightPosition + sunlightUpDirection * 100.0f;
-		glm::vec3 debugAxisDir = sunlightlightPosition + sunlightAxisVector * 100.0f;
-		managers->m_DebugManager->DrawDebugOBB(sceneBounds, sunlightrotationMatrix, glm::vec3(1.0f, 0.0f, 0.0f));
-		managers->m_DebugManager->DrawDebugLine(sunlightlightPosition, debugLightDir, glm::vec3(1.0f, 0.0f, 0.0f));
-		managers->m_DebugManager->DrawDebugLine(sunlightlightPosition, debugUpDir, glm::vec3(0.0f, 1.0f, 0.0f));
-		managers->m_DebugManager->DrawDebugLine(sunlightlightPosition, debugAxisDir, glm::vec3(0.0f, 0.0f, 1.0f));
 
 		lookatMatrix = sunlightViewMatrix;
 		projectionMatrix = sunlightOrthoMatrix;
-		sunlightDirection = sunlightlightDirection;
+		sunlightDirection = sunlightForwardVector;
 	}
 
 	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
@@ -209,7 +196,7 @@ namespace NVulkanEngine
 
 		glm::mat4 sunlightViewMatrix       = glm::identity<glm::mat4>();
 		glm::mat4 sunlightProjectionMatrix = glm::identity<glm::mat4>();
-		GetSunlightFrustum(managers, s_SunlightDirection, sunlightViewMatrix, sunlightProjectionMatrix);
+		GetSunlightTransformAndDirection(managers, s_SunlightDirection, sunlightViewMatrix, sunlightProjectionMatrix);
 
 		s_LightMatrix = sunlightProjectionMatrix * sunlightViewMatrix;
 

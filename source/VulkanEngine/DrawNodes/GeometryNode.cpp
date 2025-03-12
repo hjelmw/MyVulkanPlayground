@@ -85,7 +85,7 @@ namespace NVulkanEngine
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 
-			managers->m_DebugManager->DrawDebugAABB(model->GetAABB(), glm::vec3(1.0f, 1.0f, 0.0f));
+			//managers->m_DebugManager->DrawDebugAABB(model->GetAABB(), glm::vec3(1.0f, 1.0f, 0.0f));
 
 			model->BindVertexAndIndexBuffers(commandBuffer);
 			model->BindGeometryTable(context, commandBuffer, m_GeometryPipeline->GetPipelineLayout());
