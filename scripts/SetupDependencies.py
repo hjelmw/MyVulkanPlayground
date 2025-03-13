@@ -1,5 +1,7 @@
-import DownloadUtils
 import os
+import DownloadUtils
+
+from PrintUtils import Colors, PrintColor
 
 vulkanSDKVersion     = "1.4.304.0"
 premakeVersion       = "5.0.0-beta4"
@@ -21,18 +23,23 @@ tinyobjloaderGithubURL = "https://github.com/tinyobjloader/tinyobjloader/archive
 stbiGithubURL          = "https://github.com/nothings/stb/archive/refs/heads/master.zip" # Repro does not do releases
 vsWhereGithubURL       = "https://github.com/microsoft/vswhere/releases/download/{}/vswhere.exe".format(vsWhereVersion)
 
-vulkanIsInstalled = False
+def CheckVulkanInstalled(printNum, printTotal):
+    vulkanSDKEnv = os.environ.get("VULKAN_SDK")
+    if vulkanSDKEnv is None:
+        PrintColor(Colors.FAIL, "Error Did not find any active vulkan install.")
+    else:
+        PrintColor(Colors.OKBLUE, "({}, {}) Found active Vulkan install.".format(printNum, printTotal))
 
 def CheckAll():
     vendorDirectoryExists = os.path.exists("./vendor/")
-    if (vendorDirectoryExists is False):
+    if (not vendorDirectoryExists):
         os.mkdir("./vendor")
     
     itemsChecked = 0
     totalItemsToCheck = 7
 
     # 1. Check Vulkan SDK
-    vulkanIsInstalled = DownloadUtils.CheckVulkanInstalled(itemsChecked, totalItemsToCheck)
+    CheckVulkanInstalled(itemsChecked, totalItemsToCheck)
     itemsChecked += 1
 
     # 2. Check premake
