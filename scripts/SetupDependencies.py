@@ -18,7 +18,7 @@ premakeGithubURL       = "https://github.com/premake/premake-core/releases/downl
 glfwGithubURL          = "https://github.com/glfw/glfw/releases/download/{}/glfw-{}.bin.WIN64.zip".format(glfwVersion, glfwVersion)
 glmGithubURL           = "https://github.com/g-truc/glm/releases/download/{}/glm-{}-light.zip".format(glmVersion, glmVersion)
 glmaabbGithubURL       = "https://github.com/hjelmw/glm-aabb/archive/refs/heads/master.zip" # Repo does not do releases
-imguiGithubURL         = "https://github.com/ocornut/imgui/archive/refs/heads/docking.zip"
+imguiGithubURL         = "https://github.com/ocornut/imgui/archive/2d403a16144070a4cb46bb124318b20141e83cb4.zip" # Avoid syncing latest since they sometimes make breaking changes and it's annoying to fix all the time. Currently commit 2d403a1 
 tinyobjloaderGithubURL = "https://github.com/tinyobjloader/tinyobjloader/archive/refs/tags/v{}-rc1.zip".format(tinyobjloaderVersion)
 stbiGithubURL          = "https://github.com/nothings/stb/archive/refs/heads/master.zip" # Repro does not do releases
 vsWhereGithubURL       = "https://github.com/microsoft/vswhere/releases/download/{}/vswhere.exe".format(vsWhereVersion)
@@ -26,7 +26,7 @@ vsWhereGithubURL       = "https://github.com/microsoft/vswhere/releases/download
 def CheckVulkanInstalled(printNum, printTotal):
     vulkanSDKEnv = os.environ.get("VULKAN_SDK")
     if vulkanSDKEnv is None:
-        PrintColor(Colors.FAIL, "Error Did not find any active vulkan install.")
+        PrintColor(Colors.FAIL, "Error Did not find any active vulkan install. Please visit https://vulkan.lunarg.com/ and install the latest SDK. You do not need to rerun the script but the solution will not build without it.")
     else:
         PrintColor(Colors.OKBLUE, "({}, {}) Found active Vulkan install.".format(printNum, printTotal))
 

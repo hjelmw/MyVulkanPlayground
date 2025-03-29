@@ -11,7 +11,7 @@ namespace NVulkanEngine
 
 	void CDebugNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		VkFormat sceneColorFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::SceneColor).m_Format;
+		VkFormat sceneColorFormat = managers->m_ResourceManager->GetResource(EResourceIndices::SceneColor).m_Format;
 
 		m_DebugUniformBuffer = CreateUniformBuffer(context, m_DebuguniformBufferMemory, sizeof(SDebugUniformUniformBuffer));
 
@@ -55,9 +55,9 @@ namespace NVulkanEngine
 		if (numDebugLines == 0)
 			return;
 
-		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
+		CResourceManager* resourceManager = managers->m_ResourceManager;
 
-		SRenderAttachment sceneColorAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderResource sceneColorAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		BeginRendering("Debug Rendering", context, commandBuffer, { sceneColorAttachment });
 

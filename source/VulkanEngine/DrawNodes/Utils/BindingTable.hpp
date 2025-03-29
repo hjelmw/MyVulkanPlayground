@@ -9,6 +9,39 @@
 	Simplifies shader resource binding. Used by the draw nodes
 */
 
+static VkDescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkDescriptorType descriptorType)
+{
+	VkDescriptorSetLayoutBinding shaderDescriptorBinding{};
+
+	shaderDescriptorBinding.binding = bindingSlot;
+	shaderDescriptorBinding.descriptorType = descriptorType;
+	shaderDescriptorBinding.descriptorCount = 1;
+	shaderDescriptorBinding.stageFlags = shaderStage;
+	shaderDescriptorBinding.pImmutableSamplers = nullptr;
+
+	return shaderDescriptorBinding;
+}
+
+static VkDescriptorBufferInfo CreateDescriptorBufferInfo(VkBuffer buffer, uint32_t range)
+{
+	VkDescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = buffer;
+	bufferInfo.offset = 0;
+	bufferInfo.range = range;
+
+	return bufferInfo;
+}
+
+static VkDescriptorImageInfo CreateDescriptorImageInfo(VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout)
+{
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout = imageLayout; // Make sure to transition the resource into this state before you use it
+	imageInfo.imageView = imageView;
+	imageInfo.sampler = sampler;
+
+	return imageInfo;
+}
+
 namespace NVulkanEngine
 {
 	class CBindingTable

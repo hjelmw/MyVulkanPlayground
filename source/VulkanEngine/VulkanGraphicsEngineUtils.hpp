@@ -30,7 +30,7 @@ namespace NVulkanEngine
 	static const bool g_EnableValidationLayers = true;
 #endif
 
-	struct SRenderAttachment
+	struct SRenderResource
 	{
 		char                      m_DebugName[64]        = "No Debug Name";
 		VkFormat                  m_Format               = VK_FORMAT_UNDEFINED;
@@ -410,6 +410,36 @@ namespace NVulkanEngine
 		EndSingleTimeCommands(context, commandBuffer);
 	}
 
+	static void CreateBufferAndCopyData(CGraphicsContext* context, VkBuffer& genericBuffer, VkDeviceMemory& returnMemory, void* dataToCopy, VkDeviceSize sizeOfData, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags)
+	{
+
+		// On host side (CPU mem)
+		VkDeviceMemory stagingBufferMemory;
+		VkBuffer genericStagingBuffer = CreateBuffer(
+			context,
+			stagingBufferMemory,
+			sizeOfData,
+			usageFlags | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		// On device side (GPU mem)
+		genericBuffer = CreateBuffer(
+			context,
+			returnMemory,
+			sizeOfData,
+			usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			propertyFlags);
+
+		// Map CPU staging buffer and copy into it
+		void* mappedData;
+		vkMapMemory(context->GetLogicalDevice(), stagingBufferMemory, 0, sizeOfData, 0, &mappedData);
+		memcpy(mappedData, dataToCopy, (size_t)sizeOfData);
+		vkUnmapMemory(context->GetLogicalDevice(), stagingBufferMemory);
+
+		// Finally copy staging buffer to GPU mem
+		CopyBuffer(context, genericStagingBuffer, genericBuffer, sizeOfData);
+	}
+
 	static VkBuffer CreateUniformBuffer(CGraphicsContext* context, VkDeviceMemory& bufferMemory, VkDeviceSize size)
 	{
 		VkBuffer buffer = CreateBuffer(context, bufferMemory, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -518,7 +548,7 @@ namespace NVulkanEngine
 
 	static void TransitionImageLayout(
 		VkCommandBuffer    commandBuffer,
-		SRenderAttachment& renderAttachment,
+		SRenderResource& renderAttachment,
 		VkImageLayout      newLayout,
 		uint32_t           mipLevels)
 	{
@@ -710,7 +740,7 @@ namespace NVulkanEngine
 
 
 	// Same as above but creates the renderattachment for you and also creates and consumes a new command buffer
-	static void SingleTimeTransitionImageLayout(CGraphicsContext* context, SRenderAttachment& renderAttachment, VkImageLayout newLayout, uint32_t mipLevels)
+	static void SingleTimeTransitionImageLayout(CGraphicsContext* context, SRenderResource& renderAttachment, VkImageLayout newLayout, uint32_t mipLevels)
 	{
 		VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
 		TransitionImageLayout(commandBuffer, renderAttachment, newLayout, mipLevels);
@@ -736,7 +766,7 @@ namespace NVulkanEngine
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
-	static SRenderAttachment CreateRenderAttachment
+	static SRenderResource CreateRenderResource
 	(
 		CGraphicsContext* context,
 		VkFormat          format,
@@ -746,7 +776,7 @@ namespace NVulkanEngine
 		uint32_t          height
 	)
 	{
-		SRenderAttachment renderAttachment{};
+		SRenderResource renderAttachment{};
 		renderAttachment.m_Format = format;
 		renderAttachment.m_ImageUsage = usage;
 		renderAttachment.m_Image = CreateImage(

@@ -145,6 +145,8 @@ namespace NVulkanEngine
 
 		glm::vec3 cameraFront = glm::normalize(lookDirection);
 
+		static float cameraAcceleration = 0.0f;
+
 		if (m_KeyStatus.m_Forward)
 		{
 			cameraPosition += cameraFront * (deltaTime + sensitivity_keys);

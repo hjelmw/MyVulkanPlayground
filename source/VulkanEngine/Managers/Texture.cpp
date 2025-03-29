@@ -51,7 +51,7 @@ namespace NVulkanEngine
 			GenerateMipmaps(context, m_TextureImage, format, texWidth, texHeight, m_MipLevels);
 		}
 
-		SRenderAttachment textureRenderAttachment{};
+		SRenderResource textureRenderAttachment{};
 		textureRenderAttachment.m_Format = format;
 		textureRenderAttachment.m_Image = m_TextureImage;
 		textureRenderAttachment.m_ImageView = m_TextureImageView;

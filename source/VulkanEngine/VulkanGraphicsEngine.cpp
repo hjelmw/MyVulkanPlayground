@@ -87,7 +87,7 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::CreateScene()
 	{
 		CreateModels();
-		CreateAttachments();
+		CreateResources();
 		InitDrawNodes();
 
 		m_IsRunning = true;
@@ -114,7 +114,7 @@ namespace NVulkanEngine
 		CreateSyncObjects();
 
 		// These do depend on resolution
-		m_AttachmentManager->Cleanup(m_Context);
+		m_ResourceManager->Cleanup(m_Context);
 		CleanupDrawNodes();
 
 		g_DisplayWidth  = m_NewRenderResolution.width;
@@ -122,7 +122,7 @@ namespace NVulkanEngine
 		m_Context->SetRenderResolution(VkExtent2D(g_DisplayWidth, g_DisplayHeight));
 
 		// Order of init important here
-		CreateAttachments();
+		CreateResources();
 		InitDrawNodes();
 
 		m_NeedsResize = false;
@@ -195,7 +195,7 @@ namespace NVulkanEngine
 		m_ModelManager = new CModelManager();
 		m_LightManager = new CLightManager();
 		m_DebugManager = new CDebugManager();
-		m_AttachmentManager = new CAttachmentManager(m_VulkanInstance);
+		m_ResourceManager = new CResourceManager(m_VulkanInstance);
 
 		// For mouse and keyboard callbacks
 		glfwSetWindowUserPointer(m_Window, this);
@@ -219,13 +219,13 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::CleanupManagers()
 	{
 		m_ModelManager->Cleanup(m_Context);
-		m_AttachmentManager->Cleanup(m_Context);
+		m_ResourceManager->Cleanup(m_Context);
 		m_DebugManager->Cleanup(m_Context);
 
 		delete m_InputManager;
 		delete m_ModelManager;
 		delete m_DebugManager;
-		delete m_AttachmentManager;
+		delete m_ResourceManager;
 	};
 
 
@@ -549,17 +549,29 @@ namespace NVulkanEngine
 		vulkan13Features.robustImageAccess = VK_TRUE;
 		vulkan13Features.pNext = &vulkanRobustnessFeatures;
 
-		VkPhysicalDeviceFeatures deviceFeatures{};
-		deviceFeatures.robustBufferAccess = VK_TRUE;
-		deviceFeatures.wideLines = VK_TRUE;
+		VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
+		descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+		descriptorIndexingFeatures.descriptorBindingPartiallyBound               = VK_TRUE;
+		descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
+		descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+		descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE;
+		descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
+		descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+		descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE;
+		descriptorIndexingFeatures.pNext = &vulkan13Features;
+
+		VkPhysicalDeviceFeatures2 deviceFeatures2{};
+		deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures2.features.robustBufferAccess = VK_TRUE;
+		deviceFeatures2.features.wideLines          = VK_TRUE;
+		deviceFeatures2.pNext = &descriptorIndexingFeatures;
 		//deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());;
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-		createInfo.pEnabledFeatures = &deviceFeatures;
-		createInfo.pNext = &vulkan13Features;
+		createInfo.pNext = &deviceFeatures2;
 
 		createInfo.enabledExtensionCount = (uint32_t)g_DeviceExtensions.size();
 		createInfo.ppEnabledExtensionNames = g_DeviceExtensions.data();
@@ -679,85 +691,96 @@ namespace NVulkanEngine
 
 	}
 
-	void CVulkanGraphicsEngine::CreateAttachments()
+	void CVulkanGraphicsEngine::CreateResources()
 	{
-		m_AttachmentManager->AddAttachment(
+		m_ResourceManager->AddResource(
 			m_Context,
 			"GBuffer - Positions",
-			EAttachmentIndices::Positions,
+			EResourceIndices::Positions,
 			m_LinearClamp,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_AttachmentManager->AddAttachment(
+		m_ResourceManager->AddResource(
 			m_Context,
 			"GBuffer - Normals",
-			EAttachmentIndices::Normals,
+			EResourceIndices::Normals,
 			m_LinearClamp,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_AttachmentManager->AddAttachment(
+		m_ResourceManager->AddResource(
 			m_Context,
 			"GBuffer - Albedo",
-			EAttachmentIndices::Albedo, 
+			EResourceIndices::Albedo, 
 			m_LinearClamp,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_AttachmentManager->AddAttachment(
+		m_ResourceManager->AddResource(
 			m_Context,
 			"GBuffer - Depth",
-			EAttachmentIndices::Depth,
+			EResourceIndices::Depth,
 			m_LinearClamp,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
 			FindDepthFormat(m_Context->GetPhysicalDevice()),
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_AttachmentManager->AddAttachment(
+		m_ResourceManager->AddResource(
 			m_Context,
 			"Shadow Map",
-			EAttachmentIndices::ShadowMap,
+			EResourceIndices::ShadowMap,
 			m_LinearClamp,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			(uint32_t)4096,
 			(uint32_t)4096);
 
-		m_AttachmentManager->AddAttachment(
+		m_ResourceManager->AddResource(
 			m_Context,
 			"Atmospherics SkyBox",
-			EAttachmentIndices::AtmosphericsSkyBox,
+			EResourceIndices::AtmosphericsSkyBox,
 			m_LinearClamp,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_AttachmentManager->AddAttachment(
+		m_ResourceManager->AddResource(
 			m_Context,
 			"Scene Color",
-			EAttachmentIndices::SceneColor,
+			EResourceIndices::SceneColor,
 			m_LinearClamp,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
+
+		
 	}
+
+
 
 	void CVulkanGraphicsEngine::InitImGui()
 	{
@@ -773,16 +796,16 @@ namespace NVulkanEngine
 
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = (uint32_t)EAttachmentIndices::Count * 2;
+		poolSizes[0].descriptorCount = (uint32_t)EResourceIndices::Count * 2;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = (uint32_t)EAttachmentIndices::Count * m_Swapchain->GetMinImageCount() + 1;
+		poolSizes[1].descriptorCount = (uint32_t)EResourceIndices::Count * m_Swapchain->GetMinImageCount() + 1;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 		poolInfo.poolSizeCount = (uint32_t)poolSizes.size();
 		poolInfo.pPoolSizes    = poolSizes.data();
-		poolInfo.maxSets       = (uint32_t)EAttachmentIndices::Count * 2;
+		poolInfo.maxSets       = (uint32_t)EResourceIndices::Count * 2;
 
 		if (vkCreateDescriptorPool(m_Context->GetLogicalDevice(), &poolInfo, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
 		{
@@ -870,7 +893,7 @@ namespace NVulkanEngine
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
-		managers.m_AttachmentManager = m_AttachmentManager;
+		managers.m_ResourceManager = m_ResourceManager;
 
 		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
 		{
@@ -891,7 +914,7 @@ namespace NVulkanEngine
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
-		managers.m_AttachmentManager = m_AttachmentManager;
+		managers.m_ResourceManager = m_ResourceManager;
 		managers.m_DebugManager      = m_DebugManager;
 
 		for (uint32_t i = 0; i < (uint32_t)EDrawNodes::Debug; i++)
@@ -948,21 +971,21 @@ namespace NVulkanEngine
 		ImGui::TextColored(cameraColor, cameraDirectionStr.c_str());
 		ImGui::SetCursorPosX(currentCursorPos);
 		ImGui::EndMainMenuBar();
-		VkDescriptorSet sceneColorDescriptor = m_AttachmentManager->TransitionAttachment(m_CommandBuffers[m_FrameIndex], EAttachmentIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
+		VkDescriptorSet sceneColorDescriptor = m_ResourceManager->TransitionResource(m_CommandBuffers[m_FrameIndex], EResourceIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
 		ImGui::Image((ImTextureID)sceneColorDescriptor, ImGui::GetContentRegionAvail());
 		ImGui::End();
 		ImGui::Begin("Textures");
 
-		static bool selected[(uint32_t)EAttachmentIndices::Count] = {};
+		static bool selected[(uint32_t)EResourceIndices::Count] = {};
 		static int selectedId = -1;
 
 		if (ImGui::CollapsingHeader("List", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			static char inputText[64] = "";
 			ImGui::InputText("Filter", inputText, 64);
-			for (uint32_t i = 0; i < m_AttachmentManager->GetAttachments().size(); i++)
+			for (uint32_t i = 0; i < m_ResourceManager->GetResources().size(); i++)
 			{
-				SRenderAttachment attachment = m_AttachmentManager->GetAttachment((EAttachmentIndices)i);
+				SRenderResource attachment = m_ResourceManager->GetResource((EResourceIndices)i);
 
 				ImGui::Selectable(attachment.m_DebugName, &selected[i]);
 				if (selected[i])
@@ -975,7 +998,7 @@ namespace NVulkanEngine
 				ImGui::Text("No Texture selected. Select one from the list above to inspect!");
 			else
 			{
-				SRenderAttachment attachment = m_AttachmentManager->GetAttachment((EAttachmentIndices)selectedId);
+				SRenderResource attachment = m_ResourceManager->GetResource((EResourceIndices)selectedId);
 				ImGui::Text("Name: %s", attachment.m_DebugName);
 				static float brightness[3] = { 1.0f, 1.0f, 1.0f };
 				ImGui::SliderFloat3("Brightness", &brightness[0], 0.0f, 1.0f);
@@ -1025,7 +1048,7 @@ namespace NVulkanEngine
 		renderInfo.pColorAttachments = colorAttachmentInfos.data();
 		renderInfo.pDepthAttachment = nullptr;
 
-		SRenderAttachment swapchainAttachment{};
+		SRenderResource swapchainAttachment{};
 		swapchainAttachment.m_Format = swapchain->GetSwapchainFormat();
 		swapchainAttachment.m_Image = swapchain->GetSwapchainImage(imageIndex);
 		swapchainAttachment.m_ImageView = swapchain->GetSwapchainImageView(imageIndex);

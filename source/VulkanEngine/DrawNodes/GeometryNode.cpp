@@ -19,10 +19,10 @@ namespace NVulkanEngine
 			model->CreateGeometryBindingTable(context);
 		}
 
-		VkFormat positionsFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Positions).m_Format;
-		VkFormat normalsFormat   = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Normals).m_Format;
-		VkFormat albedoFormat    = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Albedo).m_Format;
-		VkFormat depthFormat     = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth).m_Format;
+		VkFormat positionsFormat = managers->m_ResourceManager->GetResource(EResourceIndices::Positions).m_Format;
+		VkFormat normalsFormat   = managers->m_ResourceManager->GetResource(EResourceIndices::Normals).m_Format;
+		VkFormat albedoFormat    = managers->m_ResourceManager->GetResource(EResourceIndices::Albedo).m_Format;
+		VkFormat depthFormat     = managers->m_ResourceManager->GetResource(EResourceIndices::Depth).m_Format;
 
 		// Just get any descriptor set layout since they are the same for all the models atm
 		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();
@@ -67,14 +67,14 @@ namespace NVulkanEngine
 
 	void CGeometryNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
-		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
+		CResourceManager* resourceManager = managers->m_ResourceManager;
 
-		SRenderAttachment positionsAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Positions, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		SRenderAttachment normalsAttachment   = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Normals,   VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		SRenderAttachment albedoAttachment    = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Albedo,    VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		SRenderAttachment depthAttachment     = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Depth,     VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+		SRenderResource positionsAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::Positions, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderResource normalsAttachment   = resourceManager->TransitionResource(commandBuffer, EResourceIndices::Normals,   VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderResource albedoAttachment    = resourceManager->TransitionResource(commandBuffer, EResourceIndices::Albedo,    VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderResource depthAttachment     = resourceManager->TransitionResource(commandBuffer, EResourceIndices::Depth,     VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 		
-		std::vector<SRenderAttachment> renderAttachments = { positionsAttachment, normalsAttachment, albedoAttachment, depthAttachment };
+		std::vector<SRenderResource> renderAttachments = { positionsAttachment, normalsAttachment, albedoAttachment, depthAttachment };
 
 		BeginRendering("GBuffers", context, commandBuffer, renderAttachments);
 		UpdateGeometryBuffers(context, managers);

@@ -107,20 +107,20 @@ namespace NVulkanEngine
 		const std::string              markerName,
 		CGraphicsContext*              context,
 		VkCommandBuffer                commandBuffer,
-		std::vector<SRenderAttachment> attachmentInfos)
+		std::vector<SRenderResource>   renderResourceInfos)
 	{
 		std::vector<VkRenderingAttachmentInfo> colorAttachmentInfos = {};
 		VkRenderingAttachmentInfo depthAttachmentInfo = {};
 		bool hasDepthAttachment = false;
-		for (uint32_t i = 0; i < attachmentInfos.size(); i++)
+		for (uint32_t i = 0; i < renderResourceInfos.size(); i++)
 		{
-			if (attachmentInfos[i].m_ImageUsage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+			if (renderResourceInfos[i].m_ImageUsage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 			{
-				colorAttachmentInfos.push_back(attachmentInfos[i].m_RenderAttachmentInfo);
+				colorAttachmentInfos.push_back(renderResourceInfos[i].m_RenderAttachmentInfo);
 			}
-			if (attachmentInfos[i].m_ImageUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+			if (renderResourceInfos[i].m_ImageUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
 			{
-				depthAttachmentInfo = attachmentInfos[i].m_RenderAttachmentInfo;
+				depthAttachmentInfo = renderResourceInfos[i].m_RenderAttachmentInfo;
 				hasDepthAttachment = true;
 			}
 		}

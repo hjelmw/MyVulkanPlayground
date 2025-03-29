@@ -7,7 +7,7 @@
 #include <Managers/ModelManager.hpp>
 #include <Managers/LightManager.hpp>
 #include <Managers/DebugManager.hpp>
-#include <Managers/AttachmentManager.hpp>
+#include <Managers/ResourceManager.hpp>
 
 /*
 	Draw nodes. Used for drawing everything in this engine.
@@ -41,7 +41,7 @@ namespace NVulkanEngine
 		CModelManager*      m_Modelmanager      = nullptr;
 		CLightManager*      m_LightManager      = nullptr;
 		CDebugManager*      m_DebugManager      = nullptr;
-		CAttachmentManager* m_AttachmentManager = nullptr;
+		CResourceManager*   m_ResourceManager = nullptr;
 	};
 
 	class CDrawNode
@@ -65,7 +65,7 @@ namespace NVulkanEngine
 			const std::string              markerName,
 			CGraphicsContext*              context,
 			VkCommandBuffer                commandBuffer,
-			std::vector<SRenderAttachment> attachmentInfos);
+			std::vector<SRenderResource> attachmentInfos);
 
 		void EndRendering(CGraphicsContext* context, VkCommandBuffer commandBuffer);
 	};

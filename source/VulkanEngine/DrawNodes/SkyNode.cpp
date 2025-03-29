@@ -67,8 +67,8 @@ namespace NVulkanEngine
 
 	void CSkyNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		const SRenderAttachment atmosphericsAttachment  = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::AtmosphericsSkyBox);
-		const SRenderAttachment depthAttachment         = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::Depth);
+		const SRenderResource atmosphericsAttachment  = managers->m_ResourceManager->GetResource(EResourceIndices::AtmosphericsSkyBox);
+		const SRenderResource depthAttachment         = managers->m_ResourceManager->GetResource(EResourceIndices::Depth);
 
 		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentConstants));
 
@@ -144,11 +144,11 @@ namespace NVulkanEngine
 
 		UpdateAtmosphericsConstants(context, managers);
 
-		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
-		attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::Depth, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		SRenderAttachment atmosphericsAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::AtmosphericsSkyBox, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		CResourceManager* resourceManager = managers->m_ResourceManager;
+		resourceManager->TransitionResource(commandBuffer, EResourceIndices::Depth, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		SRenderResource atmosphericsAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::AtmosphericsSkyBox, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-		std::vector<SRenderAttachment> inscatteringAttachments = { atmosphericsAttachment };
+		std::vector<SRenderResource> inscatteringAttachments = { atmosphericsAttachment };
 		BeginRendering("Skybox", context, commandBuffer, inscatteringAttachments);
 
 		m_AtmosphericsPipeline->BindPipeline(context, commandBuffer);

@@ -18,6 +18,8 @@
 #include <Managers/LightManager.hpp> // Need ELightType in header
 #include <Managers/DebugManager.hpp>
 
+#include <BindlessTable.hpp>
+
 class CModelManager;
 class CInputManager;
 
@@ -73,7 +75,7 @@ namespace NVulkanEngine
         void CreateCommandBuffers();
         void CreateSyncObjects();
         void CreateSamplers();
-        void CreateAttachments();
+        void CreateResources();
 
         // Create scene
         void CreateModels();
@@ -118,7 +120,7 @@ namespace NVulkanEngine
         CModelManager*                      m_ModelManager             = nullptr;
         CLightManager*                      m_LightManager             = nullptr;
         CDebugManager*                      m_DebugManager             = nullptr;
-        CAttachmentManager*                 m_AttachmentManager        = nullptr;
+        CResourceManager*                 m_ResourceManager        = nullptr;
 
         /* Vulkan Primitives */
         // Device
@@ -150,6 +152,8 @@ namespace NVulkanEngine
         std::vector<VkSemaphore>            m_RenderFinishedSemaphores = {};
         std::vector<VkFence>                m_InFlightFences           = {};
 
+        CBindlessTable*                     m_BindlessTable            = nullptr;
+
         // Misc
         VkDebugUtilsMessengerEXT            m_DebugMessenger           = VK_NULL_HANDLE;
         GLFWwindow*					        m_Window                   = nullptr;
@@ -157,7 +161,6 @@ namespace NVulkanEngine
         VkDescriptorPool                    m_ImGuiDescriptorPool      = VK_NULL_HANDLE;
 
         CPipeline*                          m_ImGuiPipeline            = VK_NULL_HANDLE;
-
 
 
     };

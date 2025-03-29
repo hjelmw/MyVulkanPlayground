@@ -6,7 +6,7 @@
 
 #define SHADOWMAP_RESOLUTION 4096
 
-static float g_SunZenithDegrees  = 88.0f;
+static float g_SunZenithDegrees  = 80.0f;
 static float g_SunAzimuthDegrees = 45.0f;
 
 namespace NVulkanEngine
@@ -29,7 +29,7 @@ namespace NVulkanEngine
 			model->CreateShadowBindingTable(context);
 		}
 
-		VkFormat shadowMapFormat = managers->m_AttachmentManager->GetAttachment(EAttachmentIndices::ShadowMap).m_Format;
+		VkFormat shadowMapFormat = managers->m_ResourceManager->GetResource(EResourceIndices::ShadowMap).m_Format;
 
 		// Just get any descriptor set layout since they are the same for all the models atm
 		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();
@@ -37,7 +37,7 @@ namespace NVulkanEngine
 		m_ShadowPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_ShadowPipeline->SetVertexShader("shaders/shadow.vert.spv");
 		m_ShadowPipeline->SetFragmentShader("shaders/shadow.frag.spv");
-		m_ShadowPipeline->SetCullingMode(VK_CULL_MODE_NONE);
+		m_ShadowPipeline->SetCullingMode(VK_CULL_MODE_BACK_BIT);
 		m_ShadowPipeline->SetVertexInput(sizeof(SModelVertex), VK_VERTEX_INPUT_RATE_VERTEX);
 		m_ShadowPipeline->AddVertexAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SModelVertex, m_Position));
 		m_ShadowPipeline->AddDepthAttachment(shadowMapFormat);
@@ -222,8 +222,8 @@ namespace NVulkanEngine
 	{
 		CDebugManager* debugManager = managers->m_DebugManager;
 
-		CAttachmentManager* attachmentManager = managers->m_AttachmentManager;
-		SRenderAttachment shadowmapAttachment = attachmentManager->TransitionAttachment(commandBuffer, EAttachmentIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		CResourceManager* resourceManager = managers->m_ResourceManager;
+		SRenderResource shadowmapAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 		VkExtent2D prevRenderResolution = context->GetRenderResolution();
 		context->SetRenderResolution(VkExtent2D(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION));

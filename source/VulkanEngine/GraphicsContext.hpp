@@ -2,7 +2,6 @@
 
 #include <vulkan/vulkan.h>
 #include "GLFW/glfw3.h"
-
 /*
 	Stores a bunch of useful members for the draw nodes. Might need to prune this a bit later
 */
@@ -47,7 +46,7 @@ namespace NVulkanEngine
 		const float            GetDeltaTime()           { return m_DeltaTime; }
 		const uint32_t         GetFrameIndex()          { return m_FrameIndex; }
 		const uint32_t         GetSwapchainImageIndex() { return m_SwapchainImageIndex; }
-		
+
 		void SetDeltaTime(float deltaTime);
 		void SetFrameIndex(uint32_t frameIndex);
 		void SetSwapchainImageIndex(uint32_t imageIndex);

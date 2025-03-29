@@ -25,39 +25,6 @@ namespace NVulkanEngine
 		m_VertexInputAttributes.push_back(attributeDescription);
 	}
 
-	VkDescriptorSetLayoutBinding CreateDescriptorSetLayoutBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkDescriptorType descriptorType)
-	{
-		VkDescriptorSetLayoutBinding shaderDescriptorBinding{};
-
-		shaderDescriptorBinding.binding            = bindingSlot;
-		shaderDescriptorBinding.descriptorType     = descriptorType;
-		shaderDescriptorBinding.descriptorCount    = 1;
-		shaderDescriptorBinding.stageFlags         = shaderStage;
-		shaderDescriptorBinding.pImmutableSamplers = nullptr;
-
-		return shaderDescriptorBinding;
-	}
-
-	VkDescriptorBufferInfo CreateDescriptorBufferInfo(VkBuffer buffer, uint32_t range)
-	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = buffer;
-		bufferInfo.offset = 0;
-		bufferInfo.range  = range;
-
-		return bufferInfo;
-	}
-
-	VkDescriptorImageInfo CreateDescriptorImageInfo(VkImageView imageView, VkSampler sampler, VkImageLayout imageLayout)
-	{
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = imageLayout; // Make sure to transition the resource into this state before you use it
-		imageInfo.imageView   = imageView;
-		imageInfo.sampler     = sampler;
-
-		return imageInfo;
-	}
-
 	void CBindingTable::AllocateDescriptorPool(CGraphicsContext* context)
 	{
 		uint32_t numBufferDescriptors = m_NumBufferDescriptors * g_MaxFramesInFlight;
