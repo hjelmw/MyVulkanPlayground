@@ -1,5 +1,5 @@
 # MyVulkanPlayground
-This repository contains the code and assets for my hobby graphics engine where I experiment with implementing modern rendering techniques and systems. It's written in C++ and uses Vulkan for the graphics API and GLSL for shaders.
+This repository contains the code and assets for my hobby graphics engine where I experiment with implementing modern rendering techniques and systems. It's written in C++, uses Vulkan for the graphics API and GLSL for shaders. The code is developed based on my own collecetd understanding through personal experience and not simply sourced from a single course 
 
 # Features
 In this project I have implemented several systems meant for simplifying interaction with the [Graphics Pipeline](https://en.wikipedia.org/wiki/Graphics_pipeline) and exposed them an interface I call "Draw Nodes". 
@@ -13,15 +13,15 @@ You can have a look under [source/VulkanEngine/DrawNodes/](https://github.com/hj
 
 # Setup
 1. Install [Python](https://www.python.org/downloads/) (Version 3.7 or above should work)
-2. Install [VulkanSDK](https://vulkan.lunarg.com/) from Lunarg (Version 1.4 or above should work)
-4. `CreateVisualStudioSolution.bat`. It should download all the required dependencies and create the .sln file
+2. Install [VulkanSDK](https://vulkan.lunarg.com/) from Lunarg (Version 1.4 should work)
+4. `CreateVisualStudioSolution.bat`. It should download all the other required dependencies and create the .sln file
 5. Open in Visual Studio 2022 (have not tested older versions but it might still work)
 
 
 **Note:** When installing the Vulkan SDK you can optionally choose to install the GLM math library but regardless the build script will download and use its own version
 
 ## Dependencies
-* Vulkan SDK (Your graphics driver needs to support `VK_KHR_DYNAMIC_RENDERING` and '')
+* Vulkan SDK (Your graphics driver needs to support `VK_KHR_DYNAMIC_RENDERING`)
 * Python3
 * Premake5
 * GLFW
