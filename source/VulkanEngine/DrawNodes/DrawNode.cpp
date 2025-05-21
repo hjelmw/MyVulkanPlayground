@@ -6,6 +6,7 @@ namespace NVulkanEngine
 {
 	/* Implemented by derived class */
 	void CDrawNode::Init(CGraphicsContext* context, SGraphicsManagers* managers) { }
+	void CDrawNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers) {}
 	void CDrawNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
 	void CDrawNode::Cleanup(CGraphicsContext* context) { }
 

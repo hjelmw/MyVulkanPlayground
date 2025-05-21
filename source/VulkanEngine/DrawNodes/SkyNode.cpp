@@ -67,8 +67,8 @@ namespace NVulkanEngine
 
 	void CSkyNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		const SRenderResource atmosphericsAttachment  = managers->m_ResourceManager->GetResource(EResourceIndices::AtmosphericsSkyBox);
-		const SRenderResource depthAttachment         = managers->m_ResourceManager->GetResource(EResourceIndices::Depth);
+		const SRenderResource atmosphericsAttachment  = managers->m_ResourceManager->GetRenderResource(EResourceIndices::AtmosphericsSkyBox);
+		const SRenderResource depthAttachment         = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth);
 
 		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentConstants));
 

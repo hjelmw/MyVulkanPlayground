@@ -9,10 +9,10 @@ namespace NVulkanEngine
 	{
 		m_VkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(vulkanInstance, "vkSetDebugUtilsObjectNameEXT");
 
-		m_BindlessTable = new CBindlessTable();
+		m_BindlessBuffer = new CBindlessBuffer();
 	}
 
-	SRenderResource CResourceManager::AddResource(
+	SRenderResource CResourceManager::AddRenderResource(
 		CGraphicsContext*     context,
 		const std::string     debugName,
 		EResourceIndices    attachmentIndex,
@@ -55,22 +55,59 @@ namespace NVulkanEngine
 		}
 
 		// Add to the global table
-		m_BindlessTable->AddSampledImageBinding((uint32_t)attachmentIndex, shaderStageUsageFlags, renderResource.m_ImageView, format, sampler);
+		m_BindlessBuffer->AddSampledImageBinding((uint32_t)attachmentIndex, shaderStageUsageFlags, renderResource.m_ImageView, format, sampler);
 
-		m_RenderAttachments[(uint32_t)attachmentIndex] = renderResource;
+		m_RenderResources[(uint32_t)attachmentIndex] = renderResource;
 		return renderResource;
 	}
 
-	const SRenderResource CResourceManager::GetResource(const EResourceIndices index)
+	SUniformBufferResource CResourceManager::AddUniformBuffer(
+		CGraphicsContext*  context, 
+		const std::string& debugName,
+		EBufferIndices     uniformBufferIndex,
+		VkDeviceSize       uniformBufferSize)
 	{
-		return m_RenderAttachments[(uint32_t)index];
+		VkDeviceMemory uniformBufferMemory;
+		VkBuffer uniformBuffer = CreateUniformBuffer(context, uniformBufferMemory, uniformBufferSize);
+
+		SUniformBufferResource uniformBufferResource{};
+
+		if (debugName.length() > 0)
+		{
+			memset(uniformBufferResource.m_DebugName, 0, 64);
+			memcpy(uniformBufferResource.m_DebugName, debugName.c_str(), debugName.length());
+		}
+
+		uniformBufferResource.m_Buffer = uniformBuffer;
+		uniformBufferResource.m_Memory = uniformBufferMemory;
+		uniformBufferResource.m_Size   = (uint32_t)uniformBufferSize;
+
+		m_BufferResources[(uint32_t) uniformBufferIndex] = uniformBufferResource;
+
+		m_BindlessBuffer->AddUniformBufferBinding((uint32_t)uniformBufferIndex, VK_SHADER_STAGE_ALL, (uint32_t)uniformBufferSize);
+
+		return uniformBufferResource;
 	}
 
-	const std::array<SRenderResource, (uint32_t)EResourceIndices::Count> CResourceManager::GetResources()
+	const SRenderResource CResourceManager::GetRenderResource(const EResourceIndices index)
 	{
-		return m_RenderAttachments;
+		return m_RenderResources[(uint32_t)index];
 	}
 
+	const SUniformBufferResource CResourceManager::GetBufferResource(const EBufferIndices index)
+	{
+		return m_BufferResources[(uint32_t)index];
+	}
+
+	const std::array<SRenderResource, (uint32_t)EResourceIndices::Count> CResourceManager::GetRenderResources()
+	{
+		return m_RenderResources;
+	}
+
+	const std::array<SUniformBufferResource, (uint32_t)EBufferIndices::Count> CResourceManager::GetBufferResources()
+	{
+		return m_BufferResources;
+	}
 
 	SRenderResource CResourceManager::TransitionResource(
 		VkCommandBuffer          commandBuffer,
@@ -78,7 +115,7 @@ namespace NVulkanEngine
 		VkAttachmentLoadOp       loadOperation,
 		VkImageLayout            wantedLayout)
 	{
-		SRenderResource& attachment = m_RenderAttachments[(uint32_t)index];
+		SRenderResource& attachment = m_RenderResources[(uint32_t)index];
 
 		if (wantedLayout != VK_IMAGE_LAYOUT_UNDEFINED && wantedLayout != attachment.m_CurrentImageLayout)
 			TransitionImageLayout(commandBuffer, attachment, wantedLayout, 1);
@@ -91,14 +128,14 @@ namespace NVulkanEngine
 
 	void CResourceManager::Cleanup(CGraphicsContext* context)
 	{
-		for (uint32_t i = 0; i < m_RenderAttachments.size(); i++)
+		for (uint32_t i = 0; i < m_RenderResources.size(); i++)
 		{
-			vkDestroyImageView(context->GetLogicalDevice(), m_RenderAttachments[i].m_ImageView, nullptr);
-			vkDestroyImage(context->GetLogicalDevice(), m_RenderAttachments[i].m_Image, nullptr);
-			vkFreeMemory(context->GetLogicalDevice(), m_RenderAttachments[i].m_Memory, nullptr);
+			vkDestroyImageView(context->GetLogicalDevice(), m_RenderResources[i].m_ImageView, nullptr);
+			vkDestroyImage(context->GetLogicalDevice(), m_RenderResources[i].m_Image, nullptr);
+			vkFreeMemory(context->GetLogicalDevice(), m_RenderResources[i].m_Memory, nullptr);
 
-			ImGui_ImplVulkan_RemoveTexture(m_RenderAttachments[i].m_ImguiDescriptor);
-			m_RenderAttachments[i] = {};			 
+			ImGui_ImplVulkan_RemoveTexture(m_RenderResources[i].m_ImguiDescriptor);
+			m_RenderResources[i] = {};			 
 		}
 	}
 };

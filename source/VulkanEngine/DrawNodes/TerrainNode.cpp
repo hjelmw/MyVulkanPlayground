@@ -90,8 +90,8 @@ namespace NVulkanEngine
 
 		m_TerrainUniformBuffer = CreateUniformBuffer(context, m_TerrainUniformBufferMemory, sizeof(STerrainFragmentConstants));
 
-		const SRenderResource sceneColorAttachment = managers->m_ResourceManager->GetResource(EResourceIndices::SceneColor);
-		const SRenderResource depthAttachment      = managers->m_ResourceManager->GetResource(EResourceIndices::Depth);
+		const SRenderResource sceneColorAttachment = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor);
+		const SRenderResource depthAttachment      = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth);
 
 
 		m_TerrainPipeline = new CPipeline(EPipelineType::GRAPHICS);

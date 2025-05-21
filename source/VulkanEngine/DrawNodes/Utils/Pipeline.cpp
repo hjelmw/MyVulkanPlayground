@@ -14,6 +14,11 @@ namespace NVulkanEngine
 		m_BindingTable = new CBindingTable();
 	}
 
+	void CPipeline::SetDebugName(const std::string& debugName)
+	{
+		m_DebugName = debugName;
+	}
+
 	void CPipeline::SetVertexShader(const std::string& vertexShaderPath)
 	{
 		m_VertexShaderPath = vertexShaderPath;
@@ -95,10 +100,6 @@ namespace NVulkanEngine
 
 	void CPipeline::CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
 	{
-#if defined(_DEBUG)
-		std::cout << "\n --- Pipeline created succesfully! ---" << "\n" << std::endl;
-#endif
-
 		CreateGraphicsPipeline(context, descriptorSetLayout);
 	}
 
@@ -107,8 +108,6 @@ namespace NVulkanEngine
 #if defined(_DEBUG)
 		std::cout << "\n --- Creating Graphics pipeline ---" << "\n" << std::endl;
 #endif
-
-
 
 		VkShaderModule vertexShaderModule   = CreateShaderModule(context->GetLogicalDevice(), m_VertexShaderPath);
 		VkShaderModule fragmentShaderModule = CreateShaderModule(context->GetLogicalDevice(), m_FragmentShaderPath);
@@ -153,20 +152,11 @@ namespace NVulkanEngine
 		rasterizer.lineWidth = 1.0f;
 		rasterizer.depthBiasEnable = VK_FALSE;
 
-#if defined(_DEBUG)
-		std::cout << "Cull mode: ";
-#endif
 		switch(m_CullMode)
 		{
 		case VK_CULL_MODE_FRONT_BIT:
-#if defined(_DEBUG)
-			std::cout << "Frontface " << std::endl;
-#endif
 			break;
 		case VK_CULL_MODE_BACK_BIT:
-#if defined(_DEBUG)
-			std::cout << "Backface " << std::endl;
-#endif
 			break;
 		}
 		rasterizer.cullMode = m_CullMode;
@@ -180,9 +170,6 @@ namespace NVulkanEngine
 
 		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(m_ColorAttachmentFormats.size());
 
-#if defined(_DEBUG)
-		std::cout << "Attachments  " << "\n\tColor: " << m_ColorAttachmentFormats.size() << "\n\tDepth: 1" << std::endl;
-#endif
 		for (uint32_t i = 0; i < m_ColorAttachmentFormats.size(); i++)
 		{
 			colorBlendAttachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -273,8 +260,8 @@ namespace NVulkanEngine
 			const std::string fragmentShaderBase = m_VertexShaderPath.substr(m_VertexShaderPath.find_last_of("/\\") + 1);
 			const std::string vertexShaderName   = "Vertex Shader - "   + vertexShaderBase;
 			const std::string fragmentShaderName = "Fragment Shader - " + fragmentShaderBase;
-			const std::string pipelineName       = "Pipeline - " + vertexShaderBase;
-			const std::string pipelineLayoutName = "Pipeline Layout - " + vertexShaderBase;
+			const std::string pipelineName       = "Pipeline - " + m_DebugName;
+			const std::string pipelineLayoutName = "Pipeline Layout - " + m_DebugName;
 
 			VkDebugUtilsObjectNameInfoEXT nameInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
 			nameInfo.objectType   = VK_OBJECT_TYPE_SHADER_MODULE;

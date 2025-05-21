@@ -11,15 +11,12 @@ namespace NVulkanEngine
 
 	void CDebugNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		VkFormat sceneColorFormat = managers->m_ResourceManager->GetResource(EResourceIndices::SceneColor).m_Format;
+		VkFormat sceneColorFormat = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor).m_Format;
 
-		m_DebugUniformBuffer = CreateUniformBuffer(context, m_DebuguniformBufferMemory, sizeof(SDebugUniformUniformBuffer));
-
-		m_DebugTable = new CBindingTable();
-		m_DebugTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, m_DebugUniformBuffer, sizeof(SDebugUniformUniformBuffer));
-		m_DebugTable->CreateBindings(context);
+		managers->m_ResourceManager->AddUniformBuffer(context, "DebugLines Uniforms", EBufferIndices::DebugLines, sizeof(SDebugUniformUniformBuffer));
 
 		m_DebugPipeline = new CPipeline(EPipelineType::GRAPHICS);
+		m_DebugPipeline->SetDebugName("Debug Lines");
 		m_DebugPipeline->SetVertexShader("shaders/debug.vert.spv");
 		m_DebugPipeline->SetFragmentShader("shaders/debug.frag.spv");
 		m_DebugPipeline->SetPrimitiveTopology(VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
@@ -28,23 +25,24 @@ namespace NVulkanEngine
 		m_DebugPipeline->AddVertexAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SDebugVertexLine, m_Position));
 		m_DebugPipeline->AddVertexAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SDebugVertexLine, m_Color));
 		m_DebugPipeline->AddColorAttachment(sceneColorFormat);
-		m_DebugPipeline->CreatePipeline(context, m_DebugTable->GetDescriptorSetLayout());
+		managers->m_PipelineManager->RegisterPipeline(m_DebugPipeline);
 	}
 
-	void CDebugNode::UpdateDebugUniformBuffer(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CDebugNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers)
 	{
+		SUniformBufferResource bufferResource = managers->m_ResourceManager->GetBufferResource(EBufferIndices::DebugLines);
 
 		glm::mat4 cameraLookAt = managers->m_InputManager->GetCamera()->GetLookAtMatrix();
 		glm::mat4 cameraProj = managers->m_InputManager->GetCamera()->GetProjectionMatrix();
 		glm::mat4 cameraViewProj = cameraProj * cameraLookAt;
+
 		SDebugUniformUniformBuffer debugUniformConstants{};
 		debugUniformConstants.m_ViewProjectionMatrix = cameraViewProj;
 
 		void* data;
-		vkMapMemory(context->GetLogicalDevice(), m_DebuguniformBufferMemory, 0, sizeof(SDebugUniformUniformBuffer), 0, &data);
+		vkMapMemory(logicalDevice, bufferResource.m_Memory, 0, sizeof(SDebugUniformUniformBuffer), 0, &data);
 		memcpy(data, &debugUniformConstants, sizeof(SDebugUniformUniformBuffer));
-		vkUnmapMemory(context->GetLogicalDevice(), m_DebuguniformBufferMemory);
-
+		vkUnmapMemory(logicalDevice, bufferResource.m_Memory);
 	}
 
 	void CDebugNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
@@ -62,16 +60,12 @@ namespace NVulkanEngine
 		BeginRendering("Debug Rendering", context, commandBuffer, { sceneColorAttachment });
 
 		m_DebugPipeline->BindPipeline(commandBuffer);
-		m_DebugTable->BindTable(context, commandBuffer, m_DebugPipeline->GetPipelineLayout());
 
 		VkBuffer debugLinesVertexBuffers[] = { debugManager->GetDebugLinesVertexBuffer() };
 		VkDeviceSize vertexOffsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, debugLinesVertexBuffers, vertexOffsets);
 
 		vkCmdSetLineWidth(commandBuffer, 4.0f);
-
-		UpdateDebugUniformBuffer(context, managers);
-
 		vkCmdDraw(commandBuffer, numDebugLines, 1, 0, 0);
 
 		EndRendering(context, commandBuffer);
@@ -79,11 +73,7 @@ namespace NVulkanEngine
 
 	void CDebugNode::Cleanup(CGraphicsContext* context)
 	{
-		vkDestroyBuffer(context->GetLogicalDevice(), m_DebugUniformBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_DebuguniformBufferMemory, nullptr);
-
 		m_DebugPipeline->Cleanup(context);
-		m_DebugTable->Cleanup(context);
 	}
 
 };

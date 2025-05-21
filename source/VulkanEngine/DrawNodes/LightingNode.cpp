@@ -27,12 +27,12 @@ namespace NVulkanEngine
 
 	void CLightingNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
 	{
-		const SRenderResource positionsAttachment    = managers->m_ResourceManager->GetResource(EResourceIndices::Positions);
-		const SRenderResource normalsAttachment      = managers->m_ResourceManager->GetResource(EResourceIndices::Normals);
-		const SRenderResource albedoAttachment       = managers->m_ResourceManager->GetResource(EResourceIndices::Albedo);
-		const SRenderResource depthAttachment        = managers->m_ResourceManager->GetResource(EResourceIndices::Depth);
-		const SRenderResource shadowMapAttachment    = managers->m_ResourceManager->GetResource(EResourceIndices::ShadowMap);
-		const SRenderResource atmosphericsAttachment = managers->m_ResourceManager->GetResource(EResourceIndices::AtmosphericsSkyBox);
+		const SRenderResource positionsAttachment    = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Positions);
+		const SRenderResource normalsAttachment      = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Normals);
+		const SRenderResource albedoAttachment       = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Albedo);
+		const SRenderResource depthAttachment        = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth);
+		const SRenderResource shadowMapAttachment    = managers->m_ResourceManager->GetRenderResource(EResourceIndices::ShadowMap);
+		const SRenderResource atmosphericsAttachment = managers->m_ResourceManager->GetRenderResource(EResourceIndices::AtmosphericsSkyBox);
 
 		m_DeferredUniformBuffer = CreateUniformBuffer(context, m_DeferredLightBufferMemory, sizeof(SDeferredLightingUniformBuffer));
 
@@ -46,7 +46,7 @@ namespace NVulkanEngine
 		m_DeferredTable->AddUniformBufferBinding(6, VK_SHADER_STAGE_FRAGMENT_BIT, m_DeferredUniformBuffer, sizeof(SDeferredLightingUniformBuffer));
 		m_DeferredTable->CreateBindings(context);
 
-		const VkFormat sceneColorAttachmentFormat = managers->m_ResourceManager->GetResource(EResourceIndices::SceneColor).m_Format;
+		const VkFormat sceneColorAttachmentFormat = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor).m_Format;
 		const VkFormat depthFormat = depthAttachment.m_Format;
 
 		m_DeferredPipeline = new CPipeline(EPipelineType::GRAPHICS);

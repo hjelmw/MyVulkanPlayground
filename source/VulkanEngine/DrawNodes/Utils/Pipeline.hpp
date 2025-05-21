@@ -27,6 +27,8 @@ namespace NVulkanEngine
 		CPipeline(EPipelineType type);
 		~CPipeline() = default;
 
+		void SetDebugName(const std::string& debugName);
+
 		// Shaders
 		void SetVertexShader(const std::string& vertexShaderPath);
 		void SetFragmentShader(const std::string& fragmentShaderPath);
@@ -66,6 +68,7 @@ namespace NVulkanEngine
 		VkVertexInputBindingDescription m_VertexInputBindingDescription = {};
 		std::vector<VkVertexInputAttributeDescription> m_VertexAttributeDescriptions    = {};
 
+		std::string           m_DebugName              = "";
 		std::string           m_VertexShaderPath       = "";
 		std::string           m_FragmentShaderPath     = "";
 		std::string           m_ComputeShaderPath      = "";

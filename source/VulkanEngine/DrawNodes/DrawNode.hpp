@@ -8,6 +8,7 @@
 #include <Managers/LightManager.hpp>
 #include <Managers/DebugManager.hpp>
 #include <Managers/ResourceManager.hpp>
+#include <Managers/PipelineManager.hpp>
 
 /*
 	Draw nodes. Used for drawing everything in this engine.
@@ -41,13 +42,15 @@ namespace NVulkanEngine
 		CModelManager*      m_Modelmanager      = nullptr;
 		CLightManager*      m_LightManager      = nullptr;
 		CDebugManager*      m_DebugManager      = nullptr;
-		CResourceManager*   m_ResourceManager = nullptr;
+		CPipelineManager*   m_PipelineManager   = nullptr;
+		CResourceManager*   m_ResourceManager   = nullptr;
 	};
 
 	class CDrawNode
 	{
 	public:
 		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers);
+		virtual void UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers);
 		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer);
 		virtual void Cleanup(CGraphicsContext* context);
 

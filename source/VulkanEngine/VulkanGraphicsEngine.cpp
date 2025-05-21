@@ -693,7 +693,7 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CreateResources()
 	{
-		m_ResourceManager->AddResource(
+		m_ResourceManager->AddRenderResource(
 			m_Context,
 			"GBuffer - Positions",
 			EResourceIndices::Positions,
@@ -705,7 +705,7 @@ namespace NVulkanEngine
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_ResourceManager->AddResource(
+		m_ResourceManager->AddRenderResource(
 			m_Context,
 			"GBuffer - Normals",
 			EResourceIndices::Normals,
@@ -717,7 +717,7 @@ namespace NVulkanEngine
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_ResourceManager->AddResource(
+		m_ResourceManager->AddRenderResource(
 			m_Context,
 			"GBuffer - Albedo",
 			EResourceIndices::Albedo, 
@@ -729,7 +729,7 @@ namespace NVulkanEngine
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_ResourceManager->AddResource(
+		m_ResourceManager->AddRenderResource(
 			m_Context,
 			"GBuffer - Depth",
 			EResourceIndices::Depth,
@@ -741,7 +741,7 @@ namespace NVulkanEngine
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_ResourceManager->AddResource(
+		m_ResourceManager->AddRenderResource(
 			m_Context,
 			"Shadow Map",
 			EResourceIndices::ShadowMap,
@@ -753,7 +753,7 @@ namespace NVulkanEngine
 			(uint32_t)4096,
 			(uint32_t)4096);
 
-		m_ResourceManager->AddResource(
+		m_ResourceManager->AddRenderResource(
 			m_Context,
 			"Atmospherics SkyBox",
 			EResourceIndices::AtmosphericsSkyBox,
@@ -765,7 +765,7 @@ namespace NVulkanEngine
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
 
-		m_ResourceManager->AddResource(
+		m_ResourceManager->AddRenderResource(
 			m_Context,
 			"Scene Color",
 			EResourceIndices::SceneColor,
@@ -901,6 +901,8 @@ namespace NVulkanEngine
 			if (drawNode)
 				drawNode->Init(m_Context, &managers);
 		}
+
+		m_PipelineManager->CreatePipelines(m_Context, m_BindlessBuffer->GetDescriptorSetLayout());
 	}
 
 	void CVulkanGraphicsEngine::RecordDrawNodes(VkCommandBuffer commandBuffer)
@@ -914,13 +916,15 @@ namespace NVulkanEngine
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
-		managers.m_ResourceManager = m_ResourceManager;
+		managers.m_ResourceManager   = m_ResourceManager;
+		managers.m_PipelineManager   = m_PipelineManager;
 		managers.m_DebugManager      = m_DebugManager;
 
 		for (uint32_t i = 0; i < (uint32_t)EDrawNodes::Debug; i++)
 		{
 			CDrawNode* drawNode = m_DrawNodes[i];
 			if (drawNode)
+				drawNode->UpdateBeforeDraw(m_VulkanDevice, &managers);
 				drawNode->Draw(m_Context, &managers, commandBuffer);
 		}
 
@@ -983,9 +987,9 @@ namespace NVulkanEngine
 		{
 			static char inputText[64] = "";
 			ImGui::InputText("Filter", inputText, 64);
-			for (uint32_t i = 0; i < m_ResourceManager->GetResources().size(); i++)
+			for (uint32_t i = 0; i < m_ResourceManager->GetRenderResources().size(); i++)
 			{
-				SRenderResource attachment = m_ResourceManager->GetResource((EResourceIndices)i);
+				SRenderResource attachment = m_ResourceManager->GetRenderResource((EResourceIndices)i);
 
 				ImGui::Selectable(attachment.m_DebugName, &selected[i]);
 				if (selected[i])
@@ -998,7 +1002,7 @@ namespace NVulkanEngine
 				ImGui::Text("No Texture selected. Select one from the list above to inspect!");
 			else
 			{
-				SRenderResource attachment = m_ResourceManager->GetResource((EResourceIndices)selectedId);
+				SRenderResource attachment = m_ResourceManager->GetRenderResource((EResourceIndices)selectedId);
 				ImGui::Text("Name: %s", attachment.m_DebugName);
 				static float brightness[3] = { 1.0f, 1.0f, 1.0f };
 				ImGui::SliderFloat3("Brightness", &brightness[0], 0.0f, 1.0f);

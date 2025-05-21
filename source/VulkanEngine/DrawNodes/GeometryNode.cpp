@@ -19,10 +19,10 @@ namespace NVulkanEngine
 			model->CreateGeometryBindingTable(context);
 		}
 
-		VkFormat positionsFormat = managers->m_ResourceManager->GetResource(EResourceIndices::Positions).m_Format;
-		VkFormat normalsFormat   = managers->m_ResourceManager->GetResource(EResourceIndices::Normals).m_Format;
-		VkFormat albedoFormat    = managers->m_ResourceManager->GetResource(EResourceIndices::Albedo).m_Format;
-		VkFormat depthFormat     = managers->m_ResourceManager->GetResource(EResourceIndices::Depth).m_Format;
+		VkFormat positionsFormat = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Positions).m_Format;
+		VkFormat normalsFormat   = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Normals).m_Format;
+		VkFormat albedoFormat    = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Albedo).m_Format;
+		VkFormat depthFormat     = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth).m_Format;
 
 		// Just get any descriptor set layout since they are the same for all the models atm
 		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();

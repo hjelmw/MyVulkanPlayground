@@ -29,7 +29,7 @@ namespace NVulkanEngine
 			model->CreateShadowBindingTable(context);
 		}
 
-		VkFormat shadowMapFormat = managers->m_ResourceManager->GetResource(EResourceIndices::ShadowMap).m_Format;
+		VkFormat shadowMapFormat = managers->m_ResourceManager->GetRenderResource(EResourceIndices::ShadowMap).m_Format;
 
 		// Just get any descriptor set layout since they are the same for all the models atm
 		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();

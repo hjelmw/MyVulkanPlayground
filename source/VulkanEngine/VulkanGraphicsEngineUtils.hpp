@@ -43,6 +43,14 @@ namespace NVulkanEngine
 		VkRenderingAttachmentInfo m_RenderAttachmentInfo = {};
 	};
 
+	struct SUniformBufferResource
+	{
+		char           m_DebugName[64] = "No Debug Name";
+		uint32_t       m_Size          = 0;
+		VkBuffer       m_Buffer        = VK_NULL_HANDLE;
+		VkDeviceMemory m_Memory        = VK_NULL_HANDLE;
+	};
+
 	static std::vector<const char*> GetRequiredInstanceExtensions()
 	{
 		uint32_t requiredGLFWExtensionCount;
