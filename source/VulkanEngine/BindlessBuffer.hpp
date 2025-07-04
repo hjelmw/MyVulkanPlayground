@@ -19,12 +19,12 @@ namespace NVulkanEngine
 
 		void  SetVertexDescription(VkVertexInputBindingDescription vertexBindingDescription);
 		void  AddUniformBufferBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, uint32_t bufferSize);
-		void  AddSampledImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler);
+		void  AddSampledImageBinding(VkDevice device, uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler);
 		void  CreateBindings(CGraphicsContext* context);
 
-		bool HasResourcesToBind() { return ((m_NumImageDescriptors + m_NumBufferDescriptors) > 0); };
+		bool HasResourcesToBind() const { return ((m_NumImageDescriptors + m_NumBufferDescriptors) > 0); };
 
-		VkDescriptorSetLayout GetDescriptorSetLayout() { return m_DescriptorSetLayout; };
+		VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_DescriptorSetLayout; };
 
 		void BindTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
 

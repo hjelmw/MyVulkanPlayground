@@ -12,6 +12,8 @@ enum class EBindlessBufferType : uint32_t
 	COUNT    = 2
 };
 
+constexpr uint32_t g_MaxBindlessResources = 16536;
+
 namespace NVulkanEngine
 {
 	// From https://dev.to/gasim/implementing-bindless-design-in-vulkan-34no
@@ -20,29 +22,20 @@ namespace NVulkanEngine
 		return (originalSize + minAlignment - 1) & ~(minAlignment - 1);
 	}
 
-	void CBindlessBuffer::AddUniformBufferBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, uint32_t bufferSize)
-	{
-
-	}
-
 	void CBindlessBuffer::AllocateDescriptorPool(CGraphicsContext* context)
 	{
-		uint32_t numBufferDescriptors = m_NumBufferDescriptors * g_MaxFramesInFlight;
-		uint32_t numImageDescriptors  = m_NumImageDescriptors  * g_MaxFramesInFlight;
-		uint32_t numDescriptorSets    = (uint32_t) m_DescriptorInfos.size() * g_MaxFramesInFlight;
-
-		std::array<VkDescriptorPoolSize, 2> poolSizes{};
-		poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = numBufferDescriptors;
-		poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = numImageDescriptors;
+		std::array<VkDescriptorPoolSize, 1> poolSizeBindless[] =
+		{
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, g_MaxBindlessResources },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, g_MaxBindlessResources }
+		};
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
-		poolInfo.poolSizeCount = m_NumImageDescriptors > 0 ? static_cast<uint32_t>(poolSizes.size()) : 1;
-		poolInfo.pPoolSizes    = poolSizes.data();
-		poolInfo.maxSets       = numDescriptorSets;
+		poolInfo.poolSizeCount = (uint32_t)poolSizeBindless->size();
+		poolInfo.pPoolSizes    = poolSizeBindless->data();
+		poolInfo.maxSets       = g_MaxBindlessResources * (uint32_t)poolSizeBindless->size();
 
 		VkResult result = vkCreateDescriptorPool(context->GetLogicalDevice(), &poolInfo, nullptr, &m_DescriptorPool);
 
@@ -63,8 +56,8 @@ namespace NVulkanEngine
 
 		std::array<VkDescriptorBindingFlags, (uint32_t) EBindlessBufferType::COUNT> descriptorBindingFlags
 		{
-			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
-			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT
 		};
 
 		// Create layout for descriptor set
@@ -74,7 +67,7 @@ namespace NVulkanEngine
 		{
 			descriptorBindings[i].binding = i;
 			descriptorBindings[i].descriptorType = descriptorBindingTypes[i]; // uniforms/textures in this descriptor
-			descriptorBindings[i].descriptorCount = 1000; // Up to 1000 uniforms/textures allowed
+			descriptorBindings[i].descriptorCount = g_MaxBindlessResources; // Up to 1000 uniforms/textures allowed
 			descriptorBindings[i].stageFlags = VK_SHADER_STAGE_ALL;
 		}
 
@@ -113,7 +106,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CBindlessBuffer::AddSampledImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler)
+	void CBindlessBuffer::AddSampledImageBinding(VkDevice device, uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler)
 	{
 		VkDescriptorSetLayoutBinding descriptorLayoutBinding = CreateDescriptorSetLayoutBinding(bindingSlot, shaderStage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 		m_DescriptorSetLayoutBindings.push_back(descriptorLayoutBinding);
@@ -125,12 +118,30 @@ namespace NVulkanEngine
 		writeDescriptor.m_ImageInfo = CreateDescriptorImageInfo(imageView, sampler, isDepthFormat ? VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		
 		m_DescriptorInfos.push_back(writeDescriptor);
+		
+		VkWriteDescriptorSet write{};
+		write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		write.dstBinding = (uint32_t)EBindlessBufferType::TEXTURES;
+		write.dstSet = m_DescriptorSets[0];
+
+		// Write just the one texture that is being added
+		write.descriptorCount = 1;
+
+		// The array element that we are going to write to
+		// is the index, which we refer to as our handles
+		write.dstArrayElement = bindingSlot;
+		write.pImageInfo = &writeDescriptor.m_ImageInfo;
+
+		vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+		
 		m_NumImageDescriptors++;
 	}
 
 	void CBindlessBuffer::CreateBindings(CGraphicsContext* context)
 	{
-
+		AllocateDescriptorPool(context);
+		AllocateDescriptorSetLayout(context);
+		AllocateDescriptorSets(context);
 
 
 	}

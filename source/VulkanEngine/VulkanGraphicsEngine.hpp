@@ -37,7 +37,7 @@ namespace NVulkanEngine
 
         void Initialize();
 
-        void AddModelFilepath(const std::string& modelpath);
+        void AddModelByFilepath(const std::string& modelpath);
         void SetModelTexture(const std::string& texturepath);
         void SetModelPosition(float x, float y, float z);
         void SetModelRotation(float x, float y, float z);

@@ -54,7 +54,7 @@ namespace NVulkanEngine
 			m_VkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
 		}
 
-		// Add to the global table
+		// Add to the bindless table
 		m_BindlessBuffer->AddSampledImageBinding((uint32_t)attachmentIndex, shaderStageUsageFlags, renderResource.m_ImageView, format, sampler);
 
 		m_RenderResources[(uint32_t)attachmentIndex] = renderResource;

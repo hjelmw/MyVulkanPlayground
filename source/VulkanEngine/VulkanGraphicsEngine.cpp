@@ -1072,9 +1072,9 @@ namespace NVulkanEngine
 		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainAttachment, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
 	}
 
-	void CVulkanGraphicsEngine::AddModelFilepath(const std::string& modelpath)
+	void CVulkanGraphicsEngine::AddModelByFilepath(const std::string& modelpath)
 	{
-		m_ModelManager->AddModelFilepath(modelpath);
+		m_ModelManager->AddModelByFilepath(modelpath);
 	}
 
 	void CVulkanGraphicsEngine::SetModelTexture(const std::string& texturePath)
