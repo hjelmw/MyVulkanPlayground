@@ -12,10 +12,10 @@ You can have a look under [source/VulkanEngine/DrawNodes/](https://github.com/hj
 ![alt text](engine.png)
 
 # Setup
-1. Install [Python](https://www.python.org/downloads/) (Version 3.7 or above should work)
-2. Install [VulkanSDK](https://vulkan.lunarg.com/) from Lunarg (Version 1.4 should work)
-4. `CreateVisualStudioSolution.bat`. It should download all the other required dependencies and create the .sln file
-5. Open in Visual Studio 2022 (have not tested older versions but it might still work)
+1. Install [VulkanSDK](https://vulkan.lunarg.com/) from Lunarg (Version 1.4)
+2. Install [Python](https://www.python.org/downloads/)
+3. `CreateVisualStudioSolution.bat`. It should download all the other required dependencies and create a .sln file
+4. Open in Visual Studio 2022 (have not tested other versions but probably still works)
 
 
 **Note:** When installing the Vulkan SDK you can optionally choose to install the GLM math library but regardless the build script will download and use its own version
