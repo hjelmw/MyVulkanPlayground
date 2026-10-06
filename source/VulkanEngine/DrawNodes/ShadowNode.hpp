@@ -18,6 +18,7 @@ namespace NVulkanEngine
 		~CShadowNode() = default;
 
 		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers)  override;
+		virtual void UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers) override;
 		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
 		virtual void Cleanup(CGraphicsContext* context) override;
 
@@ -25,7 +26,6 @@ namespace NVulkanEngine
 		static glm::vec3 GetSunlightDirection() { return s_SunlightDirection; };
 
 	private:
-		void UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers);
 
 		std::vector<SDescriptorSets> m_DescriptorSetsShadow = { };
 

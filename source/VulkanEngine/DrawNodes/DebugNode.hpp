@@ -4,6 +4,7 @@
 
 #include <DrawNodes/DrawNode.hpp>
 #include <DrawNodes/Utils/Pipeline.hpp>
+#include <DrawNodes/Utils/BindingTable.hpp>
 
 /*
 	Draw debug lines
@@ -25,6 +26,7 @@ namespace NVulkanEngine
 	private:
 
 		// Shadow Uniform Buffer
-		CPipeline* m_DebugPipeline  = nullptr;
+		CPipeline*     m_DebugPipeline = nullptr;
+		CBindingTable* m_DebugTable    = nullptr;
 	};
 }

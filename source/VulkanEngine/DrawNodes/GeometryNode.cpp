@@ -45,7 +45,7 @@ namespace NVulkanEngine
 		m_GeometryPipeline->CreatePipeline(context, modelDescriptorSetLayout); 
 	}
 
-	void CGeometryNode::UpdateGeometryBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CGeometryNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers)
 	{
 		CCamera* camera = managers->m_InputManager->GetCamera();
 
@@ -59,9 +59,9 @@ namespace NVulkanEngine
 			uboModel.m_ProjectionMat = camera->GetProjectionMatrix();
 
 			void* data;
-			vkMapMemory(context->GetLogicalDevice(), model->GetGeometryMemoryBuffer().m_Memory, 0, sizeof(SGeometryUniformBuffer), 0, &data);
+			vkMapMemory(logicalDevice, model->GetGeometryMemoryBuffer().m_Memory, 0, sizeof(SGeometryUniformBuffer), 0, &data);
 			memcpy(data, &uboModel, sizeof(uboModel));
-			vkUnmapMemory(context->GetLogicalDevice(), model->GetGeometryMemoryBuffer().m_Memory);
+			vkUnmapMemory(logicalDevice, model->GetGeometryMemoryBuffer().m_Memory);
 		}
 	}
 
@@ -77,7 +77,6 @@ namespace NVulkanEngine
 		std::vector<SRenderResource> renderAttachments = { positionsAttachment, normalsAttachment, albedoAttachment, depthAttachment };
 
 		BeginRendering("GBuffers", context, commandBuffer, renderAttachments);
-		UpdateGeometryBuffers(context, managers);
 
 		m_GeometryPipeline->BindPipeline(commandBuffer);
 

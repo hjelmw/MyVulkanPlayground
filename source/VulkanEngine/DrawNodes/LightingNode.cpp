@@ -58,7 +58,7 @@ namespace NVulkanEngine
 		m_DeferredPipeline->CreatePipeline(context, m_DeferredTable->GetDescriptorSetLayout());
 	}
 
-	void CLightingNode::UpdateLightBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CLightingNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers)
 	{
 		SDeferredLightingUniformBuffer deferredLightingUbo{};
 		deferredLightingUbo.m_Lights[0].m_LightColor     = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -70,15 +70,13 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_Pad1                       = 0.0f;
 
 		void* data;
-		vkMapMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory, 0, sizeof(SDeferredLightingUniformBuffer), 0, &data);
+		vkMapMemory(logicalDevice, m_DeferredLightBufferMemory, 0, sizeof(SDeferredLightingUniformBuffer), 0, &data);
 		memcpy(data, &deferredLightingUbo, sizeof(SDeferredLightingUniformBuffer));
-		vkUnmapMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory);
+		vkUnmapMemory(logicalDevice, m_DeferredLightBufferMemory);
 	}
 
 	void CLightingNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
-		UpdateLightBuffers(context, managers);
-
 		CResourceManager* resourceManager = managers->m_ResourceManager;
 		resourceManager->TransitionResource(commandBuffer, EResourceIndices::Positions,          VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		resourceManager->TransitionResource(commandBuffer, EResourceIndices::Normals,            VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

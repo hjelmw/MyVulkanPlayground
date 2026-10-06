@@ -11,7 +11,6 @@ namespace NVulkanEngine
 	CPipeline::CPipeline(EPipelineType type)
 	{
 		m_Type = type;
-		m_BindingTable = new CBindingTable();
 	}
 
 	void CPipeline::SetDebugName(const std::string& debugName)
@@ -31,16 +30,6 @@ namespace NVulkanEngine
 	void CPipeline::SetCullingMode(VkCullModeFlagBits cullMode)
 	{
 		m_CullMode = cullMode;
-	}
-
-	void CPipeline::AddSampledImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler)
-	{
-		m_BindingTable->AddSampledImageBinding(bindingSlot, shaderStage, imageView, format, sampler);
-	}
-
-	void CPipeline::AddSampledBufferBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkBuffer buffer, uint32_t bufferSize)
-	{
-		m_BindingTable->AddUniformBufferBinding(bindingSlot, shaderStage, buffer, bufferSize);
 	}
 
 	void CPipeline::AddPushConstantSlot(VkShaderStageFlags shaderStage, size_t constantsSize, size_t offset)
@@ -87,15 +76,6 @@ namespace NVulkanEngine
 	void CPipeline::AddDepthAttachment(VkFormat depthFormat)
 	{
 		m_DepthAttachmentFormat = depthFormat;
-	}
-
-	void CPipeline::CreatePipeline(CGraphicsContext* context)
-	{
-		if (m_BindingTable->HasResourcesToBind())
-		{
-			m_BindingTable->CreateBindings(context);
-		}
-		CreateGraphicsPipeline(context, m_BindingTable->GetDescriptorSetLayout());
 	}
 
 	void CPipeline::CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
@@ -287,8 +267,6 @@ namespace NVulkanEngine
 
 	void CPipeline::BindPipeline(CGraphicsContext* context, VkCommandBuffer commandBuffer)
 	{
-		if (m_BindingTable->HasResourcesToBind())
-			m_BindingTable->BindTable(context, commandBuffer, m_PipelineLayout);
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 	}
 
@@ -306,7 +284,5 @@ namespace NVulkanEngine
 	{
 		vkDestroyPipeline(context->GetLogicalDevice(), m_Pipeline, nullptr);
 		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
-
-		m_BindingTable->Cleanup(context);
 	}
 }

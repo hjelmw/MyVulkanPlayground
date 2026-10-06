@@ -72,19 +72,22 @@ namespace NVulkanEngine
 
 		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentConstants));
 
+		m_AtmosphericsTable = new CBindingTable();
+		m_AtmosphericsTable->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView, depthAttachment.m_Format, context->GetLinearClampSampler());
+		m_AtmosphericsTable->AddUniformBufferBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_AtmosphericsUniformBuffer, sizeof(SAtmosphericsFragmentConstants));
+		m_AtmosphericsTable->CreateBindings(context);
+
 		m_AtmosphericsPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_AtmosphericsPipeline->SetVertexShader("shaders/atmospherics.vert.spv");
 		m_AtmosphericsPipeline->SetFragmentShader("shaders/atmospherics.frag.spv");
 		m_AtmosphericsPipeline->SetCullingMode(VK_CULL_MODE_NONE);
-		m_AtmosphericsPipeline->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView, depthAttachment.m_Format, context->GetLinearClampSampler());
-		m_AtmosphericsPipeline->AddSampledBufferBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_AtmosphericsUniformBuffer, sizeof(SAtmosphericsFragmentConstants));
 		m_AtmosphericsPipeline->AddColorAttachment(atmosphericsAttachment.m_Format);
 		m_AtmosphericsPipeline->AddDepthAttachment(depthAttachment.m_Format);
 		m_AtmosphericsPipeline->AddPushConstantSlot(VK_SHADER_STAGE_VERTEX_BIT, sizeof(SAtmosphericsVertexPushConstants), 0);
-		m_AtmosphericsPipeline->CreatePipeline(context);
+		m_AtmosphericsPipeline->CreatePipeline(context, m_AtmosphericsTable->GetDescriptorSetLayout());
 	}
 
-	void CSkyNode::UpdateAtmosphericsConstants(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CSkyNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers)
 	{
 		CCamera* camera = managers->m_InputManager->GetCamera();
 		float cameraNear = camera->GetNear();
@@ -116,9 +119,9 @@ namespace NVulkanEngine
 		atmosphericsUbo.m_ScatteringIntensity    = g_ScatteringIntensity;
 
 		void* data;
-		vkMapMemory(context->GetLogicalDevice(), m_AtmosphericsBufferMemory, 0, sizeof(SAtmosphericsFragmentConstants), 0, &data);
+		vkMapMemory(logicalDevice, m_AtmosphericsBufferMemory, 0, sizeof(SAtmosphericsFragmentConstants), 0, &data);
 		memcpy(data, &atmosphericsUbo, sizeof(SAtmosphericsFragmentConstants));
-		vkUnmapMemory(context->GetLogicalDevice(), m_AtmosphericsBufferMemory);
+		vkUnmapMemory(logicalDevice, m_AtmosphericsBufferMemory);
 	}
 
 	void CSkyNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
@@ -142,8 +145,6 @@ namespace NVulkanEngine
 		vertexPushConstants.m_InvViewProjectionMatrix = invViewProjectionMatrix;
 		vertexPushConstants.m_CameraFar = camera->GetFar();
 
-		UpdateAtmosphericsConstants(context, managers);
-
 		CResourceManager* resourceManager = managers->m_ResourceManager;
 		resourceManager->TransitionResource(commandBuffer, EResourceIndices::Depth, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
 		SRenderResource atmosphericsAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::AtmosphericsSkyBox, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -151,7 +152,8 @@ namespace NVulkanEngine
 		std::vector<SRenderResource> inscatteringAttachments = { atmosphericsAttachment };
 		BeginRendering("Skybox", context, commandBuffer, inscatteringAttachments);
 
-		m_AtmosphericsPipeline->BindPipeline(context, commandBuffer);
+		m_AtmosphericsPipeline->BindPipeline(commandBuffer);
+		m_AtmosphericsTable->BindTable(context, commandBuffer, m_AtmosphericsPipeline->GetPipelineLayout());
 		m_AtmosphericsPipeline->PushConstants(commandBuffer, (void*)&vertexPushConstants);
 
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
@@ -166,8 +168,10 @@ namespace NVulkanEngine
 		vkDestroyBuffer(device, m_AtmosphericsUniformBuffer, nullptr);
 		vkFreeMemory(device, m_AtmosphericsBufferMemory, nullptr);
 
+		m_AtmosphericsTable->Cleanup(context);
 		m_AtmosphericsPipeline->Cleanup(context);
 
+		delete m_AtmosphericsTable;
 		delete m_AtmosphericsPipeline;
 	}
 

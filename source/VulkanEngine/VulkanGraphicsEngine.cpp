@@ -915,12 +915,15 @@ namespace NVulkanEngine
 		{
 			CDrawNode* drawNode = m_DrawNodes[i];
 			if (drawNode)
+			{
 				drawNode->UpdateBeforeDraw(m_VulkanDevice, &managers);
 				drawNode->Draw(m_Context, &managers, commandBuffer);
+			}
 		}
 
 		// Debug rendering happens after main rendering
 		m_DebugManager->Update(m_Context);
+		m_DrawNodes[(uint32_t)EDrawNodes::Debug]->UpdateBeforeDraw(m_VulkanDevice, &managers);
 		m_DrawNodes[(uint32_t)EDrawNodes::Debug]->Draw(m_Context, &managers, commandBuffer);
 	}
 

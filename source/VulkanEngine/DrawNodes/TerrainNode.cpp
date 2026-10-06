@@ -90,9 +90,12 @@ namespace NVulkanEngine
 
 		m_TerrainUniformBuffer = CreateUniformBuffer(context, m_TerrainUniformBufferMemory, sizeof(STerrainFragmentConstants));
 
-		const SRenderResource sceneColorAttachment = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor);
-		const SRenderResource depthAttachment      = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth);
+		m_TerrainTable = new CBindingTable();
+		m_TerrainTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, m_TerrainUniformBuffer, sizeof(STerrainFragmentConstants));
+		m_TerrainTable->CreateBindings(context);
 
+		const VkFormat sceneColorAttachment = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor).m_Format;
+		const VkFormat depthAttachment      = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth).m_Format;
 
 		m_TerrainPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_TerrainPipeline->SetVertexShader("shaders/terrain.vert.spv");
@@ -101,22 +104,14 @@ namespace NVulkanEngine
 		m_TerrainPipeline->SetPrimitiveTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
 		m_TerrainPipeline->SetVertexInput(sizeof(glm::vec3), VK_VERTEX_INPUT_RATE_VERTEX);
 		m_TerrainPipeline->AddVertexAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
-		m_TerrainPipeline->AddSampledBufferBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, m_TerrainUniformBuffer, sizeof(STerrainFragmentConstants));
 		m_TerrainPipeline->AddPushConstantSlot(VK_SHADER_STAGE_VERTEX_BIT, sizeof(STerrainVertexPushConstants), 0);
-		m_TerrainPipeline->AddColorAttachment(sceneColorAttachment.m_Format);
-		m_TerrainPipeline->AddDepthAttachment(depthAttachment.m_Format);
-		m_TerrainPipeline->CreatePipeline(context);
-	}
-
-	void CTerrainNode::UpdateTerrainConstants(CGraphicsContext* context, SGraphicsManagers* managers)
-	{
-
+		m_TerrainPipeline->AddColorAttachment(sceneColorAttachment);
+		m_TerrainPipeline->AddDepthAttachment(depthAttachment);
+		m_TerrainPipeline->CreatePipeline(context, m_TerrainTable->GetDescriptorSetLayout());
 	}
 
 	void CTerrainNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
-		UpdateTerrainConstants(context, managers);
-
 		//glm::mat4 cameraLookAt = managers->m_InputManager->GetCamera()->GetLookAtMatrix();
 		//glm::mat4 cameraProjection = managers->m_InputManager->GetCamera()->GetProjectionMatrix();
 		glm::mat4 cameraLookAt = glm::lookAt(glm::vec3(67.0f, 627.5f, 170.0f), glm::vec3(67.0f, 627.5f, 170.0f) + glm::vec3(-0.45f, -0.67f, -0.58f), glm::vec3(-0.41f, 0.73f, -0.53f));
@@ -134,7 +129,8 @@ namespace NVulkanEngine
 
 		BeginRendering("Terrain", context, commandBuffer, { sceneColorAttachment, depthAttachment });
 
-		m_TerrainPipeline->BindPipeline(context, commandBuffer);
+		m_TerrainPipeline->BindPipeline(commandBuffer);
+		m_TerrainTable->BindTable(context, commandBuffer, m_TerrainPipeline->GetPipelineLayout());
 		m_TerrainPipeline->PushConstants(commandBuffer, (void*)&terrainPushConstants);
 
 		VkBuffer vertexBuffer[] = { m_TerrainVertexBuffer };
@@ -147,7 +143,7 @@ namespace NVulkanEngine
 
 		for (unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
 		{
-			//vkCmdDrawIndexed(commandBuffer, NUM_VERTS_PER_STRIP, 1, (NUM_VERTS_PER_STRIP * strip), 0, 0); // offset to starting index
+			vkCmdDrawIndexed(commandBuffer, NUM_VERTS_PER_STRIP, 1, (NUM_VERTS_PER_STRIP * strip), 0, 0); // offset to starting index
 		}
 
 		EndRendering(context, commandBuffer);
@@ -164,7 +160,10 @@ namespace NVulkanEngine
 		vkDestroyBuffer(context->GetLogicalDevice(), m_TerrainUniformBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_TerrainUniformBufferMemory, nullptr);
 
+		m_TerrainTable->Cleanup(context);
 		m_TerrainPipeline->Cleanup(context);
+
+		delete m_TerrainTable;
 	}
 
 };

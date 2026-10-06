@@ -15,6 +15,10 @@ namespace NVulkanEngine
 
 		SUniformBufferResource debugUniformBuffer = managers->m_ResourceManager->AddUniformBuffer(context, "DebugLines Uniforms", EBufferIndices::DebugLines, sizeof(SDebugUniformUniformBuffer));
 
+		m_DebugTable = new CBindingTable();
+		m_DebugTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, debugUniformBuffer.m_Buffer, sizeof(SDebugUniformUniformBuffer));
+		m_DebugTable->CreateBindings(context);
+
 		m_DebugPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_DebugPipeline->SetDebugName("Debug Lines");
 		m_DebugPipeline->SetVertexShader("shaders/debug.vert.spv");
@@ -24,9 +28,8 @@ namespace NVulkanEngine
 		m_DebugPipeline->SetVertexInput(sizeof(SDebugVertexLine), VK_VERTEX_INPUT_RATE_VERTEX);
 		m_DebugPipeline->AddVertexAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SDebugVertexLine, m_Position));
 		m_DebugPipeline->AddVertexAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SDebugVertexLine, m_Color));
-		m_DebugPipeline->AddSampledBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, debugUniformBuffer.m_Buffer, sizeof(SDebugUniformUniformBuffer));
 		m_DebugPipeline->AddColorAttachment(sceneColorFormat);
-		m_DebugPipeline->CreatePipeline(context);
+		m_DebugPipeline->CreatePipeline(context, m_DebugTable->GetDescriptorSetLayout());
 	}
 
 	void CDebugNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers)
@@ -59,7 +62,8 @@ namespace NVulkanEngine
 
 		BeginRendering("Debug Rendering", context, commandBuffer, { sceneColorAttachment });
 
-		m_DebugPipeline->BindPipeline(context, commandBuffer);
+		m_DebugPipeline->BindPipeline(commandBuffer);
+		m_DebugTable->BindTable(context, commandBuffer, m_DebugPipeline->GetPipelineLayout());
 
 		VkBuffer debugLinesVertexBuffers[] = { debugManager->GetDebugLinesVertexBuffer() };
 		VkDeviceSize vertexOffsets[] = { 0 };
@@ -73,7 +77,10 @@ namespace NVulkanEngine
 
 	void CDebugNode::Cleanup(CGraphicsContext* context)
 	{
+		m_DebugTable->Cleanup(context);
 		m_DebugPipeline->Cleanup(context);
+
+		delete m_DebugTable;
 	}
 
 };

@@ -103,7 +103,7 @@ namespace NVulkanEngine
 		sunlightDirection = sunlightForwardVector;
 	}
 
-	void CShadowNode::UpdateShadowBuffers(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CShadowNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers)
 	{
 		//glm::vec3 cameraPosition = managers->m_InputManager->GetCamera()->GetPosition();
 
@@ -210,12 +210,10 @@ namespace NVulkanEngine
 			uboShadow.m_ModelMatrix      = model->GetTransform();
 			
 			void* data;
-			vkMapMemory(context->GetLogicalDevice(), model->GetShadowMemoryBuffer().m_Memory, 0, sizeof(SShadowUniformBuffer), 0, &data);
+			vkMapMemory(logicalDevice, model->GetShadowMemoryBuffer().m_Memory, 0, sizeof(SShadowUniformBuffer), 0, &data);
 			memcpy(data, &uboShadow, sizeof(uboShadow));
-			vkUnmapMemory(context->GetLogicalDevice(), model->GetShadowMemoryBuffer().m_Memory);
+			vkUnmapMemory(logicalDevice, model->GetShadowMemoryBuffer().m_Memory);
 		}
-
-
 	}
 
 	void CShadowNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
@@ -229,7 +227,6 @@ namespace NVulkanEngine
 		context->SetRenderResolution(VkExtent2D(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION));
 
 		BeginRendering("Shadow Map", context, commandBuffer, {shadowmapAttachment});
-		UpdateShadowBuffers(context, managers);
 
 		m_ShadowPipeline->BindPipeline(commandBuffer);
 

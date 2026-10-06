@@ -42,15 +42,12 @@ namespace NVulkanEngine
 		void SetCullingMode(VkCullModeFlagBits cullMode);
 	
 		// Shader inputs
-		void AddSampledImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler);
-		void AddSampledBufferBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkBuffer buffer, uint32_t bufferSize);
 		void AddPushConstantSlot(VkShaderStageFlags shaderStage, size_t constantsSize, size_t offset);
 
 		// Shader outputs
 		void AddColorAttachment(VkFormat colorFormat);
 		void AddDepthAttachment(VkFormat depthFormat);
 
-		void CreatePipeline(CGraphicsContext* context);
 		void CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
 
 		VkPipelineLayout GetPipelineLayout() { return m_PipelineLayout; };
@@ -84,8 +81,6 @@ namespace NVulkanEngine
 
 		VkPipelineLayout      m_PipelineLayout         = VK_NULL_HANDLE;
 		VkPipeline		      m_Pipeline               = VK_NULL_HANDLE;
-
-		CBindingTable*        m_BindingTable           = nullptr;
 	};
 
 };

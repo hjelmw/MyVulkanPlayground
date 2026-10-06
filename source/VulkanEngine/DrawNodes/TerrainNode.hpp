@@ -21,7 +21,6 @@ namespace NVulkanEngine
 		virtual void Cleanup(CGraphicsContext* context) override;
 
 	private:
-		void UpdateTerrainConstants(CGraphicsContext* context, SGraphicsManagers* managers);
 		void CreateTerrainVertices(CGraphicsContext* context);
 
 		VkBuffer        m_TerrainUniformBuffer = VK_NULL_HANDLE;
@@ -34,6 +33,7 @@ namespace NVulkanEngine
 		VkDeviceMemory  m_TerrainIndexBufferMemory  = VK_NULL_HANDLE;
 
 		// Pipeline & shader binding
+		CBindingTable* m_TerrainTable          = nullptr;
 		CPipeline*     m_TerrainPipeline       = nullptr;
 
 		int m_TerrainTextureWidth       = -1;

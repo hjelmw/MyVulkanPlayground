@@ -17,11 +17,11 @@ namespace NVulkanEngine
 		~CGeometryNode() = default;
 
 		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers)  override;
+		virtual void UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers) override;
 		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
 		virtual void Cleanup(CGraphicsContext* context) override;
 
 	private:
-		void UpdateGeometryBuffers(CGraphicsContext* context, SGraphicsManagers* managers);
 
 		// Pipeline (shader binding is done in model)
 		CPipeline* m_GeometryPipeline = nullptr;
