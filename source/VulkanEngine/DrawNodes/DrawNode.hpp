@@ -8,7 +8,6 @@
 #include <Managers/LightManager.hpp>
 #include <Managers/DebugManager.hpp>
 #include <Managers/ResourceManager.hpp>
-#include <Managers/PipelineManager.hpp>
 
 /*
 	Draw nodes. Used for drawing everything in this engine.
@@ -42,7 +41,6 @@ namespace NVulkanEngine
 		CModelManager*      m_Modelmanager      = nullptr;
 		CLightManager*      m_LightManager      = nullptr;
 		CDebugManager*      m_DebugManager      = nullptr;
-		CPipelineManager*   m_PipelineManager   = nullptr;
 		CResourceManager*   m_ResourceManager   = nullptr;
 	};
 

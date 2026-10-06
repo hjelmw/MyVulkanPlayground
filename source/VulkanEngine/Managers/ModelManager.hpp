@@ -21,7 +21,7 @@ namespace NVulkanEngine
 		CModelManager()  = default;
 		~CModelManager() = default;
 
-		void AddModelFilepath(const std::string& modelFilepath);
+		void AddModelFromFilepath(const std::string& modelFilepath);
 		void AddPosition(const glm::vec3& position);
 		void AddRotation(const glm::vec3& rotation);
 		void AddScaling(const glm::vec3& scaling);

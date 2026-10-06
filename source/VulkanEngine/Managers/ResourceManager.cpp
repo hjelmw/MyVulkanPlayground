@@ -8,8 +8,6 @@ namespace NVulkanEngine
 	CResourceManager::CResourceManager(VkInstance vulkanInstance)
 	{
 		m_VkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(vulkanInstance, "vkSetDebugUtilsObjectNameEXT");
-
-		m_BindlessBuffer = new CBindlessBuffer();
 	}
 
 	SRenderResource CResourceManager::AddRenderResource(
@@ -54,9 +52,6 @@ namespace NVulkanEngine
 			m_VkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
 		}
 
-		// Add to the bindless table
-		m_BindlessBuffer->AddSampledImageBinding((uint32_t)attachmentIndex, shaderStageUsageFlags, renderResource.m_ImageView, format, sampler);
-
 		m_RenderResources[(uint32_t)attachmentIndex] = renderResource;
 		return renderResource;
 	}
@@ -83,8 +78,6 @@ namespace NVulkanEngine
 		uniformBufferResource.m_Size   = (uint32_t)uniformBufferSize;
 
 		m_BufferResources[(uint32_t) uniformBufferIndex] = uniformBufferResource;
-
-		m_BindlessBuffer->AddUniformBufferBinding((uint32_t)uniformBufferIndex, VK_SHADER_STAGE_ALL, (uint32_t)uniformBufferSize);
 
 		return uniformBufferResource;
 	}

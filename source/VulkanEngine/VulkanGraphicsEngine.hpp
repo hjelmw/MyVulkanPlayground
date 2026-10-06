@@ -18,7 +18,6 @@
 #include <Managers/LightManager.hpp> // Need ELightType in header
 #include <Managers/DebugManager.hpp>
 
-#include <BindlessBuffer.hpp>
 
 class CModelManager;
 class CInputManager;
@@ -37,7 +36,7 @@ namespace NVulkanEngine
 
         void Initialize();
 
-        void AddModelByFilepath(const std::string& modelpath);
+        void AddModelFromFilepath(const std::string& modelpath);
         void SetModelTexture(const std::string& texturepath);
         void SetModelPosition(float x, float y, float z);
         void SetModelRotation(float x, float y, float z);
@@ -79,6 +78,7 @@ namespace NVulkanEngine
 
         // Create scene
         void CreateModels();
+        void ConfigureDrawOrder();
         void InitDrawNodes();
         void InitManagers();
 
@@ -120,7 +120,6 @@ namespace NVulkanEngine
         CModelManager*                      m_ModelManager             = nullptr;
         CLightManager*                      m_LightManager             = nullptr;
         CDebugManager*                      m_DebugManager             = nullptr;
-        CPipelineManager*                   m_PipelineManager          = nullptr;
         CResourceManager*                   m_ResourceManager          = nullptr;
 
         /* Vulkan Primitives */
@@ -153,7 +152,6 @@ namespace NVulkanEngine
         std::vector<VkSemaphore>            m_RenderFinishedSemaphores = {};
         std::vector<VkFence>                m_InFlightFences           = {};
 
-        CBindlessBuffer*                    m_BindlessBuffer            = nullptr;
 
         // Misc
         VkDebugUtilsMessengerEXT            m_DebugMessenger           = VK_NULL_HANDLE;

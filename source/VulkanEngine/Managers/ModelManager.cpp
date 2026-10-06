@@ -4,7 +4,7 @@
 
 namespace NVulkanEngine
 {
-	void CModelManager::AddModelFilepath(const std::string& modelFilepath)
+	void CModelManager::AddModelFromFilepath(const std::string& modelFilepath)
 	{
 		CModel* model = new CModel();
 

@@ -6,7 +6,6 @@
 
 #include <GraphicsContext.hpp>
 #include <VulkanGraphicsEngineUtils.hpp>
-#include <BindlessBuffer.hpp>
 
 /*
 	Attachment manager holds all the possible render to textures and keeps track of their states for you
@@ -65,8 +64,6 @@ namespace NVulkanEngine
 
 		// Returns the buffer if it has been created. You cannot modify this
 		const SUniformBufferResource GetBufferResource(EBufferIndices bufferIndex);
-		
-		VkDescriptorSetLayout GetBindlessDescriptorLayout();
 
 		const std::array<SRenderResource, (uint32_t)EResourceIndices::Count> GetRenderResources();
 		const std::array<SUniformBufferResource, (uint32_t)EBufferIndices::Count> GetBufferResources();
@@ -78,8 +75,6 @@ namespace NVulkanEngine
 	private:
 		std::array<SRenderResource, (uint32_t)EResourceIndices::Count> m_RenderResources = {};
 		std::array<SUniformBufferResource, (uint32_t)EBufferIndices::Count>   m_BufferResources = {};
-
-		CBindlessBuffer* m_BindlessBuffer = nullptr;
 
 		// To mark attachments with debug names
 		PFN_vkSetDebugUtilsObjectNameEXT m_VkSetDebugUtilsObjectNameEXT = nullptr;

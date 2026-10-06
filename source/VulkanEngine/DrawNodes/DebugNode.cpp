@@ -13,7 +13,7 @@ namespace NVulkanEngine
 	{
 		VkFormat sceneColorFormat = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor).m_Format;
 
-		managers->m_ResourceManager->AddUniformBuffer(context, "DebugLines Uniforms", EBufferIndices::DebugLines, sizeof(SDebugUniformUniformBuffer));
+		SUniformBufferResource debugUniformBuffer = managers->m_ResourceManager->AddUniformBuffer(context, "DebugLines Uniforms", EBufferIndices::DebugLines, sizeof(SDebugUniformUniformBuffer));
 
 		m_DebugPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_DebugPipeline->SetDebugName("Debug Lines");
@@ -24,8 +24,9 @@ namespace NVulkanEngine
 		m_DebugPipeline->SetVertexInput(sizeof(SDebugVertexLine), VK_VERTEX_INPUT_RATE_VERTEX);
 		m_DebugPipeline->AddVertexAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SDebugVertexLine, m_Position));
 		m_DebugPipeline->AddVertexAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SDebugVertexLine, m_Color));
+		m_DebugPipeline->AddSampledBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, debugUniformBuffer.m_Buffer, sizeof(SDebugUniformUniformBuffer));
 		m_DebugPipeline->AddColorAttachment(sceneColorFormat);
-		managers->m_PipelineManager->RegisterPipeline(m_DebugPipeline);
+		m_DebugPipeline->CreatePipeline(context);
 	}
 
 	void CDebugNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers)
@@ -54,12 +55,11 @@ namespace NVulkanEngine
 			return;
 
 		CResourceManager* resourceManager = managers->m_ResourceManager;
-
 		SRenderResource sceneColorAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		BeginRendering("Debug Rendering", context, commandBuffer, { sceneColorAttachment });
 
-		m_DebugPipeline->BindPipeline(commandBuffer);
+		m_DebugPipeline->BindPipeline(context, commandBuffer);
 
 		VkBuffer debugLinesVertexBuffers[] = { debugManager->GetDebugLinesVertexBuffer() };
 		VkDeviceSize vertexOffsets[] = { 0 };

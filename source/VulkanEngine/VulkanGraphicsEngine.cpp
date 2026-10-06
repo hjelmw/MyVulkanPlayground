@@ -549,22 +549,11 @@ namespace NVulkanEngine
 		vulkan13Features.robustImageAccess = VK_TRUE;
 		vulkan13Features.pNext = &vulkanRobustnessFeatures;
 
-		VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
-		descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-		descriptorIndexingFeatures.descriptorBindingPartiallyBound               = VK_TRUE;
-		descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
-		descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
-		descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE;
-		descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
-		descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
-		descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE;
-		descriptorIndexingFeatures.pNext = &vulkan13Features;
-
 		VkPhysicalDeviceFeatures2 deviceFeatures2{};
 		deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures2.features.robustBufferAccess = VK_TRUE;
 		deviceFeatures2.features.wideLines          = VK_TRUE;
-		deviceFeatures2.pNext = &descriptorIndexingFeatures;
+		deviceFeatures2.pNext = &vulkan13Features;
 		//deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
@@ -776,11 +765,7 @@ namespace NVulkanEngine
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
-
-		
 	}
-
-
 
 	void CVulkanGraphicsEngine::InitImGui()
 	{
@@ -858,7 +843,6 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CreateModels()
 	{
-
 		glm::AABB sceneBounds = glm::AABB();
 		for (uint32_t i = 0; i < m_ModelManager->GetNumModels(); i++)
 		{
@@ -881,19 +865,29 @@ namespace NVulkanEngine
 		m_ModelManager->SetSceneBounds(sceneBounds);
 	}
 
-	void CVulkanGraphicsEngine::InitDrawNodes()
+	void CVulkanGraphicsEngine::ConfigureDrawOrder()
 	{
+		// Keep in mind there may be hidden dependencies between the nodes and since there is currently no way to visualize them I will write them here for future me
+		// * Lighting Node has a dependency on geometry, shadow and sky node.
+		// * Sky node      has a dependency on geometry node
+		// * Debug node    has a dependency on lighting node
+
 		m_DrawNodes[(uint32_t)EDrawNodes::Geometry] = new CGeometryNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Shadows]  = new CShadowNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Terrain]  = new CTerrainNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Skybox]   = new CSkyNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Lighting] = new CLightingNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Debug]    = new CDebugNode();
+	}
+
+	void CVulkanGraphicsEngine::InitDrawNodes()
+	{
+		ConfigureDrawOrder();
 
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
-		managers.m_ResourceManager = m_ResourceManager;
+		managers.m_ResourceManager   = m_ResourceManager;
 
 		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
 		{
@@ -901,8 +895,6 @@ namespace NVulkanEngine
 			if (drawNode)
 				drawNode->Init(m_Context, &managers);
 		}
-
-		m_PipelineManager->CreatePipelines(m_Context, m_BindlessBuffer->GetDescriptorSetLayout());
 	}
 
 	void CVulkanGraphicsEngine::RecordDrawNodes(VkCommandBuffer commandBuffer)
@@ -917,7 +909,6 @@ namespace NVulkanEngine
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
 		managers.m_ResourceManager   = m_ResourceManager;
-		managers.m_PipelineManager   = m_PipelineManager;
 		managers.m_DebugManager      = m_DebugManager;
 
 		for (uint32_t i = 0; i < (uint32_t)EDrawNodes::Debug; i++)
@@ -1072,9 +1063,9 @@ namespace NVulkanEngine
 		TransitionImageLayout(m_CommandBuffers[m_FrameIndex], swapchainAttachment, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 1);
 	}
 
-	void CVulkanGraphicsEngine::AddModelByFilepath(const std::string& modelpath)
+	void CVulkanGraphicsEngine::AddModelFromFilepath(const std::string& modelpath)
 	{
-		m_ModelManager->AddModelByFilepath(modelpath);
+		m_ModelManager->AddModelFromFilepath(modelpath);
 	}
 
 	void CVulkanGraphicsEngine::SetModelTexture(const std::string& texturePath)
