@@ -33,7 +33,7 @@ namespace NVulkanEngine
 			throw std::runtime_error("failed to load terrain texture image!");
 		}
 
-		constexpr float terrainHeightScale = 64.0f / 256.0f;
+		constexpr float terrainHeightScale = 0.25f;
 		constexpr float terrainHeightShift = 16.0f;
 
 		auto heightAt = [&](int row, int column)
@@ -144,8 +144,11 @@ namespace NVulkanEngine
 		CCamera* camera = managers->m_InputManager->GetCamera();
 		glm::mat4 cameraViewProjectionMatrix = camera->GetProjectionMatrix() * camera->GetLookAtMatrix();
 
+		glm::mat4 scaleMatrix = glm::identity<glm::mat4>();
+		scaleMatrix = glm::scale(scaleMatrix, glm::vec3(64.0f, 64.0f, 64.0f));
+
 		STerrainVertexPushConstants terrainPushConstants{};
-		terrainPushConstants.m_ViewProjectionMatrix = cameraViewProjectionMatrix;
+		terrainPushConstants.m_ViewProjectionMatrix = cameraViewProjectionMatrix * scaleMatrix;
 
 		// Draw on top of the GBuffer
 		CResourceManager* resourceManager = managers->m_ResourceManager;

@@ -206,7 +206,7 @@ namespace NVulkanEngine
 	{
 		CCamera* camera = m_InputManager->GetCamera();
 		
-		glm::vec3 cameraOriginPosition = glm::vec3(-300.0f, 250, -7.0f); // Arbitrary camera start position
+		glm::vec3 cameraOriginPosition = glm::vec3(-8113.0f, 2100.0f, -18200.0f); // Arbitrary camera start position
 		glm::vec3 cameraViewDirection  = glm::vec3(1.0f, 0.0f, 0.0f);
 		glm::vec3 cameraUpDirection    = glm::vec3(0.0f, 1.0f, 0.0f);
 		
