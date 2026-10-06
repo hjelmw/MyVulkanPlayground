@@ -3,7 +3,6 @@
 #include <VulkanGraphicsEngineUtils.hpp>
 #include <GraphicsContext.hpp>
 #include <Managers/Texture.hpp>
-#include <DrawNodes/Utils/BindingTable.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
@@ -78,6 +77,8 @@ struct SModelMaterial
 
 namespace NVulkanEngine
 {
+	class CBindingTable;
+
 	class CModel
 	{
 	public:

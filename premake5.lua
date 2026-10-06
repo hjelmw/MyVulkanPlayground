@@ -25,7 +25,7 @@ project "VulkanEngine"
     }
     
     files { "./source/**.cpp", "./source/**.hpp" }
-    files { "./shaders/*.vert", "shaders/*.frag" }
+    files { "./shaders/*.vert", "shaders/*.frag", "shaders/*.comp" }
 
     files 
     { 
@@ -92,6 +92,11 @@ project "VulkanEngine"
 
     filter "files:shaders/**.frag"
         buildmessage "Compiling fragment shader"
+        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
+        buildoutputs "$(SolutionDir)\\%(Identity).spv"
+
+    filter "files:shaders/**.comp"
+        buildmessage "Compiling compute shader"
         buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
         buildoutputs "$(SolutionDir)\\%(Identity).spv"
 

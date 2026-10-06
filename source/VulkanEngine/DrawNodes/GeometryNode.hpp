@@ -1,8 +1,6 @@
 #pragma once
 
 #include <DrawNodes/DrawNode.hpp>
-#include <DrawNodes/Utils/Pipeline.hpp>
-#include <DrawNodes/Utils/BindingTable.hpp>
 
 /* 
 	Draw scene geometry into G-Buffers
@@ -10,6 +8,8 @@
 
 namespace NVulkanEngine
 {
+	class CPipeline;
+
 	class CGeometryNode : public CDrawNode
 	{
 	public:

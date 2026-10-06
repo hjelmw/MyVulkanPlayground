@@ -26,6 +26,10 @@ namespace NVulkanEngine
 	{
 		m_FragmentShaderPath = fragmentShaderPath;
 	}
+	void CPipeline::SetComputeShader(const std::string& computeShaderPath)
+	{
+		m_ComputeShaderPath = computeShaderPath;
+	}
 
 	void CPipeline::SetCullingMode(VkCullModeFlagBits cullMode)
 	{
@@ -80,7 +84,32 @@ namespace NVulkanEngine
 
 	void CPipeline::CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
 	{
-		CreateGraphicsPipeline(context, descriptorSetLayout);
+		switch (m_Type)
+		{
+		case EPipelineType::GRAPHICS:
+			CreateGraphicsPipeline(context, descriptorSetLayout);
+			break;
+		case EPipelineType::COMPUTE:
+			CreateComputePipeline(context, descriptorSetLayout);
+			break;
+		default:
+			throw std::runtime_error("unknown pipeline type!");
+		}
+	}
+
+	void CPipeline::CreatePipelineLayout(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
+	{
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+		pipelineLayoutInfo.pushConstantRangeCount = m_PushConstantsRanges.size != 0 ? 1 : 0; // For now
+		pipelineLayoutInfo.pPushConstantRanges = &m_PushConstantsRanges;
+
+		if (vkCreatePipelineLayout(context->GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
 	}
 
 	void CPipeline::CreateGraphicsPipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
@@ -179,17 +208,7 @@ namespace NVulkanEngine
 		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 		dynamicState.pDynamicStates = dynamicStates.data();
 
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-		pipelineLayoutInfo.pushConstantRangeCount = m_PushConstantsRanges.size != 0 ? 1 : 0; // For now
-		pipelineLayoutInfo.pPushConstantRanges = &m_PushConstantsRanges;
-
-		if (vkCreatePipelineLayout(context->GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create pipeline layout!");
-		}
+		CreatePipelineLayout(context, descriptorSetLayout);
 
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
 		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -237,7 +256,7 @@ namespace NVulkanEngine
 		{
 			// Get the file name
 			const std::string vertexShaderBase   = m_VertexShaderPath.substr(m_VertexShaderPath.find_last_of("/\\") + 1);
-			const std::string fragmentShaderBase = m_VertexShaderPath.substr(m_VertexShaderPath.find_last_of("/\\") + 1);
+			const std::string fragmentShaderBase = m_FragmentShaderPath.substr(m_FragmentShaderPath.find_last_of("/\\") + 1);
 			const std::string vertexShaderName   = "Vertex Shader - "   + vertexShaderBase;
 			const std::string fragmentShaderName = "Fragment Shader - " + fragmentShaderBase;
 			const std::string pipelineName       = "Pipeline - " + m_DebugName;
@@ -265,14 +284,73 @@ namespace NVulkanEngine
 		vkDestroyShaderModule(context->GetLogicalDevice(), fragmentShaderModule, nullptr);
 	}
 
+	void CPipeline::CreateComputePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
+	{
+#if defined(_DEBUG)
+		std::cout << "\n --- Creating Compute pipeline ---" << "\n" << std::endl;
+#endif
+
+		VkShaderModule computeShaderModule = CreateShaderModule(context->GetLogicalDevice(), m_ComputeShaderPath);
+
+		VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
+		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		computeShaderStageInfo.module = computeShaderModule;
+		computeShaderStageInfo.pName = "main";
+
+		CreatePipelineLayout(context, descriptorSetLayout);
+
+		VkComputePipelineCreateInfo pipelineInfo{};
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		pipelineInfo.stage = computeShaderStageInfo;
+		pipelineInfo.layout = m_PipelineLayout;
+		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+		if (vkCreateComputePipelines(context->GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create compute pipeline!");
+		}
+
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->GetVulkanInstance(), "vkSetDebugUtilsObjectNameEXT");
+		if (vkSetDebugUtilsObjectNameEXT)
+		{
+			// Get the file name
+			const std::string computeShaderBase  = m_ComputeShaderPath.substr(m_ComputeShaderPath.find_last_of("/\\") + 1);
+			const std::string computeShaderName  = "Compute Shader - " + computeShaderBase;
+			const std::string pipelineName       = "Pipeline - " + m_DebugName;
+			const std::string pipelineLayoutName = "Pipeline Layout - " + m_DebugName;
+
+			VkDebugUtilsObjectNameInfoEXT nameInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+			nameInfo.objectType   = VK_OBJECT_TYPE_SHADER_MODULE;
+			nameInfo.objectHandle = (uint64_t)computeShaderModule;
+			nameInfo.pObjectName  = computeShaderName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			nameInfo.objectType   = VK_OBJECT_TYPE_PIPELINE;
+			nameInfo.objectHandle = (uint64_t)m_Pipeline;
+			nameInfo.pObjectName  = pipelineName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			nameInfo.objectType   = VK_OBJECT_TYPE_PIPELINE_LAYOUT;
+			nameInfo.objectHandle = (uint64_t)m_PipelineLayout;
+			nameInfo.pObjectName  = pipelineLayoutName.c_str();
+			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+		}
+
+		vkDestroyShaderModule(context->GetLogicalDevice(), computeShaderModule, nullptr);
+	}
+
+	VkPipelineBindPoint CPipeline::GetBindPoint() const
+	{
+		return m_Type == EPipelineType::COMPUTE ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
+	}
+
 	void CPipeline::BindPipeline(CGraphicsContext* context, VkCommandBuffer commandBuffer)
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+		vkCmdBindPipeline(commandBuffer, GetBindPoint(), m_Pipeline);
 	}
 
 	void CPipeline::BindPipeline(VkCommandBuffer commandBuffer)
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+		vkCmdBindPipeline(commandBuffer, GetBindPoint(), m_Pipeline);
 	}
 
 	void CPipeline::PushConstants(VkCommandBuffer commandBuffer, void* data)

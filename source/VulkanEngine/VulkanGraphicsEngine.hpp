@@ -10,7 +10,6 @@
 #include <VulkanGraphicsEngineUtils.hpp>
 
 #include <DrawNodes/DrawNode.hpp>
-#include <DrawNodes/Utils/Pipeline.hpp>
 
 #include <GraphicsContext.hpp>
 #include <Swapchain.hpp>
@@ -158,8 +157,6 @@ namespace NVulkanEngine
         GLFWwindow*					        m_Window                   = nullptr;
 
         VkDescriptorPool                    m_ImGuiDescriptorPool      = VK_NULL_HANDLE;
-
-        CPipeline*                          m_ImGuiPipeline            = VK_NULL_HANDLE;
 
 
     };

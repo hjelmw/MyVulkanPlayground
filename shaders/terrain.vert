@@ -1,9 +1,10 @@
 #version 450
 
 layout(location = 0) in  vec3  inPosition;
+layout(location = 1) in  vec3  inNormal;
 
-layout(location = 0) out float fragHeight;
-layout(location = 1) out vec3  fragColor;
+layout(location = 0) out vec3  outWorldPosition;
+layout(location = 1) out vec3  outNormal;
 
 layout( push_constant ) uniform constants
 {
@@ -12,10 +13,9 @@ layout( push_constant ) uniform constants
 } STerrainVertexPushConstants;
 
 
-void main() 
+void main()
 {
-    vec4 position = STerrainVertexPushConstants.m_ModelViewProjectionMatrix * vec4(inPosition, 1.0);
-    gl_Position  = vec4(position.x, -position.y, position.z, position.w);
-    fragHeight   = inPosition.y;
-    fragColor    = vec3(1.0f, 0.0f, 0.0f);
+    gl_Position      = STerrainVertexPushConstants.m_ModelViewProjectionMatrix * vec4(inPosition, 1.0);
+    outWorldPosition = inPosition;
+    outNormal        = inNormal;
 }

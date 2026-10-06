@@ -1,4 +1,6 @@
 #include "DebugNode.hpp"
+#include "Utils/Pipeline.hpp"
+#include "Utils/BindingTable.hpp"
 #include <Managers/DebugManager.hpp>
 
 namespace NVulkanEngine

@@ -2,6 +2,7 @@
 #include <GraphicsContext.hpp>
 
 #include <array>
+#include <map>
 
 namespace NVulkanEngine
 {
@@ -27,19 +28,24 @@ namespace NVulkanEngine
 
 	void CBindingTable::AllocateDescriptorPool(CGraphicsContext* context)
 	{
-		uint32_t numBufferDescriptors = m_NumBufferDescriptors * g_MaxFramesInFlight;
-		uint32_t numImageDescriptors  = m_NumImageDescriptors  * g_MaxFramesInFlight;
 		uint32_t numDescriptorSets    = (uint32_t) m_DescriptorInfos.size() * g_MaxFramesInFlight;
 
-		std::array<VkDescriptorPoolSize, 2> poolSizes{};
-		poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = numBufferDescriptors;
-		poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = numImageDescriptors;
+		// One pool size per descriptor type that is actually used by this table
+		std::map<VkDescriptorType, uint32_t> descriptorTypeCounts;
+		for (const VkDescriptorSetLayoutBinding& layoutBinding : m_DescriptorSetLayoutBindings)
+		{
+			descriptorTypeCounts[layoutBinding.descriptorType] += g_MaxFramesInFlight;
+		}
+
+		std::vector<VkDescriptorPoolSize> poolSizes{};
+		for (const auto& [descriptorType, descriptorCount] : descriptorTypeCounts)
+		{
+			poolSizes.push_back({ descriptorType, descriptorCount });
+		}
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = m_NumImageDescriptors > 0 ? static_cast<uint32_t>(poolSizes.size()) : 1;
+		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes    = poolSizes.data();
 		poolInfo.maxSets       = numDescriptorSets;
 
@@ -117,6 +123,33 @@ namespace NVulkanEngine
 		m_NumImageDescriptors++;
 	}
 
+	void CBindingTable::AddStorageImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView)
+	{
+		VkDescriptorSetLayoutBinding descriptorLayoutBinding = CreateDescriptorSetLayoutBinding(bindingSlot, shaderStage, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+		m_DescriptorSetLayoutBindings.push_back(descriptorLayoutBinding);
+
+		// Storage images are always accessed in VK_IMAGE_LAYOUT_GENERAL and have no sampler
+		SDescriptorInfo writeDescriptor{};
+		writeDescriptor.m_BufferInfo = { VK_NULL_HANDLE, 0, VK_WHOLE_SIZE };
+		writeDescriptor.m_ImageInfo  = CreateDescriptorImageInfo(imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL);
+
+		m_DescriptorInfos.push_back(writeDescriptor);
+		m_NumImageDescriptors++;
+	}
+
+	void CBindingTable::AddStorageBufferBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkBuffer buffer, uint32_t bufferSize)
+	{
+		VkDescriptorSetLayoutBinding descriptorLayoutBinding = CreateDescriptorSetLayoutBinding(bindingSlot, shaderStage, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+		m_DescriptorSetLayoutBindings.push_back(descriptorLayoutBinding);
+
+		SDescriptorInfo writeDescriptor{};
+		writeDescriptor.m_BufferInfo = CreateDescriptorBufferInfo(buffer, bufferSize);
+		writeDescriptor.m_ImageInfo  = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED };
+
+		m_DescriptorInfos.push_back(writeDescriptor);
+		m_NumBufferDescriptors++;
+	}
+
 	void CBindingTable::CreateBindings(CGraphicsContext* context)
 	{
 		AllocateDescriptorPool(context);
@@ -144,12 +177,12 @@ namespace NVulkanEngine
 				writeDescriptors[j].descriptorType = descriptorType;
 				writeDescriptors[j].dstArrayElement = 0;
 
-				if (descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+				if (descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
 				{
 					writeDescriptors[j].pBufferInfo = &m_DescriptorInfos[j].m_BufferInfo;
 					writeDescriptors[j].pImageInfo = VK_NULL_HANDLE;
 				}
-				else if (descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+				else if (descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
 				{
 					writeDescriptors[j].pBufferInfo = VK_NULL_HANDLE;
 					writeDescriptors[j].pImageInfo = &m_DescriptorInfos[j].m_ImageInfo;
@@ -160,9 +193,9 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CBindingTable::BindTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+	void CBindingTable::BindTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkPipelineBindPoint bindPoint)
 	{
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &m_DescriptorSets[context->GetFrameIndex()], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, bindPoint, pipelineLayout, 0, 1, &m_DescriptorSets[context->GetFrameIndex()], 0, nullptr);
 	}
 
 	void CBindingTable::Cleanup(CGraphicsContext* context)

@@ -1,4 +1,6 @@
 #include "LightingNode.hpp"
+#include "Utils/Pipeline.hpp"
+#include "Utils/BindingTable.hpp"
 #include "ShadowNode.hpp"
 
 #include <imgui.h>

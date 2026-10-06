@@ -1,0 +1,19 @@
+#version 450
+
+// Post processing on the scene color. Currently just passes the scene color through untouched
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout (binding = 0, rgba8) uniform image2D SceneColor;
+
+void main()
+{
+	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+
+	// Dispatch is rounded up to whole work groups so skip the threads outside the image
+	if (any(greaterThanEqual(pixel, imageSize(SceneColor))))
+		return;
+
+	vec4 color = imageLoad(SceneColor, pixel);
+
+	imageStore(SceneColor, pixel, color);
+}

@@ -3,8 +3,6 @@
 #include <vulkan/vulkan.h>
 
 #include <DrawNodes/DrawNode.hpp>
-#include <DrawNodes/Utils/Pipeline.hpp>
-#include <DrawNodes/Utils/BindingTable.hpp>
 
 /*
 	Draw debug lines
@@ -12,6 +10,9 @@
 
 namespace NVulkanEngine
 {
+	class CPipeline;
+	class CBindingTable;
+
 	class CDebugNode : public CDrawNode
 	{
 	public:

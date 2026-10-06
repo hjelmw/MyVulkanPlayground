@@ -6,6 +6,7 @@
 #include <DrawNodes/TerrainNode.hpp>
 #include <DrawNodes/SkyNode.hpp>
 #include <DrawNodes/ShadowNode.hpp>
+#include <DrawNodes/PostProcessNode.hpp>
 #include <DrawNodes/DebugNode.hpp>
 
 #include <Managers/InputManager.hpp>
@@ -761,7 +762,7 @@ namespace NVulkanEngine
 			m_LinearClamp,
 			VK_SHADER_STAGE_FRAGMENT_BIT,
 			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, // Storage bit allows compute shaders to write
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			m_Context->GetRenderResolution().width,
 			m_Context->GetRenderResolution().height);
@@ -870,14 +871,16 @@ namespace NVulkanEngine
 		// Keep in mind there may be hidden dependencies between the nodes and since there is currently no way to visualize them I will write them here for future me
 		// * Lighting Node has a dependency on geometry, shadow and sky node.
 		// * Sky node      has a dependency on geometry node
-		// * Debug node    has a dependency on lighting node
+		// * PostProcess   has a dependency on lighting node
+		// * Debug node    has a dependency on post process node
 
-		m_DrawNodes[(uint32_t)EDrawNodes::Geometry] = new CGeometryNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Shadows]  = new CShadowNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Terrain]  = new CTerrainNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Skybox]   = new CSkyNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Lighting] = new CLightingNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Debug]    = new CDebugNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Geometry]    = new CGeometryNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Shadows]     = new CShadowNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Terrain]     = new CTerrainNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Skybox]      = new CSkyNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Lighting]    = new CLightingNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::PostProcess] = new CPostProcessNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Debug]       = new CDebugNode();
 	}
 
 	void CVulkanGraphicsEngine::InitDrawNodes()

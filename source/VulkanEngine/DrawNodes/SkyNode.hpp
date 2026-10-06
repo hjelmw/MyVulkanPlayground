@@ -1,8 +1,6 @@
 #pragma once
 
 #include <DrawNodes/DrawNode.hpp>
-#include <DrawNodes/Utils/Pipeline.hpp>
-#include <DrawNodes/Utils/BindingTable.hpp>
 
 /* 
 	Draw stuff on the sky. Currently an atmospheric scattering raymarcher
@@ -10,6 +8,9 @@
 
 namespace NVulkanEngine
 {
+	class CPipeline;
+	class CBindingTable;
+
 	class CSkyNode : public CDrawNode
 	{
 	public:

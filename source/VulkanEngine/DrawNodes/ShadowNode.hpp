@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.h>
 
 #include <DrawNodes/DrawNode.hpp>
-#include <DrawNodes/Utils/Pipeline.hpp>
 
 /* 
 	Draw geometry into shadow map depth buffer
@@ -11,6 +10,8 @@
 
 namespace NVulkanEngine
 {
+	class CPipeline;
+
 	class CShadowNode : public CDrawNode
 	{
 	public:
@@ -35,6 +36,7 @@ namespace NVulkanEngine
 
 		static glm::mat4              s_LightMatrix;
 		static glm::vec3			  s_SunlightDirection;
+
 		// Pipeline
 		CPipeline* m_ShadowPipeline = nullptr;
 	};

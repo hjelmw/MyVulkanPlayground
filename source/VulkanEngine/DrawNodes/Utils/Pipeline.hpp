@@ -2,7 +2,6 @@
 
 #include <vulkan/vulkan.h>
 #include <GraphicsContext.hpp>
-#include <DrawNodes/Utils/BindingTable.hpp>
 
 #include <array>
 #include <string>
@@ -15,7 +14,7 @@
 enum class EPipelineType
 {
 	GRAPHICS = 0,
-	COMPUTE = 1, // Not implemented yet
+	COMPUTE = 1,
 	COUNT = 2,
 };
 
@@ -27,11 +26,16 @@ namespace NVulkanEngine
 		CPipeline(EPipelineType type);
 		~CPipeline() = default;
 
+		// Not copyable
+		CPipeline(const CPipeline&) = delete;
+		CPipeline& operator=(const CPipeline&) = delete;
+
 		void SetDebugName(const std::string& debugName);
 
 		// Shaders
 		void SetVertexShader(const std::string& vertexShaderPath);
 		void SetFragmentShader(const std::string& fragmentShaderPath);
+		void SetComputeShader(const std::string& computeShaderPath);
 
 		// Vertex info
 		void SetVertexInput(uint32_t stride, VkVertexInputRate vertexInputRate);
@@ -51,6 +55,7 @@ namespace NVulkanEngine
 		void CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
 
 		VkPipelineLayout GetPipelineLayout() { return m_PipelineLayout; };
+		VkPipelineBindPoint GetBindPoint() const;
 
 		void BindPipeline(CGraphicsContext* context, VkCommandBuffer commandBuffer);
 		void BindPipeline(VkCommandBuffer commandBuffer);
@@ -60,7 +65,9 @@ namespace NVulkanEngine
 	private:
 		EPipelineType m_Type = EPipelineType::COUNT;
 
+		void CreatePipelineLayout(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
 		void CreateGraphicsPipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
+		void CreateComputePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
 
 		VkVertexInputBindingDescription m_VertexInputBindingDescription = {};
 		std::vector<VkVertexInputAttributeDescription> m_VertexAttributeDescriptions    = {};

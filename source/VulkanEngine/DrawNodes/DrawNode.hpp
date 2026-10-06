@@ -23,7 +23,8 @@ namespace NVulkanEngine
 		Terrain      = 2,
 		Skybox       = 3,
 		Lighting     = 4,
-		Debug        = 5,
+		PostProcess  = 5,
+		Debug        = 6,
 		Count
 	};
 

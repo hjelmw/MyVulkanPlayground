@@ -54,13 +54,16 @@ namespace NVulkanEngine
 		void AddVertexShaderAttribute(uint32_t locationSlot, VkFormat format, uint32_t offset);
 		void AddUniformBufferBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkBuffer buffer, uint32_t bufferSize);
 		void AddSampledImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler);
+		void AddStorageImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView);
+		void AddStorageBufferBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkBuffer buffer, uint32_t bufferSize);
 		void CreateBindings(CGraphicsContext* context);
 
 		bool HasResourcesToBind() { return ((m_NumImageDescriptors + m_NumBufferDescriptors) > 0); };
 
 		VkDescriptorSetLayout GetDescriptorSetLayout() { return m_DescriptorSetLayout; };
 
-		void BindTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		// Use CPipeline::GetBindPoint() for bindPoint when binding for a compute pipeline
+		void BindTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
 
 		void Cleanup(CGraphicsContext* context);
 
