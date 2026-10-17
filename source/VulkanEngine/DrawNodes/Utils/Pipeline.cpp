@@ -36,6 +36,13 @@ namespace NVulkanEngine
 		m_CullMode = cullMode;
 	}
 
+	void CPipeline::SetDepthBias(float constantFactor, float slopeFactor)
+	{
+		m_DepthBiasEnable   = true;
+		m_DepthBiasConstant = constantFactor;
+		m_DepthBiasSlope    = slopeFactor;
+	}
+
 	void CPipeline::AddPushConstantSlot(VkShaderStageFlags shaderStage, size_t constantsSize, size_t offset)
 	{
 		VkPushConstantRange pushConstant;
@@ -159,7 +166,10 @@ namespace NVulkanEngine
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.0f;
-		rasterizer.depthBiasEnable = VK_FALSE;
+		rasterizer.depthBiasEnable = m_DepthBiasEnable ? VK_TRUE : VK_FALSE;
+		rasterizer.depthBiasConstantFactor = m_DepthBiasConstant;
+		rasterizer.depthBiasSlopeFactor = m_DepthBiasSlope;
+		rasterizer.depthBiasClamp = 0.0f;
 
 		switch(m_CullMode)
 		{

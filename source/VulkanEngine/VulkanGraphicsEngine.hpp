@@ -20,6 +20,7 @@
 
 class CModelManager;
 class CInputManager;
+class CDrawNode;
 
 /*
     The main engine whatchamacallit. It has most of the rendering code right now

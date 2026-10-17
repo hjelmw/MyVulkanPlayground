@@ -80,6 +80,7 @@ namespace NVulkanEngine
 		m_AtmosphericsTable->CreateBindings(context);
 
 		m_AtmosphericsPipeline = new CPipeline(EPipelineType::GRAPHICS);
+		m_AtmosphericsPipeline->SetDebugName("Atmospherics Raymarch");
 		m_AtmosphericsPipeline->SetVertexShader("shaders/atmospherics.vert.spv");
 		m_AtmosphericsPipeline->SetFragmentShader("shaders/atmospherics.frag.spv");
 		m_AtmosphericsPipeline->SetCullingMode(VK_CULL_MODE_NONE);

@@ -24,7 +24,7 @@ layout (binding = 6) uniform UBO
 {
 	SLight m_Lights[NUM_LIGHTS];
 	vec3   m_ViewPos;
-	float  m_Pad1;
+	float  m_ShadowDepthBias; // Normalized shadow map depth, see CShadowNode::GetShadowDepthBias()
 } SDeferredLightingConstants;
 
 layout (location = 0) in  vec2 inUV;
@@ -41,7 +41,7 @@ float CalculateShadow(vec4 fragPosLightSpace)
 	float currentDepth   = clamp(projCoords.z, 0.0f, 1.0f);
 	float shadowMapDepth = texture(ShadowMapBuffer, shadowMapUV).r;
 
-	const float bias = 0.05f;
+	const float bias = SDeferredLightingConstants.m_ShadowDepthBias;
 	float shadow = ( currentDepth - bias ) < shadowMapDepth ? 1.0f : 0.0f;
 	
 	return shadow;

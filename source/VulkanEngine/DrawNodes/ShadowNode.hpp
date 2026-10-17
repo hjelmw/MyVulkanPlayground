@@ -26,6 +26,9 @@ namespace NVulkanEngine
 		static glm::mat4 GetLightMatrix() { return s_LightMatrix; };
 		static glm::vec3 GetSunlightDirection() { return s_SunlightDirection; };
 
+		// Shadow bias in normalized shadow map depth. Computed from a world space bias since the light frustum depth changes with the scene bounds
+		static float     GetShadowDepthBias() { return s_ShadowDepthBias; };
+
 	private:
 
 		std::vector<SDescriptorSets> m_DescriptorSetsShadow = { };
@@ -36,8 +39,10 @@ namespace NVulkanEngine
 
 		static glm::mat4              s_LightMatrix;
 		static glm::vec3			  s_SunlightDirection;
+		static float                  s_ShadowDepthBias;
 
 		// Pipeline
 		CPipeline* m_ShadowPipeline = nullptr;
+		CPipeline* m_TerrainShadowPipeline = nullptr;
 	};
 }

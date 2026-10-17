@@ -3,6 +3,10 @@
 #include "Utils/BindingTable.hpp"
 #include <VulkanGraphicsEngineUtils.hpp>
 
+#include <imgui.h>
+
+static float g_TerrainScale = 64.0f;
+
 namespace NVulkanEngine
 {
 
@@ -12,16 +16,21 @@ namespace NVulkanEngine
 		glm::vec3 m_Normal;
 	};
 
-
 	struct STerrainVertexPushConstants
 	{
 		glm::mat4 m_ViewProjectionMatrix = glm::identity<glm::mat4>();
+		glm::mat4 m_ModelMatrix          = glm::identity<glm::mat4>();
 	};
 
 	struct STerrainFragmentConstants
 	{
 		float m_TestConst = 0;
 	};
+
+	size_t CTerrainNode::GetVertexStride()
+	{
+		return sizeof(STerrainVertex);
+	}
 
 	void CTerrainNode::CreateTerrainVertices(CGraphicsContext* context)
 	{
@@ -58,6 +67,7 @@ namespace NVulkanEngine
 				float terrainVertexY = heightAt(i, j);
 				float terrainVertexZ = i - m_TerrainTextureHeight / 2.0f;
 				terrainVertex.m_Position = glm::vec3(terrainVertexX, terrainVertexY, terrainVertexZ);
+				m_TerrainBounds.extend(terrainVertex.m_Position);
 
 				float terrainNormalX = heightAt(i, j - 1) - heightAt(i, j + 1);
 				float terrainNormalY = 2.0f;
@@ -111,6 +121,35 @@ namespace NVulkanEngine
 	{
 		CreateTerrainVertices(context);
 
+		m_TerrainTransform = glm::scale(glm::identity<glm::mat4>(), glm::vec3(g_TerrainScale, g_TerrainScale, g_TerrainScale));
+
+		// Register the terrain as a model so the shadow pass can draw it as well. One mesh per triangle strip
+		m_ModelManager = managers->m_Modelmanager;
+		m_TerrainModel = m_ModelManager->RegisterTerrainModel(m_TerrainVertexBuffer, m_TerrainIndexBuffer, m_NumTerrainVertices, m_NumTerrainIndices);
+		if (m_TerrainModel)
+		{
+			const uint32_t numStrips          = m_TerrainTextureHeight - 1;
+			const uint32_t numIndicesPerStrip = m_TerrainTextureWidth * 2;
+			for (uint32_t strip = 0; strip < numStrips; strip++)
+			{
+				SMaterialMesh stripMesh{};
+				stripMesh.m_StartIndex  = numIndicesPerStrip * strip;
+				stripMesh.m_NumVertices = numIndicesPerStrip;
+				m_TerrainModel->AddMesh(stripMesh);
+			}
+
+			glm::AABB terrainWorldBounds = m_TerrainBounds;
+			terrainWorldBounds.transformCorners(m_TerrainTransform);
+
+			m_TerrainModel->SetTransform(m_TerrainTransform);
+			m_TerrainModel->SetAABB(terrainWorldBounds);
+
+			// The shadow map frustum is fitted to the scene bounds so they need to include the terrain
+			glm::AABB sceneBounds = m_ModelManager->GetSceneBounds();
+			sceneBounds.extend(terrainWorldBounds);
+			m_ModelManager->SetSceneBounds(sceneBounds);
+		}
+
 		m_TerrainUniformBuffer = CreateUniformBuffer(context, m_TerrainUniformBufferMemory, sizeof(STerrainFragmentConstants));
 
 		m_TerrainTable = new CBindingTable();
@@ -124,6 +163,7 @@ namespace NVulkanEngine
 		const VkFormat depthFormat     = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth).m_Format;
 
 		m_TerrainPipeline = new CPipeline(EPipelineType::GRAPHICS);
+		m_TerrainPipeline->SetDebugName("Terrain");
 		m_TerrainPipeline->SetVertexShader("shaders/terrain.vert.spv");
 		m_TerrainPipeline->SetFragmentShader("shaders/terrain.frag.spv");
 		m_TerrainPipeline->SetCullingMode(VK_CULL_MODE_BACK_BIT);
@@ -141,14 +181,17 @@ namespace NVulkanEngine
 
 	void CTerrainNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
+		ImGui::Begin("Terrain Node");
+		ImGui::SliderFloat("Terrain Scale", &g_TerrainScale, 1.0f, 128.0f);
+		ImGui::End();
+
 		CCamera* camera = managers->m_InputManager->GetCamera();
 		glm::mat4 cameraViewProjectionMatrix = camera->GetProjectionMatrix() * camera->GetLookAtMatrix();
 
-		glm::mat4 scaleMatrix = glm::identity<glm::mat4>();
-		scaleMatrix = glm::scale(scaleMatrix, glm::vec3(64.0f, 64.0f, 64.0f));
-
+		// Model matrix is separate so the GBuffer gets world space positions for lighting and shadows
 		STerrainVertexPushConstants terrainPushConstants{};
-		terrainPushConstants.m_ViewProjectionMatrix = cameraViewProjectionMatrix * scaleMatrix;
+		terrainPushConstants.m_ViewProjectionMatrix = cameraViewProjectionMatrix;
+		terrainPushConstants.m_ModelMatrix          = m_TerrainTransform;
 
 		// Draw on top of the GBuffer
 		CResourceManager* resourceManager = managers->m_ResourceManager;
@@ -171,7 +214,7 @@ namespace NVulkanEngine
 		const uint32_t NUM_STRIPS          = m_TerrainTextureHeight - 1;
 		const uint32_t NUM_VERTS_PER_STRIP = m_TerrainTextureWidth * 2;
 
-		for (unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
+		for (uint32_t strip = 0; strip < NUM_STRIPS; ++strip)
 		{
 			vkCmdDrawIndexed(commandBuffer, NUM_VERTS_PER_STRIP, 1, (NUM_VERTS_PER_STRIP * strip), 0, 0); // offset to starting index
 		}
@@ -181,6 +224,13 @@ namespace NVulkanEngine
 
 	void CTerrainNode::Cleanup(CGraphicsContext* context)
 	{
+		// Draw nodes are recreated on resize, so don't leave a terrain model with destroyed buffers behind
+		if (m_TerrainModel)
+		{
+			m_ModelManager->UnregisterTerrainModel(context, m_TerrainModel);
+			m_TerrainModel = nullptr;
+		}
+
 		vkDestroyBuffer(context->GetLogicalDevice(), m_TerrainVertexBuffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_TerrainVertexBufferMemory, nullptr);
 

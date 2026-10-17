@@ -1,5 +1,6 @@
 #include "ModelManager.hpp"
 
+#include <algorithm>
 #include <vector>
 
 namespace NVulkanEngine
@@ -65,9 +66,48 @@ namespace NVulkanEngine
 		return m_Models[index];
 	}
 
+	CModel* CModelManager::GetTerrainModel(uint32_t index)
+	{
+		if (index > m_TerrainModels.size())
+			return nullptr;
+
+		return m_TerrainModels[index];
+	}
+
 	const uint32_t CModelManager::GetNumModels()
 	{
 		return (uint32_t)m_Models.size();
+	}
+
+	const uint32_t CModelManager::GetNumTerrainModels()
+	{
+		return (uint32_t)m_TerrainModels.size();
+	}
+
+	CModel* CModelManager::RegisterTerrainModel(VkBuffer& terrainVertexBuffer, VkBuffer& terrainIndexBuffer, uint32_t& numTerrainVertices, uint32_t& numTerrainIndices)
+	{
+		const bool terrainIsValid = (terrainVertexBuffer != VK_NULL_HANDLE && terrainIndexBuffer != VK_NULL_HANDLE && numTerrainVertices > 0 && numTerrainIndices > 0);
+		if (!terrainIsValid)
+			return nullptr;
+
+		CModel* terrainModel = new CModel();
+		terrainModel->SetModelFromVertexAndIndexBuffers(terrainVertexBuffer, terrainIndexBuffer, numTerrainVertices, numTerrainIndices);
+
+		m_TerrainModels.push_back(terrainModel);
+
+		return terrainModel;
+	}
+
+	void CModelManager::UnregisterTerrainModel(CGraphicsContext* context, CModel* terrainModel)
+	{
+		auto it = std::find(m_TerrainModels.begin(), m_TerrainModels.end(), terrainModel);
+		if (it == m_TerrainModels.end())
+			return;
+
+		m_TerrainModels.erase(it);
+
+		terrainModel->Cleanup(context);
+		delete terrainModel;
 	}
 
 	void CModelManager::SetSceneBounds(glm::AABB sceneBounds)

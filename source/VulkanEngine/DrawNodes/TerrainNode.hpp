@@ -21,6 +21,8 @@ namespace NVulkanEngine
 		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
 		virtual void Cleanup(CGraphicsContext* context) override;
 
+		static size_t GetVertexStride();
+
 	private:
 		void CreateTerrainVertices(CGraphicsContext* context);
 
@@ -41,5 +43,13 @@ namespace NVulkanEngine
 		int m_TerrainTextureHeight      = -1;
 		uint32_t m_NumTerrainVertices   = 0;
 		uint32_t m_NumTerrainIndices    = 0;
+
+		// Object space bounds and world transform of the terrain
+		glm::AABB m_TerrainBounds       = {};
+		glm::mat4 m_TerrainTransform    = glm::identity<glm::mat4>();
+
+		// Registered with the model manager so the shadow pass can draw the terrain
+		CModelManager* m_ModelManager   = nullptr;
+		CModel*        m_TerrainModel   = nullptr;
 	};
 }

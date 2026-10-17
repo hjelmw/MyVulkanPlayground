@@ -863,6 +863,7 @@ namespace NVulkanEngine
 			sceneBounds.extend(model->GetAABB());
 		}
 
+		// Terrain is registered later in CTerrainNode::Init, which extends these bounds itself
 		m_ModelManager->SetSceneBounds(sceneBounds);
 	}
 
@@ -875,8 +876,8 @@ namespace NVulkanEngine
 		// * Debug node    has a dependency on post process node
 
 		m_DrawNodes[(uint32_t)EDrawNodes::Geometry]    = new CGeometryNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Shadows]     = new CShadowNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Terrain]     = new CTerrainNode();
+		m_DrawNodes[(uint32_t)EDrawNodes::Shadows]     = new CShadowNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Skybox]      = new CSkyNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::Lighting]    = new CLightingNode();
 		m_DrawNodes[(uint32_t)EDrawNodes::PostProcess] = new CPostProcessNode();

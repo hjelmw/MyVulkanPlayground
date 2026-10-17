@@ -44,7 +44,8 @@ namespace NVulkanEngine
 		// Pipeline states
 		void SetPrimitiveTopology(VkPrimitiveTopology primitiveTopology);
 		void SetCullingMode(VkCullModeFlagBits cullMode);
-	
+		void SetDepthBias(float constantFactor, float slopeFactor);
+
 		// Shader inputs
 		void AddPushConstantSlot(VkShaderStageFlags shaderStage, size_t constantsSize, size_t offset);
 
@@ -81,6 +82,10 @@ namespace NVulkanEngine
 		std::vector<VkFormat> m_ColorAttachmentFormats = {};
 
 		VkCullModeFlagBits    m_CullMode               = VK_CULL_MODE_BACK_BIT;
+
+		bool                  m_DepthBiasEnable        = false;
+		float                 m_DepthBiasConstant      = 0.0f;
+		float                 m_DepthBiasSlope         = 0.0f;
 
 		VkPushConstantRange   m_PushConstantsRanges    = {};
 

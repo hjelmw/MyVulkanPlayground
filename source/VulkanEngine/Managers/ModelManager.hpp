@@ -29,8 +29,13 @@ namespace NVulkanEngine
 		void PushModel();
 
 		uint32_t GetCurrentModelIndex();
-		CModel*  GetModel(uint32_t index);
 		const uint32_t GetNumModels();
+		const uint32_t GetNumTerrainModels();
+		CModel* GetModel(uint32_t index);
+		CModel* GetTerrainModel(uint32_t index);
+
+		CModel* RegisterTerrainModel(VkBuffer& terrainVertexBuffer, VkBuffer& terrainIndexBuffer, uint32_t& numTerrainVertices, uint32_t& numTerrainIndices);
+		void    UnregisterTerrainModel(CGraphicsContext* context, CModel* terrainModel);
 
 		void SetSceneBounds(glm::AABB sceneBounds);
 		glm::AABB GetSceneBounds();
@@ -38,6 +43,7 @@ namespace NVulkanEngine
 		void Cleanup(CGraphicsContext* context);
 	private:
 		std::vector<CModel*> m_Models{};
+		std::vector<CModel*> m_TerrainModels{};
 		int m_CurrentModelIndex = 0;
 		glm::AABB m_SceneBounds = {};
 	};

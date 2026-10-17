@@ -89,7 +89,10 @@ namespace NVulkanEngine
 		void               CreateModelMeshes(CGraphicsContext* context);
 		void               SetModelFilepath(const std::string& modelFilepath, const std::string materialSearchPath);
 		void               SetModelTexturePath(const std::string& modeTexturePath);
-		
+
+		void               SetModelFromVertexAndIndexBuffers(VkBuffer terrainVertexBuffer, VkBuffer terrainIndexBuffer, uint32_t numTerrainVertices, uint32_t numTerrainIndices);
+		void               AddMesh(const SMaterialMesh& mesh);
+
 		std::string        GetModelTexturePath();
 
 		SDescriptorSets&   GetDescriptorSetsRef();
@@ -99,6 +102,7 @@ namespace NVulkanEngine
 		void               SetTransform(glm::mat4 transform);
 
 		glm::AABB          GetAABB();
+		void               SetAABB(const glm::AABB& aabb);
 
 		void               SetUsesModelTexture(bool uses_texture);
 		bool               UsesModelTexture();
@@ -121,7 +125,7 @@ namespace NVulkanEngine
 		uint32_t           GetNumMeshes();
 		SMaterialMesh      GetMesh(const uint32_t index);
 		
-		uint32_t           GetNumIndices();
+		uint32_t           GetTotalNumIndices();
 
 		// Get number of indices of model
 		SModelMaterial     GetMaterial(uint32_t materialId);
@@ -134,9 +138,9 @@ namespace NVulkanEngine
 		// Cleanup model and meshes
 		void               Cleanup(CGraphicsContext* context);
 	private:
-		std::string            m_ModelFilepath      = {};
-		std::string            m_MaterialFilepath   = {};
-		std::string            m_ModelTexturePath   = {};
+		std::string            m_ModelFilepath      = "Uninitialized";
+		std::string            m_MaterialFilepath   = "Uninitialized";
+		std::string            m_ModelTexturePath   = "Uninitialized";
 
 		std::vector<SMaterialMesh>          m_Meshes        = {};
 		std::vector<SModelMaterial>         m_Materials     = {};
@@ -145,12 +149,15 @@ namespace NVulkanEngine
 		std::vector<uint32_t>       m_Indices       = {};
 
 		glm::mat4              m_Transform          = glm::identity<glm::mat4>();
-		glm::AABB              m_ModelAABB      = {};
+		glm::AABB              m_ModelAABB          = {};
 
 		SDescriptorSets        m_DescriptorSets     = {};
 
 		VkBuffer               m_VertexBuffer       = VK_NULL_HANDLE;
 		VkDeviceMemory         m_VertexBufferMemory = VK_NULL_HANDLE;
+
+		uint32_t               m_NumVertices        = 0;
+		uint32_t               m_NumIndices         = 0;
 
 		VkBuffer               m_IndexBuffer        = VK_NULL_HANDLE;
 		VkDeviceMemory         m_IndexBufferMemory  = VK_NULL_HANDLE;
@@ -164,6 +171,8 @@ namespace NVulkanEngine
 
 		bool                   m_UsesModelTexture   = false;
 		CTexture*              m_ModelTexture       = nullptr;
+
+		bool                   m_IsTerrainModel     = false;
 
 		CBindingTable*         m_GeometryTable      = nullptr;
 		CBindingTable*         m_ShadowTable        = nullptr;

@@ -1,8 +1,6 @@
 #version 450
 
-layout(location = 0) out vec4 color;
-
+// Depth only. Not writing gl_FragDepth keeps early depth testing and the pipeline's depth bias
 void main()
 {
-    gl_FragDepth = gl_FragCoord.z;
 }

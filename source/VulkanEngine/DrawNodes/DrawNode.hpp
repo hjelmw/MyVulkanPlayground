@@ -19,8 +19,8 @@ namespace NVulkanEngine
 	enum class EDrawNodes : uint32_t
 	{
 		Geometry     = 0,
-		Shadows      = 1,
-		Terrain      = 2,
+		Terrain      = 1,
+		Shadows      = 2,
 		Skybox       = 3,
 		Lighting     = 4,
 		PostProcess  = 5,

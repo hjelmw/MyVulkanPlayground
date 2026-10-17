@@ -16,6 +16,7 @@ namespace NVulkanEngine
 	{
 		m_ModelFilepath = modelFilepath;
 		m_MaterialFilepath = materialSearchPath; // Unused currently. See CreateModelMeshes()
+		m_IsTerrainModel = false;
 	}
 
 	void CModel::SetModelTexturePath(const std::string& modelTexturePath)
@@ -27,6 +28,22 @@ namespace NVulkanEngine
 	std::string CModel::GetModelTexturePath()
 	{
 		return m_ModelTexturePath;
+	}
+
+	void CModel::SetModelFromVertexAndIndexBuffers(VkBuffer terrainVertexBuffer, VkBuffer terrainIndexBuffer, uint32_t numTerrainVertices, uint32_t numTerrainIndices)
+	{
+		// This is a bit shoe horned into but works for now.
+		// The buffers are owned by the terrain node, see Cleanup()
+		m_VertexBuffer   = terrainVertexBuffer;
+		m_IndexBuffer    = terrainIndexBuffer;
+		m_NumVertices    = numTerrainVertices;
+		m_NumIndices     = numTerrainIndices;
+		m_IsTerrainModel = true;
+	}
+
+	void CModel::AddMesh(const SMaterialMesh& mesh)
+	{
+		m_Meshes.push_back(mesh);
 	}
 
 	void CModel::CreateModelMeshes(CGraphicsContext* context)
@@ -383,6 +400,11 @@ namespace NVulkanEngine
 		return m_ModelAABB;
 	}
 
+	void CModel::SetAABB(const glm::AABB& aabb)
+	{
+		m_ModelAABB = aabb;
+	}
+
 	CTexture* CModel::GetModelTexture()
 	{
 		return m_ModelTexture;
@@ -423,9 +445,9 @@ namespace NVulkanEngine
 		return m_Materials[materialId];
 	}
 
-	uint32_t CModel::GetNumIndices()
+	uint32_t CModel::GetTotalNumIndices()
 	{
-		return static_cast<uint32_t>(m_Indices.size());
+		return m_NumIndices;
 	}
 
 	void CModel::CreateGeometryBindingTable(CGraphicsContext* context)
@@ -443,7 +465,6 @@ namespace NVulkanEngine
 		m_ShadowTable->AddSampledImageBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, VK_NULL_HANDLE, VK_FORMAT_UNDEFINED, context->GetLinearRepeatSampler());
 		m_ShadowTable->CreateBindings(context);
 	}
-
 
 	void CModel::BindVertexAndIndexBuffers(VkCommandBuffer commandBuffer)
 	{
@@ -468,11 +489,15 @@ namespace NVulkanEngine
 
 	void CModel::Cleanup(CGraphicsContext* context)
 	{
-		vkDestroyBuffer(context->GetLogicalDevice(), m_VertexBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_VertexBufferMemory, nullptr);
+		// Terrain models only borrow the vertex and index buffers from the terrain node
+		if (!m_IsTerrainModel)
+		{
+			vkDestroyBuffer(context->GetLogicalDevice(), m_VertexBuffer, nullptr);
+			vkFreeMemory(context->GetLogicalDevice(), m_VertexBufferMemory, nullptr);
 
-		vkDestroyBuffer(context->GetLogicalDevice(), m_IndexBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_IndexBufferMemory, nullptr);
+			vkDestroyBuffer(context->GetLogicalDevice(), m_IndexBuffer, nullptr);
+			vkFreeMemory(context->GetLogicalDevice(), m_IndexBufferMemory, nullptr);
+		}
 
 		vkDestroyBuffer(context->GetLogicalDevice(), m_GeometryBuffer.m_Buffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_GeometryBuffer.m_Memory, nullptr);
@@ -480,10 +505,18 @@ namespace NVulkanEngine
 		vkDestroyBuffer(context->GetLogicalDevice(), m_ShadowBuffer.m_Buffer, nullptr);
 		vkFreeMemory(context->GetLogicalDevice(), m_ShadowBuffer.m_Memory, nullptr);
 
-		m_GeometryTable->Cleanup(context);
-		m_ShadowTable->Cleanup(context);
-		delete m_GeometryTable;
-		delete m_ShadowTable;
+		// Terrain models are only drawn in the shadow pass so they don't have a geometry table
+		if (m_GeometryTable)
+		{
+			m_GeometryTable->Cleanup(context);
+			delete m_GeometryTable;
+		}
+
+		if (m_ShadowTable)
+		{
+			m_ShadowTable->Cleanup(context);
+			delete m_ShadowTable;
+		}
 
 		if(m_ModelTexture)
 			m_ModelTexture->DestroyTexture(context);

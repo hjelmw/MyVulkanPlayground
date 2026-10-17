@@ -211,7 +211,10 @@ namespace NVulkanEngine
 		presentInfo.pImageIndices = &imageIndex;
 
 		VkResult result = vkQueuePresentKHR(context->GetPresentQueue(), &presentInfo);
-		if (result != VK_SUCCESS)
+
+		// Window was resized after the image was acquired. Not fatal, the GLFW resize callback recreates the swapchain next frame
+		const bool swapchainOutdated = result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR;
+		if (result != VK_SUCCESS && !swapchainOutdated)
 		{
 			throw std::runtime_error("Swapchain present did not suceed. Fatal?");
 		}

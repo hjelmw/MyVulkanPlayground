@@ -24,7 +24,7 @@ namespace NVulkanEngine
 
 		Light     m_Lights[1];
 		glm::vec3 m_ViewPos;
-		float     m_Pad1;
+		float     m_ShadowDepthBias;
 	};
 
 	void CLightingNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
@@ -69,7 +69,7 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_Lights[0].m_LightIntensity = 100.0f;
 		deferredLightingUbo.m_Lights[0].m_LightMatrix    = CShadowNode::GetLightMatrix();
 		deferredLightingUbo.m_ViewPos                    = managers->m_InputManager->GetCamera()->GetPosition();
-		deferredLightingUbo.m_Pad1                       = 0.0f;
+		deferredLightingUbo.m_ShadowDepthBias            = CShadowNode::GetShadowDepthBias();
 
 		void* data;
 		vkMapMemory(logicalDevice, m_DeferredLightBufferMemory, 0, sizeof(SDeferredLightingUniformBuffer), 0, &data);
