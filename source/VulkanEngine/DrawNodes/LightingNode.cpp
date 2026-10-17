@@ -7,6 +7,11 @@
 
 static float g_LightRadius = 1500.0f;
 
+// Sun is the main light. Direction comes from the shadow node so it matches the shadows and the sky
+static float     g_SunIntensity     = 1.0f;
+static glm::vec3 g_SunColor         = glm::vec3(1.0f, 1.0f, 1.0f);
+static float     g_AmbientIntensity = 0.15f;
+
 namespace NVulkanEngine
 {
 	struct SDeferredLightingUniformBuffer
@@ -25,6 +30,11 @@ namespace NVulkanEngine
 		Light     m_Lights[1];
 		glm::vec3 m_ViewPos;
 		float     m_ShadowDepthBias;
+
+		glm::vec3 m_SunDirection; // Towards the sun
+		float     m_SunIntensity;
+		glm::vec3 m_SunColor;
+		float     m_AmbientIntensity;
 	};
 
 	void CLightingNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
@@ -62,6 +72,12 @@ namespace NVulkanEngine
 
 	void CLightingNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers)
 	{
+		ImGui::Begin("Lighting");
+		ImGui::SliderFloat("Sun Intensity", &g_SunIntensity, 0.0f, 5.0f);
+		ImGui::ColorEdit3("Sun Color", &g_SunColor.x);
+		ImGui::SliderFloat("Ambient", &g_AmbientIntensity, 0.0f, 1.0f);
+		ImGui::End();
+
 		SDeferredLightingUniformBuffer deferredLightingUbo{};
 		deferredLightingUbo.m_Lights[0].m_LightColor     = glm::vec3(1.0f, 1.0f, 1.0f);
 		deferredLightingUbo.m_Lights[0].m_LightPosition  = glm::vec3(0.0f, 1000.0f, 30.0f);
@@ -70,6 +86,10 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_Lights[0].m_LightMatrix    = CShadowNode::GetLightMatrix();
 		deferredLightingUbo.m_ViewPos                    = managers->m_InputManager->GetCamera()->GetPosition();
 		deferredLightingUbo.m_ShadowDepthBias            = CShadowNode::GetShadowDepthBias();
+		deferredLightingUbo.m_SunDirection               = CShadowNode::GetSunlightDirection();
+		deferredLightingUbo.m_SunIntensity               = g_SunIntensity;
+		deferredLightingUbo.m_SunColor                   = g_SunColor;
+		deferredLightingUbo.m_AmbientIntensity           = g_AmbientIntensity;
 
 		void* data;
 		vkMapMemory(logicalDevice, m_DeferredLightBufferMemory, 0, sizeof(SDeferredLightingUniformBuffer), 0, &data);

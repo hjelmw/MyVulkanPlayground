@@ -9,7 +9,7 @@
 
 #define SHADOWMAP_RESOLUTION 4096
 
-static float g_SunZenithDegrees  = 80.0f;
+static float g_SunZenithDegrees  = 45.0f;
 static float g_SunAzimuthDegrees = 45.0f;
 
 // How far behind the occluder (in world units) a receiver must be to count as shadowed

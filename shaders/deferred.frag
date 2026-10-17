@@ -25,6 +25,11 @@ layout (binding = 6) uniform UBO
 	SLight m_Lights[NUM_LIGHTS];
 	vec3   m_ViewPos;
 	float  m_ShadowDepthBias; // Normalized shadow map depth, see CShadowNode::GetShadowDepthBias()
+
+	vec3   m_SunDirection;    // Towards the sun
+	float  m_SunIntensity;
+	vec3   m_SunColor;
+	float  m_AmbientIntensity;
 } SDeferredLightingConstants;
 
 layout (location = 0) in  vec2 inUV;
@@ -69,6 +74,26 @@ void main()
 	vec3 viewPos   = SDeferredLightingConstants.m_ViewPos;
 	vec3 fragColor = vec3(0.0f, 0.0f ,0.0f);
 
+	// The shadow map is rendered from the sun, see CShadowNode
+	float shadow = 0.0f;
+	{
+		mat4 lightMatrix = SDeferredLightingConstants.m_Lights[0].m_LightMatrix;
+
+		// Move world space fragment to light view space
+		vec4 fragPosLightSpace = lightMatrix * vec4(position, 1.0f);
+
+		shadow = CalculateShadow(fragPosLightSpace);
+	}
+
+	// Sun is a directional light so there is no distance falloff
+	vec3 directLight = vec3(0.0f, 0.0f, 0.0f);
+	{
+		vec3  sunDir   = normalize(SDeferredLightingConstants.m_SunDirection);
+		float sunNdotL = max(dot(normalize(normal), sunDir), 0.0f);
+
+		directLight += SDeferredLightingConstants.m_SunColor * SDeferredLightingConstants.m_SunIntensity * albedo * sunNdotL;
+	}
+
 	for(int i = 0; i < NUM_LIGHTS; i++)
 	{
 		vec3  lightPos       = SDeferredLightingConstants.m_Lights[i].m_Position;
@@ -86,9 +111,9 @@ void main()
 			// Inverse square law
 			float attenuation = lightRadius / (distToLight * distToLight + 1.0f);
 
-			// Diffuse part
+			// Diffuse part. Clamped so surfaces facing away don't subtract light
 			{
-				float NdotL = dot(normalize(normal), lightDir);
+				float NdotL = max(dot(normalize(normal), lightDir), 0.0f);
 				diffuse = lightColor * albedo * NdotL * attenuation;
 			}
 
@@ -101,23 +126,16 @@ void main()
 				specular = pow(max(dot(normalize(normal), halfwayDir), 0.0f), 32.0f) * attenuation;
 			}
 
-			// Shadow map lookup
-			float shadow = 0.0f;
-			{
-				mat4 lightMatrix = SDeferredLightingConstants.m_Lights[i].m_LightMatrix;
-
-				// Move world space fragment to light view space
-				vec4 fragPosLightSpace = lightMatrix * vec4(position, 1.0f);
-
-				shadow = CalculateShadow(fragPosLightSpace);
-			}
-
-			fragColor = diffuse + specular;
-			fragColor *= shadow;
+			directLight += diffuse + specular;
 		}
-		
+
 
 	}
+
+	// Ambient keeps shadowed areas from going completely black
+	vec3 ambient = SDeferredLightingConstants.m_AmbientIntensity * albedo;
+
+	fragColor = ambient + directLight * shadow;
 
 	outFragColor = vec4(fragColor, 1.0f);
 
