@@ -46,13 +46,13 @@ namespace NVulkanEngine
 		m_Meshes.push_back(mesh);
 	}
 
-	void CModel::CreateModelMeshes(CGraphicsContext* context)
+	void CModel::CreateModelMeshes(SRuntimeContext* context)
 	{
 		LoadModel(m_ModelFilepath, ""); // Place .obj next to .mtl
 		CreateVertexBuffer(context);
 		CreateIndexBuffer(context);
 
-		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->GetVulkanInstance(), "vkSetDebugUtilsObjectNameEXT");
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->m_VulkanInstance, "vkSetDebugUtilsObjectNameEXT");
 		if (vkSetDebugUtilsObjectNameEXT)
 		{
 			// Get the file name
@@ -64,10 +64,10 @@ namespace NVulkanEngine
 			nameInfo.objectType   = VK_OBJECT_TYPE_BUFFER;
 			nameInfo.objectHandle = (uint64_t)m_VertexBuffer;
 			nameInfo.pObjectName  = vertexBufferName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 			nameInfo.objectHandle = (uint64_t)m_IndexBuffer;
 			nameInfo.pObjectName  = indexBufferName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 		}
 	}
 
@@ -273,7 +273,7 @@ namespace NVulkanEngine
 		return true;
 	}
 
-	void CModel::CreateVertexBuffer(CGraphicsContext* context)
+	void CModel::CreateVertexBuffer(SRuntimeContext* context)
 	{
 		VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
 
@@ -288,9 +288,9 @@ namespace NVulkanEngine
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		void* data;
-		vkMapMemory(context->GetLogicalDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
+		vkMapMemory(context->m_VulkanDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
 		memcpy(data, m_Vertices.data(), (size_t)bufferSize);
-		vkUnmapMemory(context->GetLogicalDevice(), stagingBufferMemory);
+		vkUnmapMemory(context->m_VulkanDevice, stagingBufferMemory);
 
 		/* GPU Side */
 		m_VertexBuffer = CreateBuffer(
@@ -303,11 +303,11 @@ namespace NVulkanEngine
 		/* Copy staging buffer to device*/
 		CopyBuffer(context, stagingBuffer, m_VertexBuffer, bufferSize);
 
-		vkDestroyBuffer(context->GetLogicalDevice(), stagingBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), stagingBufferMemory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, stagingBuffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, stagingBufferMemory, nullptr);
 	}
 
-	void CModel::CreateIndexBuffer(CGraphicsContext* context)
+	void CModel::CreateIndexBuffer(SRuntimeContext* context)
 	{
 		VkDeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
 
@@ -323,9 +323,9 @@ namespace NVulkanEngine
 		);
 
 		void* data;
-		vkMapMemory(context->GetLogicalDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
+		vkMapMemory(context->m_VulkanDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
 		memcpy(data, m_Indices.data(), (size_t)bufferSize);
-		vkUnmapMemory(context->GetLogicalDevice(), stagingBufferMemory);
+		vkUnmapMemory(context->m_VulkanDevice, stagingBufferMemory);
 
 		/* GPU Side Index buffer */
 		m_IndexBuffer = CreateBuffer(
@@ -338,8 +338,8 @@ namespace NVulkanEngine
 		/* Copy staging buffer to device*/
 		CopyBuffer(context, stagingBuffer, m_IndexBuffer, bufferSize);
 
-		vkDestroyBuffer(context->GetLogicalDevice(), stagingBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), stagingBufferMemory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, stagingBuffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, stagingBufferMemory, nullptr);
 	}
 
 	glm::vec3 CModel::GenerateNormal(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2)
@@ -353,13 +353,13 @@ namespace NVulkanEngine
 		return generatedNormal;
 	}
 
-	void CModel::CreateGeometryMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size)
+	void CModel::CreateGeometryMemoryBuffer(SRuntimeContext* context, const VkDeviceSize size)
 	{
 		m_GeometryBuffer.m_Buffer = CreateUniformBuffer(context, m_GeometryBuffer.m_Memory, size);
 		m_GeometryBufferSize = (uint32_t)size;
 	}
 
-	void CModel::CreateShadowMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size)
+	void CModel::CreateShadowMemoryBuffer(SRuntimeContext* context, const VkDeviceSize size)
 	{
 		m_ShadowBuffer.m_Buffer = CreateUniformBuffer(context, m_ShadowBuffer.m_Memory, size);
 		m_ShadowBufferSize = (uint32_t)size;
@@ -450,19 +450,19 @@ namespace NVulkanEngine
 		return m_NumIndices;
 	}
 
-	void CModel::CreateGeometryBindingTable(CGraphicsContext* context)
+	void CModel::CreateGeometryBindingTable(SRuntimeContext* context)
 	{
 		m_GeometryTable = new CBindingTable();
 		m_GeometryTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, m_GeometryBuffer.m_Buffer, m_GeometryBufferSize);
-		m_GeometryTable->AddSampledImageBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_UsesModelTexture ? m_ModelTexture->GetTextureImageView() : VK_NULL_HANDLE, m_UsesModelTexture ? m_ModelTexture->GetTextureFormat() : VK_FORMAT_UNDEFINED, context->GetLinearRepeatSampler());
+		m_GeometryTable->AddSampledImageBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_UsesModelTexture ? m_ModelTexture->GetTextureImageView() : VK_NULL_HANDLE, m_UsesModelTexture ? m_ModelTexture->GetTextureFormat() : VK_FORMAT_UNDEFINED, context->m_LinearRepeatSampler);
 		m_GeometryTable->CreateBindings(context);
 	}
 
-	void CModel::CreateShadowBindingTable(CGraphicsContext* context)
+	void CModel::CreateShadowBindingTable(SRuntimeContext* context)
 	{
 		m_ShadowTable = new CBindingTable();
 		m_ShadowTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, m_ShadowBuffer.m_Buffer, m_ShadowBufferSize);
-		m_ShadowTable->AddSampledImageBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, VK_NULL_HANDLE, VK_FORMAT_UNDEFINED, context->GetLinearRepeatSampler());
+		m_ShadowTable->AddSampledImageBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, VK_NULL_HANDLE, VK_FORMAT_UNDEFINED, context->m_LinearRepeatSampler);
 		m_ShadowTable->CreateBindings(context);
 	}
 
@@ -477,33 +477,33 @@ namespace NVulkanEngine
 		vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer, indexOfssets, VK_INDEX_TYPE_UINT32);
 	}
 
-	void CModel::BindGeometryTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+	void CModel::BindGeometryTable(SRuntimeContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 	{
 		m_GeometryTable->BindTable(context, commandBuffer, pipelineLayout);
 	}
 
-	void CModel::BindShadowTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+	void CModel::BindShadowTable(SRuntimeContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
 	{
 		m_ShadowTable->BindTable(context, commandBuffer, pipelineLayout);
 	}
 
-	void CModel::Cleanup(CGraphicsContext* context)
+	void CModel::Cleanup(SRuntimeContext* context)
 	{
 		// Terrain models only borrow the vertex and index buffers from the terrain node
 		if (!m_IsTerrainModel)
 		{
-			vkDestroyBuffer(context->GetLogicalDevice(), m_VertexBuffer, nullptr);
-			vkFreeMemory(context->GetLogicalDevice(), m_VertexBufferMemory, nullptr);
+			vkDestroyBuffer(context->m_VulkanDevice, m_VertexBuffer, nullptr);
+			vkFreeMemory(context->m_VulkanDevice, m_VertexBufferMemory, nullptr);
 
-			vkDestroyBuffer(context->GetLogicalDevice(), m_IndexBuffer, nullptr);
-			vkFreeMemory(context->GetLogicalDevice(), m_IndexBufferMemory, nullptr);
+			vkDestroyBuffer(context->m_VulkanDevice, m_IndexBuffer, nullptr);
+			vkFreeMemory(context->m_VulkanDevice, m_IndexBufferMemory, nullptr);
 		}
 
-		vkDestroyBuffer(context->GetLogicalDevice(), m_GeometryBuffer.m_Buffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_GeometryBuffer.m_Memory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_GeometryBuffer.m_Buffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, m_GeometryBuffer.m_Memory, nullptr);
 
-		vkDestroyBuffer(context->GetLogicalDevice(), m_ShadowBuffer.m_Buffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_ShadowBuffer.m_Memory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_ShadowBuffer.m_Buffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, m_ShadowBuffer.m_Memory, nullptr);
 
 		// Terrain models are only drawn in the shadow pass so they don't have a geometry table
 		if (m_GeometryTable)

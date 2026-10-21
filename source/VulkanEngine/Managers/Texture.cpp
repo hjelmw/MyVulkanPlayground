@@ -8,7 +8,7 @@
 namespace NVulkanEngine 
 {
 
-	void CTexture::CreateTextureImage(CGraphicsContext* context, stbi_uc* imagePixels, uint32_t texWidth, uint32_t texHeight, VkFormat format)
+	void CTexture::CreateTextureImage(SRuntimeContext* context, stbi_uc* imagePixels, uint32_t texWidth, uint32_t texHeight, VkFormat format)
 	{
 		VkDeviceSize textureImageSize = texWidth * texHeight * STBI_rgb_alpha;
 
@@ -24,9 +24,9 @@ namespace NVulkanEngine
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		void* data;
-		vkMapMemory(context->GetLogicalDevice(), stagingBufferMemory, 0, textureImageSize, 0, &data);
+		vkMapMemory(context->m_VulkanDevice, stagingBufferMemory, 0, textureImageSize, 0, &data);
 		memcpy(data, imagePixels, static_cast<size_t>(textureImageSize));
-		vkUnmapMemory(context->GetLogicalDevice(), stagingBufferMemory);
+		vkUnmapMemory(context->m_VulkanDevice, stagingBufferMemory);
 
 		stbi_image_free(imagePixels);
 
@@ -74,16 +74,16 @@ namespace NVulkanEngine
 
 		SingleTimeTransitionImageLayout(context, textureRenderAttachment, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_MipLevels);
 
-		vkDestroyBuffer(context->GetLogicalDevice(), stagingBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), stagingBufferMemory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, stagingBuffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, stagingBufferMemory, nullptr);
 	}
 
-	void CTexture::CreateTextureImageView(CGraphicsContext* context)
+	void CTexture::CreateTextureImageView(SRuntimeContext* context)
 	{
 		m_TextureImageView = CreateImageView(context, m_TextureImage, m_TextureFormat, VK_IMAGE_ASPECT_COLOR_BIT, m_MipLevels);
 	}
 
-	void CTexture::CreateTexture(CGraphicsContext* context, std::string textureFilepath, VkFormat format)
+	void CTexture::CreateTexture(SRuntimeContext* context, std::string textureFilepath, VkFormat format)
 	{
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load(textureFilepath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -97,11 +97,11 @@ namespace NVulkanEngine
 		CreateTextureImageView(context);
 	}
 
-	void CTexture::GenerateMipmaps(CGraphicsContext* context, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
+	void CTexture::GenerateMipmaps(SRuntimeContext* context, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
 	{
 		// Check if image format supports linear blitting
 		VkFormatProperties formatProperties;
-		vkGetPhysicalDeviceFormatProperties(context->GetPhysicalDevice(), imageFormat, &formatProperties);
+		vkGetPhysicalDeviceFormatProperties(context->m_PhysicalDevice, imageFormat, &formatProperties);
 
 		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
 		{
@@ -191,12 +191,12 @@ namespace NVulkanEngine
 		EndSingleTimeCommands(context, commandBuffer);
 	}
 
-	void CTexture::DestroyTexture(CGraphicsContext* context)
+	void CTexture::DestroyTexture(SRuntimeContext* context)
 	{
-		vkDestroyImageView(context->GetLogicalDevice(), m_TextureImageView, nullptr);
+		vkDestroyImageView(context->m_VulkanDevice, m_TextureImageView, nullptr);
 
-		vkDestroyImage(context->GetLogicalDevice(), m_TextureImage, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(),   m_TextureImageMemory, nullptr);
+		vkDestroyImage(context->m_VulkanDevice, m_TextureImage, nullptr);
+		vkFreeMemory(context->m_VulkanDevice,   m_TextureImageMemory, nullptr);
 
 		m_MipLevels = 1;
 		m_GenerateMipmaps = false;

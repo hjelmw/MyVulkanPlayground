@@ -56,21 +56,21 @@ namespace NVulkanEngine
 		void AddSampledImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView, VkFormat format, VkSampler sampler);
 		void AddStorageImageBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkImageView imageView);
 		void AddStorageBufferBinding(uint32_t bindingSlot, VkShaderStageFlagBits shaderStage, VkBuffer buffer, uint32_t bufferSize);
-		void CreateBindings(CGraphicsContext* context);
+		void CreateBindings(SRuntimeContext* context);
 
 		bool HasResourcesToBind() { return ((m_NumImageDescriptors + m_NumBufferDescriptors) > 0); };
 
 		VkDescriptorSetLayout GetDescriptorSetLayout() { return m_DescriptorSetLayout; };
 
 		// Use CPipeline::GetBindPoint() for bindPoint when binding for a compute pipeline
-		void BindTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
+		void BindTable(SRuntimeContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-		void Cleanup(CGraphicsContext* context);
+		void Cleanup(SRuntimeContext* context);
 
 	private:
-		void AllocateDescriptorPool(CGraphicsContext* context);
-		void AllocateDescriptorSetLayout(CGraphicsContext* context);
-		void AllocateDescriptorSets(CGraphicsContext* context);
+		void AllocateDescriptorPool(SRuntimeContext* context);
+		void AllocateDescriptorSetLayout(SRuntimeContext* context);
+		void AllocateDescriptorSets(SRuntimeContext* context);
 
 		std::vector<VkVertexInputAttributeDescription> m_VertexInputAttributes = { };
 

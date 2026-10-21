@@ -112,7 +112,8 @@ namespace NVulkanEngine
         // Draw nodes specifies render order
         std::array<CDrawNode*, (uint32_t)EDrawNodes::Count> m_DrawNodes               = {};
 
-        CGraphicsContext* m_Context   = nullptr;
+        SInternalContext* m_Context        = nullptr;
+        SRuntimeContext*  m_RuntimeContext = nullptr;
         CSwapchain*       m_Swapchain = nullptr;
 
         // Managers

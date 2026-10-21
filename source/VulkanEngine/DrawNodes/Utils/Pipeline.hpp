@@ -53,22 +53,22 @@ namespace NVulkanEngine
 		void AddColorAttachment(VkFormat colorFormat);
 		void AddDepthAttachment(VkFormat depthFormat);
 
-		void CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
+		void CreatePipeline(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout);
 
 		VkPipelineLayout GetPipelineLayout() { return m_PipelineLayout; };
 		VkPipelineBindPoint GetBindPoint() const;
 
-		void BindPipeline(CGraphicsContext* context, VkCommandBuffer commandBuffer);
+		void BindPipeline(SRuntimeContext* context, VkCommandBuffer commandBuffer);
 		void BindPipeline(VkCommandBuffer commandBuffer);
 		void PushConstants(VkCommandBuffer, void* pushConstantData);
 
-		void Cleanup(CGraphicsContext* context);
+		void Cleanup(SRuntimeContext* context);
 	private:
 		EPipelineType m_Type = EPipelineType::COUNT;
 
-		void CreatePipelineLayout(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
-		void CreateGraphicsPipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
-		void CreateComputePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout);
+		void CreatePipelineLayout(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout);
+		void CreateGraphicsPipeline(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout);
+		void CreateComputePipeline(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout);
 
 		VkVertexInputBindingDescription m_VertexInputBindingDescription = {};
 		std::vector<VkVertexInputAttributeDescription> m_VertexAttributeDescriptions    = {};

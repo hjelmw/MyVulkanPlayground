@@ -11,7 +11,7 @@ namespace NVulkanEngine
 		glm::mat4 m_ViewProjectionMatrix = glm::identity<glm::mat4>();
 	};
 
-	void CDebugNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CDebugNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		VkFormat sceneColorFormat = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor).m_Format;
 
@@ -51,7 +51,7 @@ namespace NVulkanEngine
 		vkUnmapMemory(logicalDevice, bufferResource.m_Memory);
 	}
 
-	void CDebugNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CDebugNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		CDebugManager* debugManager = managers->m_DebugManager;
 		const uint32_t numDebugLines = debugManager->GetNumDebugLines();
@@ -77,7 +77,7 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CDebugNode::Cleanup(CGraphicsContext* context)
+	void CDebugNode::Cleanup(SRuntimeContext* context)
 	{
 		m_DebugTable->Cleanup(context);
 		m_DebugPipeline->Cleanup(context);

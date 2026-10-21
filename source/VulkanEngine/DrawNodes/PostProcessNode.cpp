@@ -4,7 +4,7 @@
 
 namespace NVulkanEngine
 {
-	void CPostProcessNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CPostProcessNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		const SRenderResource sceneColorAttachment = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor);
 
@@ -18,27 +18,27 @@ namespace NVulkanEngine
 		m_PostProcessPipeline->CreatePipeline(context, m_PostProcessTable->GetDescriptorSetLayout());
 	}
 
-	void CPostProcessNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CPostProcessNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		// Writinh to storage images which have to be in the general layout
 		managers->m_ResourceManager->TransitionResource(commandBuffer, EResourceIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_GENERAL);
 
 		const float markerColor[4] = { 0.2f, 0.6f, 1.0f, 1.0f };
-		BeginMarker(context->GetVulkanInstance(), commandBuffer, "Post Process", markerColor);
+		BeginMarker(context->m_VulkanInstance, commandBuffer, "Post Process", markerColor);
 
 		m_PostProcessPipeline->BindPipeline(commandBuffer);
 		m_PostProcessTable->BindTable(context, commandBuffer, m_PostProcessPipeline->GetPipelineLayout(), m_PostProcessPipeline->GetBindPoint());
 
 		// Round up so the work groups cover the entire image
-		const VkExtent2D resolution = context->GetRenderResolution();
+		const VkExtent2D resolution = context->m_RenderResolution;
 		const uint32_t groupCountX = (resolution.width  + s_WorkGroupSize - 1) / s_WorkGroupSize;
 		const uint32_t groupCountY = (resolution.height + s_WorkGroupSize - 1) / s_WorkGroupSize;
 		vkCmdDispatch(commandBuffer, groupCountX, groupCountY, 1);
 
-		EndMarker(context->GetVulkanInstance(), commandBuffer);
+		EndMarker(context->m_VulkanInstance, commandBuffer);
 	}
 
-	void CPostProcessNode::Cleanup(CGraphicsContext* context)
+	void CPostProcessNode::Cleanup(SRuntimeContext* context)
 	{
 		m_PostProcessTable->Cleanup(context);
 		m_PostProcessPipeline->Cleanup(context);

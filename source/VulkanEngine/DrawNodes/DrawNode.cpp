@@ -5,16 +5,16 @@
 namespace NVulkanEngine
 {
 	/* Implemented by derived class */
-	void CDrawNode::Init(CGraphicsContext* context, SGraphicsManagers* managers) { }
+	void CDrawNode::Init(SRuntimeContext* context, SGraphicsManagers* managers) { }
 	void CDrawNode::UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers) {}
-	void CDrawNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
-	void CDrawNode::Cleanup(CGraphicsContext* context) { }
+	void CDrawNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) { }
+	void CDrawNode::Cleanup(SRuntimeContext* context) { }
 
-	void CDrawNode::GenerateMipmaps(CGraphicsContext* context, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
+	void CDrawNode::GenerateMipmaps(SRuntimeContext* context, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
 	{
 		// Check if image format supports linear blitting
 		VkFormatProperties formatProperties;
-		vkGetPhysicalDeviceFormatProperties(context->GetPhysicalDevice(), imageFormat, &formatProperties);
+		vkGetPhysicalDeviceFormatProperties(context->m_PhysicalDevice, imageFormat, &formatProperties);
 
 		if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
 		{
@@ -106,10 +106,13 @@ namespace NVulkanEngine
 
 	void CDrawNode::BeginRendering(
 		const std::string              markerName,
-		CGraphicsContext*              context,
+		SRuntimeContext*              context,
 		VkCommandBuffer                commandBuffer,
-		std::vector<SRenderResource>   renderResourceInfos)
+		std::vector<SRenderResource>   renderResourceInfos,
+		VkExtent2D                     renderExtentOverride)
 	{
+		const VkExtent2D renderExtent = (renderExtentOverride.width > 0 && renderExtentOverride.height > 0) ? renderExtentOverride : context->m_RenderResolution;
+
 		std::vector<VkRenderingAttachmentInfo> colorAttachmentInfos = {};
 		VkRenderingAttachmentInfo depthAttachmentInfo = {};
 		bool hasDepthAttachment = false;
@@ -128,7 +131,7 @@ namespace NVulkanEngine
 
 		VkRenderingInfo renderInfo{};
 		renderInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
-		renderInfo.renderArea.extent    = context->GetRenderResolution();
+		renderInfo.renderArea.extent    = renderExtent;
 		renderInfo.renderArea.offset    = { 0, 0 };
 		renderInfo.layerCount           = 1;
 		renderInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfos.size());
@@ -136,15 +139,15 @@ namespace NVulkanEngine
 		renderInfo.pDepthAttachment     = hasDepthAttachment ? &depthAttachmentInfo : nullptr;
 
 		const float drawNodeMarkerColor[4] = { 0.4f, 0.6f, 0.3f, 1.0f };
-		BeginMarker(context->GetVulkanInstance(), commandBuffer, markerName, drawNodeMarkerColor);
+		BeginMarker(context->m_VulkanInstance, commandBuffer, markerName, drawNodeMarkerColor);
 		vkCmdBeginRendering(commandBuffer, &renderInfo);
 
 
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = (float)context->GetRenderResolution().width;
-		viewport.height = (float)context->GetRenderResolution().height;
+		viewport.width = (float)renderExtent.width;
+		viewport.height = (float)renderExtent.height;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
@@ -152,14 +155,14 @@ namespace NVulkanEngine
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
-		scissor.extent = context->GetRenderResolution();
+		scissor.extent = renderExtent;
 
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
-	void CDrawNode::EndRendering(CGraphicsContext* context, VkCommandBuffer commandBuffer)
+	void CDrawNode::EndRendering(SRuntimeContext* context, VkCommandBuffer commandBuffer)
 	{
 		vkCmdEndRendering(commandBuffer);
-		EndMarker(context->GetVulkanInstance(), commandBuffer);
+		EndMarker(context->m_VulkanInstance, commandBuffer);
 	}
 };

@@ -42,7 +42,7 @@ namespace NVulkanEngine
 		~CResourceManager() = default;
 
 		SRenderResource AddRenderResource(
-			CGraphicsContext*     context,
+			SRuntimeContext*     context,
 			const std::string     debugName,
 			EResourceIndices    attachmentIndex,
 			VkSampler             sampler,
@@ -54,7 +54,7 @@ namespace NVulkanEngine
 			uint32_t              height);
 
 		SUniformBufferResource AddUniformBuffer(
-			CGraphicsContext* context,
+			SRuntimeContext* context,
 			const std::string& debugName,
 			EBufferIndices     uniformBufferIndex,
 			VkDeviceSize       uniformBufferSize);
@@ -71,7 +71,7 @@ namespace NVulkanEngine
 		// Returns the attachment in state ready for rendering
 		SRenderResource TransitionResource(VkCommandBuffer commandBuffer, EResourceIndices index,VkAttachmentLoadOp loadOperation, VkImageLayout wantedState);
 
-		void Cleanup(CGraphicsContext* context);
+		void Cleanup(SRuntimeContext* context);
 	private:
 		std::array<SRenderResource, (uint32_t)EResourceIndices::Count> m_RenderResources = {};
 		std::array<SUniformBufferResource, (uint32_t)EBufferIndices::Count>   m_BufferResources = {};

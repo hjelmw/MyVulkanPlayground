@@ -263,7 +263,7 @@ namespace NVulkanEngine
 	}
 
 	static void AllocateDescriptorPool(
-		CGraphicsContext* context,
+		SRuntimeContext* context,
 		VkDescriptorPool& descriptorPool,
 		uint32_t          numDescriptorSets,
 		uint32_t          descriptorImageCount,
@@ -282,14 +282,14 @@ namespace NVulkanEngine
 		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = numDescriptorSets;
 
-		if (vkCreateDescriptorPool(context->GetLogicalDevice(), &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+		if (vkCreateDescriptorPool(context->m_VulkanDevice, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
 	}
 
 	static std::vector<VkDescriptorSet> AllocateDescriptorSets(
-		CGraphicsContext*     context,
+		SRuntimeContext*     context,
 		VkDescriptorPool      descriptorPool,
 		VkDescriptorSetLayout descriptorSetLayout,
 		uint32_t              numDescriptorSets)
@@ -305,7 +305,7 @@ namespace NVulkanEngine
 
 		std::vector<VkDescriptorSet> descriptorSets(numDescriptorSets);
 
-		VkResult result = vkAllocateDescriptorSets(context->GetLogicalDevice(), &allocInfo, descriptorSets.data());
+		VkResult result = vkAllocateDescriptorSets(context->m_VulkanDevice, &allocInfo, descriptorSets.data());
 
 		if (result != VK_SUCCESS)
 		{
@@ -316,7 +316,7 @@ namespace NVulkanEngine
 	}
 
 	static void UpdateDescriptorSets(
-		CGraphicsContext* context,
+		SRuntimeContext* context,
 		std::vector<VkDescriptorSet> descriptorSets,
 		std::vector<VkWriteDescriptorSet> writeDescriptorSets)
 	{
@@ -327,21 +327,21 @@ namespace NVulkanEngine
 			{
 				writeDescriptorSets[j].dstSet = descriptorSets[i];
 			}
-			vkUpdateDescriptorSets(context->GetLogicalDevice(), static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
+			vkUpdateDescriptorSets(context->m_VulkanDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 		}
 
 	}
 
-	static VkCommandBuffer BeginSingleTimeCommands(CGraphicsContext* context)
+	static VkCommandBuffer BeginSingleTimeCommands(SRuntimeContext* context)
 	{
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = context->GetCommandPool();
+		allocInfo.commandPool = context->m_CommandPool;
 		allocInfo.commandBufferCount = 1;
 
 		VkCommandBuffer commandBuffer;
-		vkAllocateCommandBuffers(context->GetLogicalDevice(), &allocInfo, &commandBuffer);
+		vkAllocateCommandBuffers(context->m_VulkanDevice, &allocInfo, &commandBuffer);
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -352,7 +352,7 @@ namespace NVulkanEngine
 		return commandBuffer;
 	}
 
-	static void EndSingleTimeCommands(CGraphicsContext* context, VkCommandBuffer commandBuffer)
+	static void EndSingleTimeCommands(SRuntimeContext* context, VkCommandBuffer commandBuffer)
 	{
 		vkEndCommandBuffer(commandBuffer);
 
@@ -361,13 +361,13 @@ namespace NVulkanEngine
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffer;
 
-		vkQueueSubmit(context->GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(context->GetGraphicsQueue());
-		vkFreeCommandBuffers(context->GetLogicalDevice(), context->GetCommandPool(), 1, &commandBuffer);
+		vkQueueSubmit(context->m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(context->m_GraphicsQueue);
+		vkFreeCommandBuffers(context->m_VulkanDevice, context->m_CommandPool, 1, &commandBuffer);
 	}
 
 	static VkBuffer CreateBuffer(
-		CGraphicsContext*     context,
+		SRuntimeContext*     context,
 		VkDeviceMemory&       bufferMemory,
 		VkDeviceSize          size,
 		VkBufferUsageFlags    usage,
@@ -382,30 +382,30 @@ namespace NVulkanEngine
 
 		VkBuffer buffer;
 
-		if (vkCreateBuffer(context->GetLogicalDevice(), &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+		if (vkCreateBuffer(context->m_VulkanDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create vertex buffer!");
 		}
 
 		VkMemoryRequirements memoryRequirements;
-		vkGetBufferMemoryRequirements(context->GetLogicalDevice(), buffer, &memoryRequirements);
+		vkGetBufferMemoryRequirements(context->m_VulkanDevice, buffer, &memoryRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memoryRequirements.size;
-		allocInfo.memoryTypeIndex = FindMemoryType(context->GetPhysicalDevice(), memoryRequirements.memoryTypeBits, properties);
+		allocInfo.memoryTypeIndex = FindMemoryType(context->m_PhysicalDevice, memoryRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(context->GetLogicalDevice(), &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+		if (vkAllocateMemory(context->m_VulkanDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate vertex buffer memory!");
 		}
 
-		vkBindBufferMemory(context->GetLogicalDevice(), buffer, bufferMemory, 0);
+		vkBindBufferMemory(context->m_VulkanDevice, buffer, bufferMemory, 0);
 
 		return buffer;
 	}
 
-	static void CopyBuffer(CGraphicsContext* context, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	static void CopyBuffer(SRuntimeContext* context, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 	{
 		VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
 
@@ -418,7 +418,7 @@ namespace NVulkanEngine
 		EndSingleTimeCommands(context, commandBuffer);
 	}
 
-	static void CreateBufferAndCopyData(CGraphicsContext* context, VkBuffer& genericBuffer, VkDeviceMemory& returnMemory, void* dataToCopy, VkDeviceSize sizeOfData, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags)
+	static void CreateBufferAndCopyData(SRuntimeContext* context, VkBuffer& genericBuffer, VkDeviceMemory& returnMemory, void* dataToCopy, VkDeviceSize sizeOfData, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags)
 	{
 
 		// On host side (CPU mem)
@@ -440,22 +440,22 @@ namespace NVulkanEngine
 
 		// Map CPU staging buffer and copy into it
 		void* mappedData;
-		vkMapMemory(context->GetLogicalDevice(), stagingBufferMemory, 0, sizeOfData, 0, &mappedData);
+		vkMapMemory(context->m_VulkanDevice, stagingBufferMemory, 0, sizeOfData, 0, &mappedData);
 		memcpy(mappedData, dataToCopy, (size_t)sizeOfData);
-		vkUnmapMemory(context->GetLogicalDevice(), stagingBufferMemory);
+		vkUnmapMemory(context->m_VulkanDevice, stagingBufferMemory);
 
 		// Finally copy staging buffer to GPU mem
 		CopyBuffer(context, genericStagingBuffer, genericBuffer, sizeOfData);
 	}
 
-	static VkBuffer CreateUniformBuffer(CGraphicsContext* context, VkDeviceMemory& bufferMemory, VkDeviceSize size)
+	static VkBuffer CreateUniformBuffer(SRuntimeContext* context, VkDeviceMemory& bufferMemory, VkDeviceSize size)
 	{
 		VkBuffer buffer = CreateBuffer(context, bufferMemory, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		return buffer;
 	}
 
 	static VkImage CreateImage(
-		CGraphicsContext* context,
+		SRuntimeContext* context,
 		uint32_t              width,
 		uint32_t              height,
 		uint32_t              mipLevels,
@@ -483,29 +483,29 @@ namespace NVulkanEngine
 		imageInfo.usage = usage;
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateImage(context->GetLogicalDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
+		if (vkCreateImage(context->m_VulkanDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create image!");
 		}
 
 		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(context->GetLogicalDevice(), image, &memRequirements);
+		vkGetImageMemoryRequirements(context->m_VulkanDevice, image, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = FindMemoryType(context->GetPhysicalDevice(), memRequirements.memoryTypeBits, properties);
+		allocInfo.memoryTypeIndex = FindMemoryType(context->m_PhysicalDevice, memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(context->GetLogicalDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+		if (vkAllocateMemory(context->m_VulkanDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate image memory!");
 		}
 
-		vkBindImageMemory(context->GetLogicalDevice(), image, imageMemory, 0);
+		vkBindImageMemory(context->m_VulkanDevice, image, imageMemory, 0);
 
 		return image;
 	}
 
-	static void CopyBufferToImage(CGraphicsContext* context, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+	static void CopyBufferToImage(SRuntimeContext* context, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 	{
 		VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
 
@@ -532,7 +532,7 @@ namespace NVulkanEngine
 		EndSingleTimeCommands(context, commandBuffer);
 	}
 
-	static VkImageView CreateImageView(CGraphicsContext* context, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
+	static VkImageView CreateImageView(SRuntimeContext* context, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -546,7 +546,7 @@ namespace NVulkanEngine
 		viewInfo.subresourceRange.layerCount = 1;
 
 		VkImageView imageView;
-		if (vkCreateImageView(context->GetLogicalDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS)
+		if (vkCreateImageView(context->m_VulkanDevice, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create renderAttachment image view!");
 		}
@@ -781,7 +781,7 @@ namespace NVulkanEngine
 
 
 	// Same as above but creates the renderattachment for you and also creates and consumes a new command buffer
-	static void SingleTimeTransitionImageLayout(CGraphicsContext* context, SRenderResource& renderAttachment, VkImageLayout newLayout, uint32_t mipLevels)
+	static void SingleTimeTransitionImageLayout(SRuntimeContext* context, SRenderResource& renderAttachment, VkImageLayout newLayout, uint32_t mipLevels)
 	{
 		VkCommandBuffer commandBuffer = BeginSingleTimeCommands(context);
 		TransitionImageLayout(commandBuffer, renderAttachment, newLayout, mipLevels);
@@ -809,7 +809,7 @@ namespace NVulkanEngine
 
 	static SRenderResource CreateRenderResource
 	(
-		CGraphicsContext* context,
+		SRuntimeContext* context,
 		VkFormat          format,
 		VkImageUsageFlags usage,
 		VkImageLayout     imageLayout,
@@ -894,7 +894,7 @@ namespace NVulkanEngine
 	}
 
 	static VkSampler CreateSampler(
-		CGraphicsContext* context,
+		SRuntimeContext* context,
 		VkSamplerAddressMode samplerModeU,
 		VkSamplerAddressMode samplerModeV,
 		VkSamplerAddressMode samplerModeW,
@@ -923,7 +923,7 @@ namespace NVulkanEngine
 		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
 		VkSampler sampler = VK_NULL_HANDLE;
-		if (vkCreateSampler(context->GetLogicalDevice(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+		if (vkCreateSampler(context->m_VulkanDevice, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create sampler for geometry render pass!");
 		}

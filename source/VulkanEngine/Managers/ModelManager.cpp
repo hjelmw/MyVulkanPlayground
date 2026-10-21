@@ -7,6 +7,9 @@ namespace NVulkanEngine
 {
 	void CModelManager::AddModelFromFilepath(const std::string& modelFilepath)
 	{
+		if (modelFilepath.empty())
+			return;
+
 		CModel* model = new CModel();
 
 		model->SetModelFilepath("./assets/" + modelFilepath, "./assets/models");
@@ -45,6 +48,9 @@ namespace NVulkanEngine
 
 	void CModelManager::AddTexturePath(const std::string& textureFilepath)
 	{
+		if (textureFilepath.empty())
+			return;
+
 		m_Models[m_CurrentModelIndex]->SetModelTexturePath("./assets/" + textureFilepath);
 	}
 
@@ -98,7 +104,7 @@ namespace NVulkanEngine
 		return terrainModel;
 	}
 
-	void CModelManager::UnregisterTerrainModel(CGraphicsContext* context, CModel* terrainModel)
+	void CModelManager::UnregisterTerrainModel(SRuntimeContext* context, CModel* terrainModel)
 	{
 		auto it = std::find(m_TerrainModels.begin(), m_TerrainModels.end(), terrainModel);
 		if (it == m_TerrainModels.end())
@@ -120,7 +126,7 @@ namespace NVulkanEngine
 		return m_SceneBounds;
 	}
 
-	void CModelManager::Cleanup(CGraphicsContext* context)
+	void CModelManager::Cleanup(SRuntimeContext* context)
 	{
 		for (int i = 0; i < m_Models.size(); i++)
 		{

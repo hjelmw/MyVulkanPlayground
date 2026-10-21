@@ -31,7 +31,7 @@ namespace NVulkanEngine
 		float GetNear();
 		float GetFar();
 
-		void UpdateCamera(CGraphicsContext* context);
+		void UpdateCamera(VkExtent2D renderResolution);
 
 		glm::mat4 GetLookAtMatrix();
 		glm::mat4 GetProjectionMatrix();

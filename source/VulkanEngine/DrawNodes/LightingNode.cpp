@@ -37,7 +37,7 @@ namespace NVulkanEngine
 		float     m_AmbientIntensity;
 	};
 
-	void CLightingNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CLightingNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		const SRenderResource positionsAttachment    = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Positions);
 		const SRenderResource normalsAttachment      = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Normals);
@@ -49,12 +49,12 @@ namespace NVulkanEngine
 		m_DeferredUniformBuffer = CreateUniformBuffer(context, m_DeferredLightBufferMemory, sizeof(SDeferredLightingUniformBuffer));
 
 		m_DeferredTable = new CBindingTable();
-		m_DeferredTable->AddSampledImageBinding(0,  VK_SHADER_STAGE_FRAGMENT_BIT, positionsAttachment.m_ImageView,    positionsAttachment.m_Format,    context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(1,  VK_SHADER_STAGE_FRAGMENT_BIT, normalsAttachment.m_ImageView,      normalsAttachment.m_Format,      context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(2,  VK_SHADER_STAGE_FRAGMENT_BIT, albedoAttachment.m_ImageView,       albedoAttachment.m_Format,       context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(3,  VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView,        depthAttachment.m_Format,        context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(4,  VK_SHADER_STAGE_FRAGMENT_BIT, shadowMapAttachment.m_ImageView,    shadowMapAttachment.m_Format,    context->GetLinearClampSampler());
-		m_DeferredTable->AddSampledImageBinding(5,  VK_SHADER_STAGE_FRAGMENT_BIT, atmosphericsAttachment.m_ImageView, atmosphericsAttachment.m_Format, context->GetLinearClampSampler());
+		m_DeferredTable->AddSampledImageBinding(0,  VK_SHADER_STAGE_FRAGMENT_BIT, positionsAttachment.m_ImageView,    positionsAttachment.m_Format,    context->m_LinearClampSampler);
+		m_DeferredTable->AddSampledImageBinding(1,  VK_SHADER_STAGE_FRAGMENT_BIT, normalsAttachment.m_ImageView,      normalsAttachment.m_Format,      context->m_LinearClampSampler);
+		m_DeferredTable->AddSampledImageBinding(2,  VK_SHADER_STAGE_FRAGMENT_BIT, albedoAttachment.m_ImageView,       albedoAttachment.m_Format,       context->m_LinearClampSampler);
+		m_DeferredTable->AddSampledImageBinding(3,  VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView,        depthAttachment.m_Format,        context->m_LinearClampSampler);
+		m_DeferredTable->AddSampledImageBinding(4,  VK_SHADER_STAGE_FRAGMENT_BIT, shadowMapAttachment.m_ImageView,    shadowMapAttachment.m_Format,    context->m_LinearClampSampler);
+		m_DeferredTable->AddSampledImageBinding(5,  VK_SHADER_STAGE_FRAGMENT_BIT, atmosphericsAttachment.m_ImageView, atmosphericsAttachment.m_Format, context->m_LinearClampSampler);
 		m_DeferredTable->AddUniformBufferBinding(6, VK_SHADER_STAGE_FRAGMENT_BIT, m_DeferredUniformBuffer, sizeof(SDeferredLightingUniformBuffer));
 		m_DeferredTable->CreateBindings(context);
 
@@ -97,7 +97,7 @@ namespace NVulkanEngine
 		vkUnmapMemory(logicalDevice, m_DeferredLightBufferMemory);
 	}
 
-	void CLightingNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CLightingNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		CResourceManager* resourceManager = managers->m_ResourceManager;
 		resourceManager->TransitionResource(commandBuffer, EResourceIndices::Positions,          VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -121,10 +121,10 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CLightingNode::Cleanup(CGraphicsContext* context)
+	void CLightingNode::Cleanup(SRuntimeContext* context)
 	{
-		vkDestroyBuffer(context->GetLogicalDevice(), m_DeferredUniformBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_DeferredLightBufferMemory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_DeferredUniformBuffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, m_DeferredLightBufferMemory, nullptr);
 
 		m_DeferredTable->Cleanup(context);
 		m_DeferredPipeline->Cleanup(context);

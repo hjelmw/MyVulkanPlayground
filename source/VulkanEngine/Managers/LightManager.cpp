@@ -31,7 +31,7 @@ namespace NVulkanEngine
 		m_CurrentLightSourceIndex++;
 	}
 
-	void CLightManager::Cleanup(CGraphicsContext* context)
+	void CLightManager::Cleanup(SRuntimeContext* context)
 	{
 		m_Lights.clear();
 	}

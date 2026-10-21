@@ -91,7 +91,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CInputManager::UpdateCameraTransforms(CGraphicsContext* context, float deltaTime)
+	void CInputManager::UpdateCameraTransforms(SInternalContext* context, float deltaTime)
 	{
 		const float sensitivity_mouse = 1.0f;
 		const float sensitivity_keys  = m_KeyStatus.m_Shift ? 8.0f : 2.0f;
@@ -105,7 +105,7 @@ namespace NVulkanEngine
 		{
 			if (m_MouseStatus.m_FirstTimePressed)
 			{
-				glfwGetCursorPos(context->GetGLFWWindow(), &m_MouseStatus.m_MouseX, &m_MouseStatus.m_MouseY);
+				glfwGetCursorPos(context->m_GLFWWindow, &m_MouseStatus.m_MouseX, &m_MouseStatus.m_MouseY);
 				m_MouseStatus.m_FirstTimePressed = false;
 			}
 
@@ -113,7 +113,7 @@ namespace NVulkanEngine
 			double previousMouseY = m_MouseStatus.m_MouseY;
 
 			double currentMouseX, currentMouseY;
-			glfwGetCursorPos(context->GetGLFWWindow(), &currentMouseX, &currentMouseY);
+			glfwGetCursorPos(context->m_GLFWWindow, &currentMouseX, &currentMouseY);
 
 			float offsetX = static_cast<float>(previousMouseX - currentMouseX);
 			float offsetY = static_cast<float>(currentMouseY  - previousMouseY);
@@ -176,7 +176,7 @@ namespace NVulkanEngine
 		m_Camera.SetDirection(cameraFront);
 		m_Camera.SetNear(10.0f);
 		m_Camera.SetFar(250000.0f);
-		m_Camera.UpdateCamera(context);
+		m_Camera.UpdateCamera(context->m_RenderResolution);
 	}
 
 	CCamera* CInputManager::GetCamera()

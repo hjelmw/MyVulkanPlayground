@@ -115,12 +115,13 @@ namespace NVulkanEngine
 		CreateSyncObjects();
 
 		// These do depend on resolution
-		m_ResourceManager->Cleanup(m_Context);
+		m_ResourceManager->Cleanup(m_RuntimeContext);
 		CleanupDrawNodes();
 
 		g_DisplayWidth  = m_NewRenderResolution.width;
 		g_DisplayHeight = m_NewRenderResolution.height;
-		m_Context->SetRenderResolution(VkExtent2D(g_DisplayWidth, g_DisplayHeight));
+		m_Context->m_RenderResolution = VkExtent2D(g_DisplayWidth, g_DisplayHeight);
+		m_RuntimeContext->m_RenderResolution = m_Context->m_RenderResolution;
 
 		// Order of init important here
 		CreateResources();
@@ -214,14 +215,14 @@ namespace NVulkanEngine
 		camera->SetDirection(cameraViewDirection);
 		camera->SetUp(cameraUpDirection);
 
-		camera->UpdateCamera(m_Context);
+		camera->UpdateCamera(m_Context->m_RenderResolution);
 	}
 
 	void CVulkanGraphicsEngine::CleanupManagers()
 	{
-		m_ModelManager->Cleanup(m_Context);
-		m_ResourceManager->Cleanup(m_Context);
-		m_DebugManager->Cleanup(m_Context);
+		m_ModelManager->Cleanup(m_RuntimeContext);
+		m_ResourceManager->Cleanup(m_RuntimeContext);
+		m_DebugManager->Cleanup(m_RuntimeContext);
 
 		delete m_InputManager;
 		delete m_ModelManager;
@@ -234,7 +235,7 @@ namespace NVulkanEngine
 	{
 		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
 		{
-			m_DrawNodes[i]->Cleanup(m_Context);
+			m_DrawNodes[i]->Cleanup(m_RuntimeContext);
 		}
 	}
 
@@ -684,7 +685,7 @@ namespace NVulkanEngine
 	void CVulkanGraphicsEngine::CreateResources()
 	{
 		m_ResourceManager->AddRenderResource(
-			m_Context,
+			m_RuntimeContext,
 			"GBuffer - Positions",
 			EResourceIndices::Positions,
 			m_LinearClamp,
@@ -692,11 +693,11 @@ namespace NVulkanEngine
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			m_Context->GetRenderResolution().width,
-			m_Context->GetRenderResolution().height);
+			m_Context->m_RenderResolution.width,
+			m_Context->m_RenderResolution.height);
 
 		m_ResourceManager->AddRenderResource(
-			m_Context,
+			m_RuntimeContext,
 			"GBuffer - Normals",
 			EResourceIndices::Normals,
 			m_LinearClamp,
@@ -704,11 +705,11 @@ namespace NVulkanEngine
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			m_Context->GetRenderResolution().width,
-			m_Context->GetRenderResolution().height);
+			m_Context->m_RenderResolution.width,
+			m_Context->m_RenderResolution.height);
 
 		m_ResourceManager->AddRenderResource(
-			m_Context,
+			m_RuntimeContext,
 			"GBuffer - Albedo",
 			EResourceIndices::Albedo, 
 			m_LinearClamp,
@@ -716,23 +717,23 @@ namespace NVulkanEngine
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			m_Context->GetRenderResolution().width,
-			m_Context->GetRenderResolution().height);
+			m_Context->m_RenderResolution.width,
+			m_Context->m_RenderResolution.height);
 
 		m_ResourceManager->AddRenderResource(
-			m_Context,
+			m_RuntimeContext,
 			"GBuffer - Depth",
 			EResourceIndices::Depth,
 			m_LinearClamp,
 			VK_SHADER_STAGE_FRAGMENT_BIT,
-			FindDepthFormat(m_Context->GetPhysicalDevice()),
+			FindDepthFormat(m_Context->m_PhysicalDevice),
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-			m_Context->GetRenderResolution().width,
-			m_Context->GetRenderResolution().height);
+			m_Context->m_RenderResolution.width,
+			m_Context->m_RenderResolution.height);
 
 		m_ResourceManager->AddRenderResource(
-			m_Context,
+			m_RuntimeContext,
 			"Shadow Map",
 			EResourceIndices::ShadowMap,
 			m_LinearClamp,
@@ -744,7 +745,7 @@ namespace NVulkanEngine
 			(uint32_t)4096);
 
 		m_ResourceManager->AddRenderResource(
-			m_Context,
+			m_RuntimeContext,
 			"Atmospherics SkyBox",
 			EResourceIndices::AtmosphericsSkyBox,
 			m_LinearClamp,
@@ -752,11 +753,11 @@ namespace NVulkanEngine
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			m_Context->GetRenderResolution().width,
-			m_Context->GetRenderResolution().height);
+			m_Context->m_RenderResolution.width,
+			m_Context->m_RenderResolution.height);
 
 		m_ResourceManager->AddRenderResource(
-			m_Context,
+			m_RuntimeContext,
 			"Scene Color",
 			EResourceIndices::SceneColor,
 			m_LinearClamp,
@@ -764,8 +765,8 @@ namespace NVulkanEngine
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, // Storage bit allows compute shaders to write
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			m_Context->GetRenderResolution().width,
-			m_Context->GetRenderResolution().height);
+			m_Context->m_RenderResolution.width,
+			m_Context->m_RenderResolution.height);
 	}
 
 	void CVulkanGraphicsEngine::InitImGui()
@@ -793,7 +794,7 @@ namespace NVulkanEngine
 		poolInfo.pPoolSizes    = poolSizes.data();
 		poolInfo.maxSets       = (uint32_t)EResourceIndices::Count * 2;
 
-		if (vkCreateDescriptorPool(m_Context->GetLogicalDevice(), &poolInfo, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
+		if (vkCreateDescriptorPool(m_Context->m_VulkanDevice, &poolInfo, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
@@ -827,19 +828,28 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CreateGraphicsContext()
 	{
-		m_Context = new CGraphicsContext();
-		m_Context->CreateContext(
-			m_VulkanInstance,
-			m_VulkanSurface,
-			m_Window,
-			m_PhysicalDevice,
-			m_VulkanDevice,
-			m_CommandPool,
-			m_GraphicsQueue,
-			m_PresentQueue,
-			m_LinearClamp,
-			m_LinearRepeat,
-			VkExtent2D(g_DisplayWidth, g_DisplayHeight));
+		m_Context = new SInternalContext();
+		m_Context->m_VulkanInstance      = m_VulkanInstance;
+		m_Context->m_VulkanSurface       = m_VulkanSurface;
+		m_Context->m_GLFWWindow          = m_Window;
+		m_Context->m_PhysicalDevice      = m_PhysicalDevice;
+		m_Context->m_VulkanDevice        = m_VulkanDevice;
+		m_Context->m_CommandPool         = m_CommandPool;
+		m_Context->m_GraphicsQueue       = m_GraphicsQueue;
+		m_Context->m_PresentQueue        = m_PresentQueue;
+		m_Context->m_LinearClampSampler  = m_LinearClamp;
+		m_Context->m_LinearRepeatSampler = m_LinearRepeat;
+		m_Context->m_RenderResolution    = VkExtent2D(g_DisplayWidth, g_DisplayHeight);
+
+		m_RuntimeContext = new SRuntimeContext();
+		m_RuntimeContext->m_VulkanInstance      = m_VulkanInstance;
+		m_RuntimeContext->m_PhysicalDevice      = m_PhysicalDevice;
+		m_RuntimeContext->m_VulkanDevice        = m_VulkanDevice;
+		m_RuntimeContext->m_CommandPool         = m_CommandPool;
+		m_RuntimeContext->m_GraphicsQueue       = m_GraphicsQueue;
+		m_RuntimeContext->m_LinearClampSampler  = m_LinearClamp;
+		m_RuntimeContext->m_LinearRepeatSampler = m_LinearRepeat;
+		m_RuntimeContext->m_RenderResolution    = m_Context->m_RenderResolution;
 	}
 
 	void CVulkanGraphicsEngine::CreateModels()
@@ -853,12 +863,12 @@ namespace NVulkanEngine
 			{
 				CTexture* modelTexture = new CTexture();
 				modelTexture->SetGenerateMipmaps(false);
-				modelTexture->CreateTexture(m_Context, model->GetModelTexturePath(), VK_FORMAT_R8G8B8A8_SRGB);
+				modelTexture->CreateTexture(m_RuntimeContext, model->GetModelTexturePath(), VK_FORMAT_R8G8B8A8_SRGB);
 
 				model->SetModelTexture(modelTexture);
 			}
 
-			model->CreateModelMeshes(m_Context);
+			model->CreateModelMeshes(m_RuntimeContext);
 
 			sceneBounds.extend(model->GetAABB());
 		}
@@ -897,18 +907,12 @@ namespace NVulkanEngine
 		{
 			CDrawNode* drawNode = m_DrawNodes[i];
 			if (drawNode)
-				drawNode->Init(m_Context, &managers);
+				drawNode->Init(m_RuntimeContext, &managers);
 		}
 	}
 
 	void CVulkanGraphicsEngine::RecordDrawNodes(VkCommandBuffer commandBuffer)
 	{
-		SGraphicsContext context{};
-		context.m_VulkanInstance      = m_VulkanInstance;
-		context.m_VulkanDevice        = m_VulkanDevice;
-		context.m_RenderResolution    = VkExtent2D(g_DisplayWidth, g_DisplayHeight);
-		context.m_FrameIndex          = m_FrameIndex;
-	
 		SGraphicsManagers managers{};
 		managers.m_InputManager      = m_InputManager;
 		managers.m_Modelmanager      = m_ModelManager;
@@ -921,14 +925,14 @@ namespace NVulkanEngine
 			if (drawNode)
 			{
 				drawNode->UpdateBeforeDraw(m_VulkanDevice, &managers);
-				drawNode->Draw(m_Context, &managers, commandBuffer);
+				drawNode->Draw(m_RuntimeContext, &managers, commandBuffer);
 			}
 		}
 
 		// Debug rendering happens after main rendering
-		m_DebugManager->Update(m_Context);
+		m_DebugManager->Update(m_RuntimeContext);
 		m_DrawNodes[(uint32_t)EDrawNodes::Debug]->UpdateBeforeDraw(m_VulkanDevice, &managers);
-		m_DrawNodes[(uint32_t)EDrawNodes::Debug]->Draw(m_Context, &managers, commandBuffer);
+		m_DrawNodes[(uint32_t)EDrawNodes::Debug]->Draw(m_RuntimeContext, &managers, commandBuffer);
 	}
 
 	void CVulkanGraphicsEngine::DoImGuiViewport()
@@ -950,7 +954,7 @@ namespace NVulkanEngine
 
 		const glm::vec3 cameraPosition = m_InputManager->GetCamera()->GetPosition();
 		const glm::vec3 cameraDirection = m_InputManager->GetCamera()->GetDirection();
-		const float deltatTime = m_Context->GetDeltaTime();
+		const float deltatTime = m_Context->m_DeltaTime;
 		const float framerate = 1.0f / deltatTime;
 
 		const std::string cameraPositionStr = std::format("[ Camera Position (X: {:5.0f}, Y: {:5.0f}, Z: {:5.0f}), ", cameraPosition.x, cameraPosition.y, cameraPosition.z);
@@ -1043,7 +1047,7 @@ namespace NVulkanEngine
 
 		VkRenderingInfo renderInfo{};
 		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-		renderInfo.renderArea.extent = m_Context->GetRenderResolution();
+		renderInfo.renderArea.extent = m_Context->m_RenderResolution;
 		renderInfo.renderArea.offset = { 0, 0 };
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfos.size());
@@ -1167,8 +1171,10 @@ namespace NVulkanEngine
 		float deltatIme = std::chrono::duration<float, std::chrono::seconds::period>(newTime - s_LastTime).count();
 		s_LastTime = newTime;
 
-		m_Context->SetDeltaTime(deltatIme);
-		m_Context->SetSwapchainImageIndex(imageIndex);
+		m_Context->m_DeltaTime = deltatIme;
+		m_RuntimeContext->m_DeltaTime = deltatIme;
+		m_Context->m_SwapchainImageIndex = imageIndex;
+		m_RuntimeContext->m_SwapchainImageIndex = imageIndex;
 
 		// Update camera matrix based on user input
 		m_InputManager->UpdateCameraTransforms(m_Context, deltatIme);
@@ -1188,7 +1194,7 @@ namespace NVulkanEngine
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
-		SetViewportScissor(m_CommandBuffers[m_FrameIndex], m_Context->GetRenderResolution());
+		SetViewportScissor(m_CommandBuffers[m_FrameIndex], m_Context->m_RenderResolution);
 
 		// Start the Dear ImGui frame
 		ImGui_ImplVulkan_NewFrame();
@@ -1243,7 +1249,8 @@ namespace NVulkanEngine
 		m_Swapchain->Present(m_Context, signalSemaphores, imageIndex);
 
 		m_FrameIndex = (m_FrameIndex + 1) % g_MaxFramesInFlight;
-		m_Context->SetFrameIndex(m_FrameIndex);
+		m_Context->m_FrameIndex = m_FrameIndex;
+		m_RuntimeContext->m_FrameIndex = m_FrameIndex;
 
 	}
 };

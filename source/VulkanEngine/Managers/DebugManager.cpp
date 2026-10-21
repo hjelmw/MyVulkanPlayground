@@ -129,7 +129,7 @@ namespace NVulkanEngine
 		return (uint32_t)m_DebugVertexLinesRenderList.size();
 	}
 
-	void CDebugManager::Update(CGraphicsContext* context)
+	void CDebugManager::Update(SRuntimeContext* context)
 	{
 		if (m_DebugVertexLinesAddList.empty())
 			return;
@@ -142,7 +142,7 @@ namespace NVulkanEngine
 		uint32_t currentVertexBufferSize = 0;
 		if (m_DebugVertexBuffer)
 		{
-			vkGetBufferMemoryRequirements(context->GetLogicalDevice(), m_DebugVertexBuffer, &memoryRequirements);
+			vkGetBufferMemoryRequirements(context->m_VulkanDevice, m_DebugVertexBuffer, &memoryRequirements);
 			currentVertexBufferSize = (uint32_t)memoryRequirements.size;
 		}
 
@@ -150,10 +150,10 @@ namespace NVulkanEngine
 
 		if (neededVertexBufferSize > currentVertexBufferSize)
 		{
-			vkDestroyBuffer(context->GetLogicalDevice(), m_StagingVertexBuffer,       nullptr);
-			vkDestroyBuffer(context->GetLogicalDevice(), m_DebugVertexBuffer,         nullptr);
-			vkFreeMemory(context->GetLogicalDevice(),    m_StagingVertexBufferMemory, nullptr);
-			vkFreeMemory(context->GetLogicalDevice(),    m_DebugVertexBufferMemory,   nullptr);
+			vkDestroyBuffer(context->m_VulkanDevice, m_StagingVertexBuffer,       nullptr);
+			vkDestroyBuffer(context->m_VulkanDevice, m_DebugVertexBuffer,         nullptr);
+			vkFreeMemory(context->m_VulkanDevice,    m_StagingVertexBufferMemory, nullptr);
+			vkFreeMemory(context->m_VulkanDevice,    m_DebugVertexBufferMemory,   nullptr);
 
 			m_StagingVertexBuffer = CreateBuffer(
 				context,
@@ -174,9 +174,9 @@ namespace NVulkanEngine
 		m_DebugVertexLinesRenderList = m_DebugVertexLinesAddList;
 
 		void* data;
-		vkMapMemory(context->GetLogicalDevice(), m_StagingVertexBufferMemory, 0, neededVertexBufferSize, 0, &data);
+		vkMapMemory(context->m_VulkanDevice, m_StagingVertexBufferMemory, 0, neededVertexBufferSize, 0, &data);
 		memcpy(data, m_DebugVertexLinesRenderList.data(), (size_t)neededVertexBufferSize);
-		vkUnmapMemory(context->GetLogicalDevice(), m_StagingVertexBufferMemory);
+		vkUnmapMemory(context->m_VulkanDevice, m_StagingVertexBufferMemory);
 
 		CopyBuffer(context, m_StagingVertexBuffer, m_DebugVertexBuffer, neededVertexBufferSize);
 
@@ -184,12 +184,12 @@ namespace NVulkanEngine
 		
 	}
 
-	void CDebugManager::Cleanup(CGraphicsContext* context)
+	void CDebugManager::Cleanup(SRuntimeContext* context)
 	{
-		vkDestroyBuffer(context->GetLogicalDevice(), m_StagingVertexBuffer,       nullptr);
-		vkDestroyBuffer(context->GetLogicalDevice(), m_DebugVertexBuffer,         nullptr);
-		vkFreeMemory(context->GetLogicalDevice(),    m_StagingVertexBufferMemory, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(),    m_DebugVertexBufferMemory,   nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_StagingVertexBuffer,       nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_DebugVertexBuffer,         nullptr);
+		vkFreeMemory(context->m_VulkanDevice,    m_StagingVertexBufferMemory, nullptr);
+		vkFreeMemory(context->m_VulkanDevice,    m_DebugVertexBufferMemory,   nullptr);
 
 
 		m_DebugVertexLinesAddList.clear();

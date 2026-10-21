@@ -11,7 +11,7 @@ namespace NVulkanEngine
 	}
 
 	SRenderResource CResourceManager::AddRenderResource(
-		CGraphicsContext*     context,
+		SRuntimeContext*     context,
 		const std::string     debugName,
 		EResourceIndices    attachmentIndex,
 		VkSampler             sampler,
@@ -49,7 +49,7 @@ namespace NVulkanEngine
 			nameInfo.objectType   = VK_OBJECT_TYPE_IMAGE;
 			nameInfo.objectHandle = (uint64_t)renderResource.m_Image;
 			nameInfo.pObjectName  = renderResource.m_DebugName;
-			m_VkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			m_VkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 		}
 
 		m_RenderResources[(uint32_t)attachmentIndex] = renderResource;
@@ -57,7 +57,7 @@ namespace NVulkanEngine
 	}
 
 	SUniformBufferResource CResourceManager::AddUniformBuffer(
-		CGraphicsContext*  context, 
+		SRuntimeContext*  context, 
 		const std::string& debugName,
 		EBufferIndices     uniformBufferIndex,
 		VkDeviceSize       uniformBufferSize)
@@ -119,13 +119,13 @@ namespace NVulkanEngine
 	}
 
 
-	void CResourceManager::Cleanup(CGraphicsContext* context)
+	void CResourceManager::Cleanup(SRuntimeContext* context)
 	{
 		for (uint32_t i = 0; i < m_RenderResources.size(); i++)
 		{
-			vkDestroyImageView(context->GetLogicalDevice(), m_RenderResources[i].m_ImageView, nullptr);
-			vkDestroyImage(context->GetLogicalDevice(), m_RenderResources[i].m_Image, nullptr);
-			vkFreeMemory(context->GetLogicalDevice(), m_RenderResources[i].m_Memory, nullptr);
+			vkDestroyImageView(context->m_VulkanDevice, m_RenderResources[i].m_ImageView, nullptr);
+			vkDestroyImage(context->m_VulkanDevice, m_RenderResources[i].m_Image, nullptr);
+			vkFreeMemory(context->m_VulkanDevice, m_RenderResources[i].m_Memory, nullptr);
 
 			ImGui_ImplVulkan_RemoveTexture(m_RenderResources[i].m_ImguiDescriptor);
 			m_RenderResources[i] = {};			 

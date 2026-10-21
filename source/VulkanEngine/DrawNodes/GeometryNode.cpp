@@ -11,7 +11,7 @@ namespace NVulkanEngine
 		glm::mat4 m_ProjectionMat = glm::identity<glm::mat4>();
 	};
 
-	void CGeometryNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CGeometryNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
@@ -66,7 +66,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CGeometryNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CGeometryNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		CResourceManager* resourceManager = managers->m_ResourceManager;
 
@@ -103,7 +103,7 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CGeometryNode::Cleanup(CGraphicsContext* context)
+	void CGeometryNode::Cleanup(SRuntimeContext* context)
 	{
 		m_GeometryPipeline->Cleanup(context);
 	}

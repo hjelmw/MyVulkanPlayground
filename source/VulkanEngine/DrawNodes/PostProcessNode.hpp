@@ -17,9 +17,9 @@ namespace NVulkanEngine
 		CPostProcessNode() = default;
 		~CPostProcessNode() = default;
 
-		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers) override;
-		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
-		virtual void Cleanup(CGraphicsContext* context) override;
+		virtual void Init(SRuntimeContext* context, SGraphicsManagers* managers) override;
+		virtual void Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
+		virtual void Cleanup(SRuntimeContext* context) override;
 
 	private:
 		// Must match local_size_x/y in postprocess.comp

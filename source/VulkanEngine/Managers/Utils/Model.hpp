@@ -86,7 +86,7 @@ namespace NVulkanEngine
 		~CModel() = default;
 
 		// Loads the model and creates meshes. Initializes vertex and index buffers and assigns materials for them
-		void               CreateModelMeshes(CGraphicsContext* context);
+		void               CreateModelMeshes(SRuntimeContext* context);
 		void               SetModelFilepath(const std::string& modelFilepath, const std::string materialSearchPath);
 		void               SetModelTexturePath(const std::string& modeTexturePath);
 
@@ -110,12 +110,12 @@ namespace NVulkanEngine
 		CTexture*          GetModelTexture();
 		void               SetModelTexture(CTexture* texture);
 
-		void               CreateGeometryBindingTable(CGraphicsContext* context);
-		void               CreateShadowBindingTable(CGraphicsContext* context);
+		void               CreateGeometryBindingTable(SRuntimeContext* context);
+		void               CreateShadowBindingTable(SRuntimeContext* context);
 
 		// Creates the geometry and shadow UBOs. Fetch with functions just below this
-		void               CreateGeometryMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size);
-		void               CreateShadowMemoryBuffer(CGraphicsContext* context, const VkDeviceSize size);
+		void               CreateGeometryMemoryBuffer(SRuntimeContext* context, const VkDeviceSize size);
+		void               CreateShadowMemoryBuffer(SRuntimeContext* context, const VkDeviceSize size);
 
 		SUniformMemoryBuffer GetGeometryMemoryBuffer();
 		SUniformMemoryBuffer GetShadowMemoryBuffer();
@@ -132,11 +132,11 @@ namespace NVulkanEngine
 
 		// Bind vertex and index buffers for a mesh
 		void               BindVertexAndIndexBuffers(VkCommandBuffer commandBuffer);
-		void               BindGeometryTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
-		void               BindShadowTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		void               BindGeometryTable(SRuntimeContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+		void               BindShadowTable(SRuntimeContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
 
 		// Cleanup model and meshes
-		void               Cleanup(CGraphicsContext* context);
+		void               Cleanup(SRuntimeContext* context);
 	private:
 		std::string            m_ModelFilepath      = "Uninitialized";
 		std::string            m_MaterialFilepath   = "Uninitialized";
@@ -179,8 +179,8 @@ namespace NVulkanEngine
 
 		// Load a model .obj file using relative path
 		bool LoadModel(const std::string modelFilepath, const std::string materialSearchPath);
-		void CreateVertexBuffer(CGraphicsContext* context);
-		void CreateIndexBuffer(CGraphicsContext* context);
+		void CreateVertexBuffer(SRuntimeContext* context);
+		void CreateIndexBuffer(SRuntimeContext* context);
 
 		// Generate a normal vector given 3 points (vertices)
 		glm::vec3 GenerateNormal(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2);

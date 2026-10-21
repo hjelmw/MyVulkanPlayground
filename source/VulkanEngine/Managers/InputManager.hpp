@@ -18,7 +18,7 @@ namespace NVulkanEngine
 		~CInputManager() = default;
 
 		// Should be called once per frame to update camera based on user input
-		void UpdateCameraTransforms(CGraphicsContext* context, float deltaTime);
+		void UpdateCameraTransforms(SInternalContext* context, float deltaTime);
 
 		CCamera* GetCamera();
 

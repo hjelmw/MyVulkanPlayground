@@ -32,7 +32,7 @@ namespace NVulkanEngine
 		glm::mat4 m_ViewProjectionMatrix = glm::identity<glm::mat4>();
 	};
 
-	void CShadowNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CShadowNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
@@ -187,24 +187,21 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CShadowNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CShadowNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		CDebugManager* debugManager = managers->m_DebugManager;
 
 		CResourceManager* resourceManager = managers->m_ResourceManager;
 		SRenderResource shadowmapAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-		VkExtent2D prevRenderResolution = context->GetRenderResolution();
-		context->SetRenderResolution(VkExtent2D(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION));
-
-		BeginRendering("Shadow Map", context, commandBuffer, {shadowmapAttachment});
+		BeginRendering("Shadow Map", context, commandBuffer, {shadowmapAttachment}, VkExtent2D(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION));
 
 		m_ShadowPipeline->BindPipeline(commandBuffer);
 
 		constexpr float drawNodeMarkerColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
-			BeginMarker(context->GetVulkanInstance(), commandBuffer, "Model", drawNodeMarkerColor);
+			BeginMarker(context->m_VulkanInstance, commandBuffer, "Model", drawNodeMarkerColor);
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 
 			model->BindVertexAndIndexBuffers(commandBuffer);
@@ -214,14 +211,14 @@ namespace NVulkanEngine
 				SMaterialMesh modelMesh = model->GetMesh(j);
 				vkCmdDrawIndexed(commandBuffer, modelMesh.m_NumVertices, 1, modelMesh.m_StartIndex, 0, 0);
 			}
-			EndMarker(context->GetVulkanInstance(), commandBuffer);
+			EndMarker(context->m_VulkanInstance, commandBuffer);
 		}
 
 		m_TerrainShadowPipeline->BindPipeline(commandBuffer);
 
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumTerrainModels(); i++)
 		{
-			BeginMarker(context->GetVulkanInstance(), commandBuffer, "Terrain", drawNodeMarkerColor);
+			BeginMarker(context->m_VulkanInstance, commandBuffer, "Terrain", drawNodeMarkerColor);
 			CModel* terrainModel = managers->m_Modelmanager->GetTerrainModel(i);
 
 			terrainModel->BindVertexAndIndexBuffers(commandBuffer);
@@ -233,18 +230,16 @@ namespace NVulkanEngine
 				SMaterialMesh stripMesh = terrainModel->GetMesh(j);
 				vkCmdDrawIndexed(commandBuffer, stripMesh.m_NumVertices, 1, stripMesh.m_StartIndex, 0, 0);
 			}
-			EndMarker(context->GetVulkanInstance(), commandBuffer);
+			EndMarker(context->m_VulkanInstance, commandBuffer);
 		}
 
 		EndRendering(context, commandBuffer);
-
-		context->SetRenderResolution(prevRenderResolution);
 	}
 
-	void CShadowNode::Cleanup(CGraphicsContext* context)
+	void CShadowNode::Cleanup(SRuntimeContext* context)
 	{
-		vkDestroyBuffer(context->GetLogicalDevice(), m_ShadowBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_ShadowBufferMemory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_ShadowBuffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, m_ShadowBufferMemory, nullptr);
 
 		m_ShadowPipeline->Cleanup(context);
 		m_TerrainShadowPipeline->Cleanup(context);

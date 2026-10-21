@@ -15,10 +15,10 @@ namespace NVulkanEngine
 		~CSwapchain() = default;
 
 		// Creates the swapchain
-		void                Create(CGraphicsContext* context);
+		void                Create(SInternalContext* context);
 
 		// Acquires the swapchain image at the provided index
-		VkResult            AcquireSwapchainImageIndex(CGraphicsContext* context, VkSemaphore imageAvailableSemaphore, uint32_t& imageIndex);
+		VkResult            AcquireSwapchainImageIndex(SInternalContext* context, VkSemaphore imageAvailableSemaphore, uint32_t& imageIndex);
 
 		// Gets the current frame swapchain image. Needed for transitions
 		VkImage             GetSwapchainImage(uint32_t imageIndex);
@@ -35,13 +35,13 @@ namespace NVulkanEngine
 		uint32_t            GetMinImageCount() { return m_ImageCount; };
 
 		// Destroys and initializes the swap chain again
-		void                Recreate(CGraphicsContext* context);
+		void                Recreate(SInternalContext* context);
 
 		// Destroy the swapchain
-		void                Cleanup(CGraphicsContext* context);
+		void                Cleanup(SInternalContext* context);
 
 		// Presents the finished rendered swapchain image to the present queue
-		void                Present(CGraphicsContext* context, VkSemaphore* signalSemaphore, uint32_t imageIndex);
+		void                Present(SInternalContext* context, VkSemaphore* signalSemaphore, uint32_t imageIndex);
 
 	private:
 		VkExtent2D         ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities, GLFWwindow* window);

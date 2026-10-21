@@ -6,13 +6,13 @@
 
 namespace NVulkanEngine
 {
-	void CSwapchain::Create(CGraphicsContext* context)
+	void CSwapchain::Create(SInternalContext* context)
 	{
-		CSwapchain::SSwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(context->GetPhysicalDevice(), context->GetVulkanSurface());
+		CSwapchain::SSwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(context->m_PhysicalDevice, context->m_VulkanSurface);
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
 		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
-		VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities, context->GetGLFWWindow());
+		VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities, context->m_GLFWWindow);
 
 		// Request one more image than the minium supported
 		m_ImageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -23,7 +23,7 @@ namespace NVulkanEngine
 
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = context->GetVulkanSurface();
+		createInfo.surface = context->m_VulkanSurface;
 		createInfo.minImageCount = m_ImageCount;
 		createInfo.imageFormat = surfaceFormat.format;
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -31,7 +31,7 @@ namespace NVulkanEngine
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-		SVulkanQueueFamilyIndices indices = FindVulkanQueueFamilies(context->GetPhysicalDevice(), context->GetVulkanSurface());
+		SVulkanQueueFamilyIndices indices = FindVulkanQueueFamilies(context->m_PhysicalDevice, context->m_VulkanSurface);
 		uint32_t queueFamilyIndices[] = { indices.m_GraphicsFamily.value(), indices.m_PresentFamily.value() };
 
 		if (indices.m_GraphicsFamily != indices.m_PresentFamily)
@@ -61,19 +61,19 @@ namespace NVulkanEngine
 		// If we recreate the swapchain, this needs to point to the old one.
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(context->GetLogicalDevice(), &createInfo, nullptr, &m_VulkanSwapchain) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(context->m_VulkanDevice, &createInfo, nullptr, &m_VulkanSwapchain) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create swap chain!");
 		}
 
-		vkGetSwapchainImagesKHR(context->GetLogicalDevice(), m_VulkanSwapchain, &m_ImageCount, nullptr);
+		vkGetSwapchainImagesKHR(context->m_VulkanDevice, m_VulkanSwapchain, &m_ImageCount, nullptr);
 		m_SwapchainImages.resize(m_ImageCount);
-		vkGetSwapchainImagesKHR(context->GetLogicalDevice(), m_VulkanSwapchain, &m_ImageCount, m_SwapchainImages.data());
+		vkGetSwapchainImagesKHR(context->m_VulkanDevice, m_VulkanSwapchain, &m_ImageCount, m_SwapchainImages.data());
 
 		m_SwapchainImageFormat = surfaceFormat.format;
 		m_SwapchainExtent = extent;
 
-		CreateSwapChainImageViews(context->GetLogicalDevice());
+		CreateSwapChainImageViews(context->m_VulkanDevice);
 
 #if defined(_DEBUG)
 		std::cout << "Swapchain succesfully created!\n" << std::endl;
@@ -181,9 +181,9 @@ namespace NVulkanEngine
 		}
 	}
 
-	VkResult CSwapchain::AcquireSwapchainImageIndex(CGraphicsContext* context, VkSemaphore imageAvailableSemaphore, uint32_t& imageIndex)
+	VkResult CSwapchain::AcquireSwapchainImageIndex(SInternalContext* context, VkSemaphore imageAvailableSemaphore, uint32_t& imageIndex)
 	{
-		VkResult result = vkAcquireNextImageKHR(context->GetLogicalDevice(), m_VulkanSwapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(context->m_VulkanDevice, m_VulkanSwapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 		return result;
 	}
 
@@ -197,7 +197,7 @@ namespace NVulkanEngine
 		return m_SwapchainImageViews[imageIndex];
 	}
 	
-	void CSwapchain::Present(CGraphicsContext* context, VkSemaphore* signalSemaphores, uint32_t imageIndex)
+	void CSwapchain::Present(SInternalContext* context, VkSemaphore* signalSemaphores, uint32_t imageIndex)
 	{
 		VkPresentInfoKHR presentInfo{};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -210,7 +210,7 @@ namespace NVulkanEngine
 		presentInfo.pSwapchains = swapchains;
 		presentInfo.pImageIndices = &imageIndex;
 
-		VkResult result = vkQueuePresentKHR(context->GetPresentQueue(), &presentInfo);
+		VkResult result = vkQueuePresentKHR(context->m_PresentQueue, &presentInfo);
 
 		// Window was resized after the image was acquired. Not fatal, the GLFW resize callback recreates the swapchain next frame
 		const bool swapchainOutdated = result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR;
@@ -220,21 +220,21 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CSwapchain::Recreate(CGraphicsContext* context)
+	void CSwapchain::Recreate(SInternalContext* context)
 	{
 		Cleanup(context);
 		Create(context);
 	}
 
-	void CSwapchain::Cleanup(CGraphicsContext* context)
+	void CSwapchain::Cleanup(SInternalContext* context)
 	{
 		for (size_t i = 0; i < m_SwapchainImageViews.size(); i++) 
 		{
-			vkDestroyImageView(context->GetLogicalDevice(), m_SwapchainImageViews[i], nullptr);
+			vkDestroyImageView(context->m_VulkanDevice, m_SwapchainImageViews[i], nullptr);
 		}
 
 		// This also destroy the all of the VkImage(s) stored in m_SwapchainImages
-		vkDestroySwapchainKHR(context->GetLogicalDevice(), m_VulkanSwapchain, nullptr);
+		vkDestroySwapchainKHR(context->m_VulkanDevice, m_VulkanSwapchain, nullptr);
 
 		m_SwapchainImages.clear();
 		m_SwapchainImageViews.clear();

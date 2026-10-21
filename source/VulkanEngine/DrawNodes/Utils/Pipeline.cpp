@@ -89,7 +89,7 @@ namespace NVulkanEngine
 		m_DepthAttachmentFormat = depthFormat;
 	}
 
-	void CPipeline::CreatePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
+	void CPipeline::CreatePipeline(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout)
 	{
 		switch (m_Type)
 		{
@@ -104,7 +104,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CPipeline::CreatePipelineLayout(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
+	void CPipeline::CreatePipelineLayout(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout)
 	{
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -113,20 +113,20 @@ namespace NVulkanEngine
 		pipelineLayoutInfo.pushConstantRangeCount = m_PushConstantsRanges.size != 0 ? 1 : 0; // For now
 		pipelineLayoutInfo.pPushConstantRanges = &m_PushConstantsRanges;
 
-		if (vkCreatePipelineLayout(context->GetLogicalDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(context->m_VulkanDevice, &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 	}
 
-	void CPipeline::CreateGraphicsPipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
+	void CPipeline::CreateGraphicsPipeline(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout)
 	{
 #if defined(_DEBUG)
 		std::cout << "\n --- Creating Graphics pipeline ---" << "\n" << std::endl;
 #endif
 
-		VkShaderModule vertexShaderModule   = CreateShaderModule(context->GetLogicalDevice(), m_VertexShaderPath);
-		VkShaderModule fragmentShaderModule = CreateShaderModule(context->GetLogicalDevice(), m_FragmentShaderPath);
+		VkShaderModule vertexShaderModule   = CreateShaderModule(context->m_VulkanDevice, m_VertexShaderPath);
+		VkShaderModule fragmentShaderModule = CreateShaderModule(context->m_VulkanDevice, m_FragmentShaderPath);
 
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -256,12 +256,12 @@ namespace NVulkanEngine
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateGraphicsPipelines(context->GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(context->m_VulkanDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
-		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->GetVulkanInstance(), "vkSetDebugUtilsObjectNameEXT");
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->m_VulkanInstance, "vkSetDebugUtilsObjectNameEXT");
 		if (vkSetDebugUtilsObjectNameEXT)
 		{
 			// Get the file name
@@ -276,31 +276,31 @@ namespace NVulkanEngine
 			nameInfo.objectType   = VK_OBJECT_TYPE_SHADER_MODULE;
 			nameInfo.objectHandle = (uint64_t)vertexShaderModule;
 			nameInfo.pObjectName  = vertexShaderName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 			nameInfo.objectHandle = (uint64_t)fragmentShaderModule;
 			nameInfo.pObjectName  = fragmentShaderName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 			nameInfo.objectType   = VK_OBJECT_TYPE_PIPELINE;
 			nameInfo.objectHandle = (uint64_t)m_Pipeline;
 			nameInfo.pObjectName  = pipelineName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 			nameInfo.objectType   = VK_OBJECT_TYPE_PIPELINE_LAYOUT;
 			nameInfo.objectHandle = (uint64_t)m_PipelineLayout;
 			nameInfo.pObjectName  = pipelineLayoutName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 		}
 
-		vkDestroyShaderModule(context->GetLogicalDevice(), vertexShaderModule, nullptr);
-		vkDestroyShaderModule(context->GetLogicalDevice(), fragmentShaderModule, nullptr);
+		vkDestroyShaderModule(context->m_VulkanDevice, vertexShaderModule, nullptr);
+		vkDestroyShaderModule(context->m_VulkanDevice, fragmentShaderModule, nullptr);
 	}
 
-	void CPipeline::CreateComputePipeline(CGraphicsContext* context, VkDescriptorSetLayout descriptorSetLayout)
+	void CPipeline::CreateComputePipeline(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout)
 	{
 #if defined(_DEBUG)
 		std::cout << "\n --- Creating Compute pipeline ---" << "\n" << std::endl;
 #endif
 
-		VkShaderModule computeShaderModule = CreateShaderModule(context->GetLogicalDevice(), m_ComputeShaderPath);
+		VkShaderModule computeShaderModule = CreateShaderModule(context->m_VulkanDevice, m_ComputeShaderPath);
 
 		VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
 		computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -316,12 +316,12 @@ namespace NVulkanEngine
 		pipelineInfo.layout = m_PipelineLayout;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateComputePipelines(context->GetLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
+		if (vkCreateComputePipelines(context->m_VulkanDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create compute pipeline!");
 		}
 
-		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->GetVulkanInstance(), "vkSetDebugUtilsObjectNameEXT");
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(context->m_VulkanInstance, "vkSetDebugUtilsObjectNameEXT");
 		if (vkSetDebugUtilsObjectNameEXT)
 		{
 			// Get the file name
@@ -334,18 +334,18 @@ namespace NVulkanEngine
 			nameInfo.objectType   = VK_OBJECT_TYPE_SHADER_MODULE;
 			nameInfo.objectHandle = (uint64_t)computeShaderModule;
 			nameInfo.pObjectName  = computeShaderName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 			nameInfo.objectType   = VK_OBJECT_TYPE_PIPELINE;
 			nameInfo.objectHandle = (uint64_t)m_Pipeline;
 			nameInfo.pObjectName  = pipelineName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 			nameInfo.objectType   = VK_OBJECT_TYPE_PIPELINE_LAYOUT;
 			nameInfo.objectHandle = (uint64_t)m_PipelineLayout;
 			nameInfo.pObjectName  = pipelineLayoutName.c_str();
-			vkSetDebugUtilsObjectNameEXT(context->GetLogicalDevice(), &nameInfo);
+			vkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 		}
 
-		vkDestroyShaderModule(context->GetLogicalDevice(), computeShaderModule, nullptr);
+		vkDestroyShaderModule(context->m_VulkanDevice, computeShaderModule, nullptr);
 	}
 
 	VkPipelineBindPoint CPipeline::GetBindPoint() const
@@ -353,7 +353,7 @@ namespace NVulkanEngine
 		return m_Type == EPipelineType::COMPUTE ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
 	}
 
-	void CPipeline::BindPipeline(CGraphicsContext* context, VkCommandBuffer commandBuffer)
+	void CPipeline::BindPipeline(SRuntimeContext* context, VkCommandBuffer commandBuffer)
 	{
 		vkCmdBindPipeline(commandBuffer, GetBindPoint(), m_Pipeline);
 	}
@@ -368,9 +368,9 @@ namespace NVulkanEngine
 		vkCmdPushConstants(commandBuffer, m_PipelineLayout, m_PushConstantsRanges.stageFlags, m_PushConstantsRanges.offset, m_PushConstantsRanges.size, { data });
 	}
 
-	void CPipeline::Cleanup(CGraphicsContext* context)
+	void CPipeline::Cleanup(SRuntimeContext* context)
 	{
-		vkDestroyPipeline(context->GetLogicalDevice(), m_Pipeline, nullptr);
-		vkDestroyPipelineLayout(context->GetLogicalDevice(), m_PipelineLayout, nullptr);
+		vkDestroyPipeline(context->m_VulkanDevice, m_Pipeline, nullptr);
+		vkDestroyPipelineLayout(context->m_VulkanDevice, m_PipelineLayout, nullptr);
 	}
 }

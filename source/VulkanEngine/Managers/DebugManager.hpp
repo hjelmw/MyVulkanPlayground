@@ -32,8 +32,8 @@ namespace NVulkanEngine
 		VkBuffer GetDebugLinesVertexBuffer();
 		const uint32_t GetNumDebugLines();
 
-		void Update(CGraphicsContext* context);
-		void Cleanup(CGraphicsContext* context);
+		void Update(SRuntimeContext* context);
+		void Cleanup(SRuntimeContext* context);
 	private:
 		std::vector<SDebugVertexLine> m_DebugVertexLinesAddList    = {};
 		std::vector<SDebugVertexLine> m_DebugVertexLinesRenderList = {};

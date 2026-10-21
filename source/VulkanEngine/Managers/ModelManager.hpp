@@ -35,12 +35,12 @@ namespace NVulkanEngine
 		CModel* GetTerrainModel(uint32_t index);
 
 		CModel* RegisterTerrainModel(VkBuffer& terrainVertexBuffer, VkBuffer& terrainIndexBuffer, uint32_t& numTerrainVertices, uint32_t& numTerrainIndices);
-		void    UnregisterTerrainModel(CGraphicsContext* context, CModel* terrainModel);
+		void    UnregisterTerrainModel(SRuntimeContext* context, CModel* terrainModel);
 
 		void SetSceneBounds(glm::AABB sceneBounds);
 		glm::AABB GetSceneBounds();
 
-		void Cleanup(CGraphicsContext* context);
+		void Cleanup(SRuntimeContext* context);
 	private:
 		std::vector<CModel*> m_Models{};
 		std::vector<CModel*> m_TerrainModels{};

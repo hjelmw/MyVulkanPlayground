@@ -26,7 +26,7 @@ namespace NVulkanEngine
 		m_VertexInputAttributes.push_back(attributeDescription);
 	}
 
-	void CBindingTable::AllocateDescriptorPool(CGraphicsContext* context)
+	void CBindingTable::AllocateDescriptorPool(SRuntimeContext* context)
 	{
 		uint32_t numDescriptorSets    = (uint32_t) m_DescriptorInfos.size() * g_MaxFramesInFlight;
 
@@ -49,7 +49,7 @@ namespace NVulkanEngine
 		poolInfo.pPoolSizes    = poolSizes.data();
 		poolInfo.maxSets       = numDescriptorSets;
 
-		VkResult result = vkCreateDescriptorPool(context->GetLogicalDevice(), &poolInfo, nullptr, &m_DescriptorPool);
+		VkResult result = vkCreateDescriptorPool(context->m_VulkanDevice, &poolInfo, nullptr, &m_DescriptorPool);
 
 		if (result != VK_SUCCESS)
 		{
@@ -58,14 +58,14 @@ namespace NVulkanEngine
 	}
 
 
-	void CBindingTable::AllocateDescriptorSetLayout(CGraphicsContext* context)
+	void CBindingTable::AllocateDescriptorSetLayout(SRuntimeContext* context)
 	{
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = static_cast<uint32_t>(m_DescriptorSetLayoutBindings.size());
 		layoutInfo.pBindings = m_DescriptorSetLayoutBindings.data();
 
-		VkResult result = vkCreateDescriptorSetLayout(context->GetLogicalDevice(), &layoutInfo, nullptr, &m_DescriptorSetLayout);
+		VkResult result = vkCreateDescriptorSetLayout(context->m_VulkanDevice, &layoutInfo, nullptr, &m_DescriptorSetLayout);
 
 		if (result != VK_SUCCESS)
 		{
@@ -73,7 +73,7 @@ namespace NVulkanEngine
 		}
 	}
 
-	void CBindingTable::AllocateDescriptorSets(CGraphicsContext* context)
+	void CBindingTable::AllocateDescriptorSets(SRuntimeContext* context)
 	{
 		std::vector<VkDescriptorSetLayout> descritporSetLayouts(g_MaxFramesInFlight, m_DescriptorSetLayout);
 
@@ -86,7 +86,7 @@ namespace NVulkanEngine
 
 		m_DescriptorSets.resize(g_MaxFramesInFlight);
 
-		VkResult result = vkAllocateDescriptorSets(context->GetLogicalDevice(), &allocInfo, m_DescriptorSets.data());
+		VkResult result = vkAllocateDescriptorSets(context->m_VulkanDevice, &allocInfo, m_DescriptorSets.data());
 
 		if (result != VK_SUCCESS)
 		{
@@ -150,7 +150,7 @@ namespace NVulkanEngine
 		m_NumBufferDescriptors++;
 	}
 
-	void CBindingTable::CreateBindings(CGraphicsContext* context)
+	void CBindingTable::CreateBindings(SRuntimeContext* context)
 	{
 		AllocateDescriptorPool(context);
 		AllocateDescriptorSetLayout(context);
@@ -189,19 +189,19 @@ namespace NVulkanEngine
 				}
 			}
 
-			vkUpdateDescriptorSets(context->GetLogicalDevice(), static_cast<uint32_t>(writeDescriptors.size()), writeDescriptors.data(), 0, nullptr);
+			vkUpdateDescriptorSets(context->m_VulkanDevice, static_cast<uint32_t>(writeDescriptors.size()), writeDescriptors.data(), 0, nullptr);
 		}
 	}
 
-	void CBindingTable::BindTable(CGraphicsContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkPipelineBindPoint bindPoint)
+	void CBindingTable::BindTable(SRuntimeContext* context, VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkPipelineBindPoint bindPoint)
 	{
-		vkCmdBindDescriptorSets(commandBuffer, bindPoint, pipelineLayout, 0, 1, &m_DescriptorSets[context->GetFrameIndex()], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, bindPoint, pipelineLayout, 0, 1, &m_DescriptorSets[context->m_FrameIndex], 0, nullptr);
 	}
 
-	void CBindingTable::Cleanup(CGraphicsContext* context)
+	void CBindingTable::Cleanup(SRuntimeContext* context)
 	{
-		vkDestroyDescriptorPool(context->GetLogicalDevice(), m_DescriptorPool, nullptr);
-		vkDestroyDescriptorSetLayout(context->GetLogicalDevice(), m_DescriptorSetLayout, nullptr);
+		vkDestroyDescriptorPool(context->m_VulkanDevice, m_DescriptorPool, nullptr);
+		vkDestroyDescriptorSetLayout(context->m_VulkanDevice, m_DescriptorSetLayout, nullptr);
 
 		m_DescriptorSets.clear();
 		m_DescriptorInfos.clear();

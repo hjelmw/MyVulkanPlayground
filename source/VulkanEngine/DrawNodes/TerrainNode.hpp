@@ -17,14 +17,14 @@ namespace NVulkanEngine
 		CTerrainNode() = default;
 		~CTerrainNode() = default;
 
-		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers)  override;
-		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
-		virtual void Cleanup(CGraphicsContext* context) override;
+		virtual void Init(SRuntimeContext* context, SGraphicsManagers* managers)  override;
+		virtual void Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
+		virtual void Cleanup(SRuntimeContext* context) override;
 
 		static size_t GetVertexStride();
 
 	private:
-		void CreateTerrainVertices(CGraphicsContext* context);
+		void CreateTerrainVertices(SRuntimeContext* context);
 
 		VkBuffer        m_TerrainUniformBuffer = VK_NULL_HANDLE;
 		VkDeviceMemory  m_TerrainUniformBufferMemory  = VK_NULL_HANDLE;

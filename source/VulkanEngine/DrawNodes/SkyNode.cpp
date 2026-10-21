@@ -67,7 +67,7 @@ namespace NVulkanEngine
 		glm::vec2     m_Pad0                  = glm::vec2(0xdeadbeef, 0xdeadbeef);
 	};
 
-	void CSkyNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CSkyNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		const SRenderResource atmosphericsAttachment  = managers->m_ResourceManager->GetRenderResource(EResourceIndices::AtmosphericsSkyBox);
 		const SRenderResource depthAttachment         = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth);
@@ -75,7 +75,7 @@ namespace NVulkanEngine
 		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentConstants));
 
 		m_AtmosphericsTable = new CBindingTable();
-		m_AtmosphericsTable->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView, depthAttachment.m_Format, context->GetLinearClampSampler());
+		m_AtmosphericsTable->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView, depthAttachment.m_Format, context->m_LinearClampSampler);
 		m_AtmosphericsTable->AddUniformBufferBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_AtmosphericsUniformBuffer, sizeof(SAtmosphericsFragmentConstants));
 		m_AtmosphericsTable->CreateBindings(context);
 
@@ -127,7 +127,7 @@ namespace NVulkanEngine
 		vkUnmapMemory(logicalDevice, m_AtmosphericsBufferMemory);
 	}
 
-	void CSkyNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CSkyNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		ImGui::Begin("Atmospherics");
 		ImGui::SliderFloat("Atmosphere Radius", &g_AtmosphereScale, 0.0f, 1.0f);
@@ -164,9 +164,9 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CSkyNode::Cleanup(CGraphicsContext* context)
+	void CSkyNode::Cleanup(SRuntimeContext* context)
 	{
-		VkDevice device = context->GetLogicalDevice();
+		VkDevice device = context->m_VulkanDevice;
 
 		vkDestroyBuffer(device, m_AtmosphericsUniformBuffer, nullptr);
 		vkFreeMemory(device, m_AtmosphericsBufferMemory, nullptr);

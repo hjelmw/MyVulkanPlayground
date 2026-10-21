@@ -28,14 +28,6 @@ namespace NVulkanEngine
 		Count
 	};
 
-	struct SGraphicsContext
-	{
-		VkInstance        m_VulkanInstance      = VK_NULL_HANDLE;
-		VkDevice          m_VulkanDevice        = VK_NULL_HANDLE;
-		VkExtent2D        m_RenderResolution    = { 0,0 };
-		uint32_t          m_FrameIndex          = 0;
-	};
-
 	struct SGraphicsManagers
 	{
 		CInputManager*      m_InputManager      = nullptr;
@@ -48,14 +40,14 @@ namespace NVulkanEngine
 	class CDrawNode
 	{
 	public:
-		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers);
+		virtual void Init(SRuntimeContext* context, SGraphicsManagers* managers);
 		virtual void UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers);
-		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer);
-		virtual void Cleanup(CGraphicsContext* context);
+		virtual void Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer);
+		virtual void Cleanup(SRuntimeContext* context);
 
 	protected:
 		void GenerateMipmaps(
-			CGraphicsContext* context, 
+			SRuntimeContext* context, 
 			VkImage           image, 
 			VkFormat          imageFormat, 
 			int32_t           texWidth, 
@@ -65,10 +57,11 @@ namespace NVulkanEngine
 		// Begin rendering with attachments
 		void BeginRendering(
 			const std::string              markerName,
-			CGraphicsContext*              context,
+			SRuntimeContext*              context,
 			VkCommandBuffer                commandBuffer,
-			std::vector<SRenderResource> attachmentInfos);
+			std::vector<SRenderResource> attachmentInfos,
+			VkExtent2D                   renderExtentOverride = { 0, 0 }); // Defaults to the context render resolution
 
-		void EndRendering(CGraphicsContext* context, VkCommandBuffer commandBuffer);
+		void EndRendering(SRuntimeContext* context, VkCommandBuffer commandBuffer);
 	};
 };

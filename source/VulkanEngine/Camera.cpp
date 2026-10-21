@@ -63,7 +63,7 @@ namespace NVulkanEngine
 		return m_ProjectionMatrix;
 	}
 
-	void CCamera::UpdateCamera(CGraphicsContext* context)
+	void CCamera::UpdateCamera(VkExtent2D renderResolution)
 	{
 		m_LookAtMatrix = glm::lookAt(
 			m_PlanetCameraPosition,                     // Camera world pos
@@ -73,7 +73,7 @@ namespace NVulkanEngine
 
 		m_ProjectionMatrix = glm::perspective(
 			glm::radians(90.0f),
-			(float)context->GetRenderResolution().width / (float)context->GetRenderResolution().height,
+			(float)renderResolution.width / (float)renderResolution.height,
 			m_Near,
 			m_Far
 		);

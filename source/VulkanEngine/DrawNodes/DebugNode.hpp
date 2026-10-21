@@ -19,10 +19,10 @@ namespace NVulkanEngine
 		CDebugNode() = default;
 		~CDebugNode() = default;
 
-		virtual void Init(CGraphicsContext* context, SGraphicsManagers* managers)  override;
+		virtual void Init(SRuntimeContext* context, SGraphicsManagers* managers)  override;
 		virtual void UpdateBeforeDraw(VkDevice logicalDevice, SGraphicsManagers* managers) override;
-		virtual void Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
-		virtual void Cleanup(CGraphicsContext* context) override;
+		virtual void Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer) override;
+		virtual void Cleanup(SRuntimeContext* context) override;
 
 	private:
 

@@ -3,6 +3,8 @@
 #include "Utils/BindingTable.hpp"
 #include <VulkanGraphicsEngineUtils.hpp>
 
+
+
 #include <imgui.h>
 
 static float g_TerrainScale = 64.0f;
@@ -32,7 +34,7 @@ namespace NVulkanEngine
 		return sizeof(STerrainVertex);
 	}
 
-	void CTerrainNode::CreateTerrainVertices(CGraphicsContext* context)
+	void CTerrainNode::CreateTerrainVertices(SRuntimeContext* context)
 	{
 		int textureChannels = 0;
 		stbi_uc* pixelData = stbi_load("./assets/terrain/iceland_heightmap.png", &m_TerrainTextureWidth, &m_TerrainTextureHeight, &textureChannels, STBI_rgb_alpha);
@@ -117,7 +119,7 @@ namespace NVulkanEngine
 		);
 	}
 
-	void CTerrainNode::Init(CGraphicsContext* context, SGraphicsManagers* managers)
+	void CTerrainNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		CreateTerrainVertices(context);
 
@@ -179,7 +181,7 @@ namespace NVulkanEngine
 		m_TerrainPipeline->CreatePipeline(context, m_TerrainTable->GetDescriptorSetLayout());
 	}
 
-	void CTerrainNode::Draw(CGraphicsContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
+	void CTerrainNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		ImGui::Begin("Terrain Node");
 		ImGui::SliderFloat("Terrain Scale", &g_TerrainScale, 1.0f, 128.0f);
@@ -222,7 +224,7 @@ namespace NVulkanEngine
 		EndRendering(context, commandBuffer);
 	}
 
-	void CTerrainNode::Cleanup(CGraphicsContext* context)
+	void CTerrainNode::Cleanup(SRuntimeContext* context)
 	{
 		// Draw nodes are recreated on resize, so don't leave a terrain model with destroyed buffers behind
 		if (m_TerrainModel)
@@ -231,14 +233,14 @@ namespace NVulkanEngine
 			m_TerrainModel = nullptr;
 		}
 
-		vkDestroyBuffer(context->GetLogicalDevice(), m_TerrainVertexBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_TerrainVertexBufferMemory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_TerrainVertexBuffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, m_TerrainVertexBufferMemory, nullptr);
 
-		vkDestroyBuffer(context->GetLogicalDevice(), m_TerrainIndexBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_TerrainIndexBufferMemory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_TerrainIndexBuffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, m_TerrainIndexBufferMemory, nullptr);
 
-		vkDestroyBuffer(context->GetLogicalDevice(), m_TerrainUniformBuffer, nullptr);
-		vkFreeMemory(context->GetLogicalDevice(), m_TerrainUniformBufferMemory, nullptr);
+		vkDestroyBuffer(context->m_VulkanDevice, m_TerrainUniformBuffer, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, m_TerrainUniformBufferMemory, nullptr);
 
 		m_TerrainTable->Cleanup(context);
 		m_TerrainPipeline->Cleanup(context);

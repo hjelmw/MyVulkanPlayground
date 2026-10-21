@@ -38,7 +38,7 @@ namespace NVulkanEngine
 		void AddIntensity(float);
 		void PushLight();
 
-		void Cleanup(CGraphicsContext* context);
+		void Cleanup(SRuntimeContext* context);
 
 		SLightSource GetSunlight() { return m_Sunlight; };
 		SLightSource GetLightSource(uint32_t index) { return m_Lights[index]; };
