@@ -64,20 +64,20 @@ namespace NVulkanEngine
 		template<class TRenderResource>
 		void Read(VkImageLayout layout)
 		{
-			m_ResourceUses.push_back({ ResourceId<TRenderResource>(), EResourceAccess::Read, layout });
+			m_ResourceUses.push_back({ CResourceManager::GetResourceId<TRenderResource>(), EResourceAccess::Read, layout });
 		}
 
 		template<class TRenderResource>
 		void Write(VkImageLayout layout)
 		{
-			m_ResourceUses.push_back({ ResourceId<TRenderResource>(), EResourceAccess::Write, layout });
+			m_ResourceUses.push_back({ CResourceManager::GetResourceId<TRenderResource>(), EResourceAccess::Write, layout });
 		}
 
 		
 		template<class TRenderResource>
 		void ReadWrite(VkImageLayout layout)
 		{
-			m_ResourceUses.push_back({ ResourceId<TRenderResource>(), EResourceAccess::ReadWrite, layout });
+			m_ResourceUses.push_back({ CResourceManager::GetResourceId<TRenderResource>(), EResourceAccess::ReadWrite, layout });
 		}
 
 		const std::vector<SResourceUse>& GetResourceUses() const { return m_ResourceUses; }

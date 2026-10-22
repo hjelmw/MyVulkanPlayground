@@ -15,11 +15,10 @@
 #include <Swapchain.hpp>
 
 #include <Managers/LightManager.hpp> // Need ELightType in header
-#include <Managers/DebugManager.hpp>
-
 
 class CModelManager;
 class CInputManager;
+class CDebugManager;
 class CDrawNode;
 
 /*
