@@ -48,7 +48,7 @@ namespace NVulkanEngine
 			terrainModel->CreateShadowBindingTable(context);
 		}
 
-		VkFormat shadowMapFormat = managers->m_ResourceManager->GetRenderResource(EResourceIndices::ShadowMap).m_Format;
+		VkFormat shadowMapFormat = managers->m_ResourceManager->Get<NRenderResources::SSunShadowMap>().m_Format;
 
 		// Just get any descriptor set layout since they are the same for all the models atm
 		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();
@@ -192,7 +192,7 @@ namespace NVulkanEngine
 		CDebugManager* debugManager = managers->m_DebugManager;
 
 		CResourceManager* resourceManager = managers->m_ResourceManager;
-		SRenderResource shadowmapAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::ShadowMap, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		SRenderResource shadowmapAttachment = resourceManager->TransitionResource<NRenderResources::SSunShadowMap>(commandBuffer, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 		BeginRendering("Shadow Map", context, commandBuffer, {shadowmapAttachment}, VkExtent2D(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION));
 

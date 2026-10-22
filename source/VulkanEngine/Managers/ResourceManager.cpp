@@ -11,9 +11,9 @@ namespace NVulkanEngine
 	}
 
 	SRenderResource CResourceManager::AddRenderResource(
-		SRuntimeContext*     context,
+		SRuntimeContext*      context,
+		uint32_t              resourceId,
 		const std::string     debugName,
-		EResourceIndices    attachmentIndex,
 		VkSampler             sampler,
 		VkShaderStageFlagBits shaderStageUsageFlags,
 		VkFormat              format,
@@ -52,7 +52,10 @@ namespace NVulkanEngine
 			m_VkSetDebugUtilsObjectNameEXT(context->m_VulkanDevice, &nameInfo);
 		}
 
-		m_RenderResources[(uint32_t)attachmentIndex] = renderResource;
+		if (resourceId >= m_RenderResources.size())
+			m_RenderResources.resize(resourceId + 1);
+
+		m_RenderResources[resourceId] = renderResource;
 		return renderResource;
 	}
 
@@ -82,19 +85,15 @@ namespace NVulkanEngine
 		return uniformBufferResource;
 	}
 
-	const SRenderResource CResourceManager::GetRenderResource(const EResourceIndices index)
+	const SRenderResource& CResourceManager::GetRenderResource(const uint32_t resourceId) const
 	{
-		return m_RenderResources[(uint32_t)index];
+		assert(resourceId < m_RenderResources.size() && "Resource was never added");
+		return m_RenderResources[resourceId];
 	}
 
 	const SUniformBufferResource CResourceManager::GetBufferResource(const EBufferIndices index)
 	{
 		return m_BufferResources[(uint32_t)index];
-	}
-
-	const std::array<SRenderResource, (uint32_t)EResourceIndices::Count> CResourceManager::GetRenderResources()
-	{
-		return m_RenderResources;
 	}
 
 	const std::array<SUniformBufferResource, (uint32_t)EBufferIndices::Count> CResourceManager::GetBufferResources()
@@ -103,12 +102,13 @@ namespace NVulkanEngine
 	}
 
 	SRenderResource CResourceManager::TransitionResource(
-		VkCommandBuffer          commandBuffer,
-		const EResourceIndices index, 
-		VkAttachmentLoadOp       loadOperation,
-		VkImageLayout            wantedLayout)
+		VkCommandBuffer    commandBuffer,
+		const uint32_t     resourceId,
+		VkAttachmentLoadOp loadOperation,
+		VkImageLayout      wantedLayout)
 	{
-		SRenderResource& attachment = m_RenderResources[(uint32_t)index];
+		assert(resourceId < m_RenderResources.size() && "Resource was never added");
+		SRenderResource& attachment = m_RenderResources[resourceId];
 
 		if (wantedLayout != VK_IMAGE_LAYOUT_UNDEFINED && wantedLayout != attachment.m_CurrentImageLayout)
 			TransitionImageLayout(commandBuffer, attachment, wantedLayout, 1);
@@ -118,17 +118,19 @@ namespace NVulkanEngine
 		return attachment;
 	}
 
+	void CResourceManager::DestroyRenderResource(SRuntimeContext* context, SRenderResource& resource)
+	{
+		vkDestroyImageView(context->m_VulkanDevice, resource.m_ImageView, nullptr);
+		vkDestroyImage(context->m_VulkanDevice, resource.m_Image, nullptr);
+		vkFreeMemory(context->m_VulkanDevice, resource.m_Memory, nullptr);
+
+		ImGui_ImplVulkan_RemoveTexture(resource.m_ImguiDescriptor);
+		resource = {};
+	}
 
 	void CResourceManager::Cleanup(SRuntimeContext* context)
 	{
-		for (uint32_t i = 0; i < m_RenderResources.size(); i++)
-		{
-			vkDestroyImageView(context->m_VulkanDevice, m_RenderResources[i].m_ImageView, nullptr);
-			vkDestroyImage(context->m_VulkanDevice, m_RenderResources[i].m_Image, nullptr);
-			vkFreeMemory(context->m_VulkanDevice, m_RenderResources[i].m_Memory, nullptr);
-
-			ImGui_ImplVulkan_RemoveTexture(m_RenderResources[i].m_ImguiDescriptor);
-			m_RenderResources[i] = {};			 
-		}
+		for (SRenderResource& resource : m_RenderResources)
+			DestroyRenderResource(context, resource);
 	}
 };

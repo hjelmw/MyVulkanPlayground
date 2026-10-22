@@ -6,7 +6,7 @@ namespace NVulkanEngine
 {
 	void CPostProcessNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
-		const SRenderResource sceneColorAttachment = managers->m_ResourceManager->GetRenderResource(EResourceIndices::SceneColor);
+		const SRenderResource sceneColorAttachment = managers->m_ResourceManager->Get<NRenderResources::SSceneColor>();
 
 		m_PostProcessTable = new CBindingTable();
 		m_PostProcessTable->AddStorageImageBinding(0, VK_SHADER_STAGE_COMPUTE_BIT, sceneColorAttachment.m_ImageView);
@@ -21,7 +21,7 @@ namespace NVulkanEngine
 	void CPostProcessNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
 		// Writinh to storage images which have to be in the general layout
-		managers->m_ResourceManager->TransitionResource(commandBuffer, EResourceIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_GENERAL);
+		managers->m_ResourceManager->TransitionResource<NRenderResources::SSceneColor>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_GENERAL);
 
 		const float markerColor[4] = { 0.2f, 0.6f, 1.0f, 1.0f };
 		BeginMarker(context->m_VulkanInstance, commandBuffer, "Post Process", markerColor);

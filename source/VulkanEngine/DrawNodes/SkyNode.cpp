@@ -69,8 +69,8 @@ namespace NVulkanEngine
 
 	void CSkyNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
-		const SRenderResource atmosphericsAttachment  = managers->m_ResourceManager->GetRenderResource(EResourceIndices::AtmosphericsSkyBox);
-		const SRenderResource depthAttachment         = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth);
+		const SRenderResource atmosphericsAttachment  = managers->m_ResourceManager->Get<NRenderResources::SAtmosphericsSkyBox>();
+		const SRenderResource depthAttachment         = managers->m_ResourceManager->Get<NRenderResources::SGBufferDepth>();
 
 		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentConstants));
 
@@ -149,8 +149,8 @@ namespace NVulkanEngine
 		vertexPushConstants.m_CameraFar = camera->GetFar();
 
 		CResourceManager* resourceManager = managers->m_ResourceManager;
-		resourceManager->TransitionResource(commandBuffer, EResourceIndices::Depth, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		SRenderResource atmosphericsAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::AtmosphericsSkyBox, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		resourceManager->TransitionResource<NRenderResources::SGBufferDepth>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		SRenderResource atmosphericsAttachment = resourceManager->TransitionResource<NRenderResources::SAtmosphericsSkyBox>(commandBuffer, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		std::vector<SRenderResource> inscatteringAttachments = { atmosphericsAttachment };
 		BeginRendering("Skybox", context, commandBuffer, inscatteringAttachments);

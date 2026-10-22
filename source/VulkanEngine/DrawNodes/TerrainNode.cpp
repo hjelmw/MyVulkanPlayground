@@ -159,10 +159,10 @@ namespace NVulkanEngine
 		m_TerrainTable->CreateBindings(context);
 
 		// Same render targets as the geometry node so the deferred lighting pass shades the terrain
-		const VkFormat positionsFormat = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Positions).m_Format;
-		const VkFormat normalsFormat   = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Normals).m_Format;
-		const VkFormat albedoFormat    = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Albedo).m_Format;
-		const VkFormat depthFormat     = managers->m_ResourceManager->GetRenderResource(EResourceIndices::Depth).m_Format;
+		const VkFormat positionsFormat = managers->m_ResourceManager->Get<NRenderResources::SGBufferPositions>().m_Format;
+		const VkFormat normalsFormat   = managers->m_ResourceManager->Get<NRenderResources::SGBufferNormals>().m_Format;
+		const VkFormat albedoFormat    = managers->m_ResourceManager->Get<NRenderResources::SGBufferAlbedo>().m_Format;
+		const VkFormat depthFormat     = managers->m_ResourceManager->Get<NRenderResources::SGBufferDepth>().m_Format;
 
 		m_TerrainPipeline = new CPipeline(EPipelineType::GRAPHICS);
 		m_TerrainPipeline->SetDebugName("Terrain");
@@ -197,10 +197,10 @@ namespace NVulkanEngine
 
 		// Draw on top of the GBuffer
 		CResourceManager* resourceManager = managers->m_ResourceManager;
-		SRenderResource positionsAttachment = resourceManager->TransitionResource(commandBuffer, EResourceIndices::Positions, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		SRenderResource normalsAttachment   = resourceManager->TransitionResource(commandBuffer, EResourceIndices::Normals,   VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		SRenderResource albedoAttachment    = resourceManager->TransitionResource(commandBuffer, EResourceIndices::Albedo,    VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		SRenderResource depthAttachment     = resourceManager->TransitionResource(commandBuffer, EResourceIndices::Depth,     VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+		SRenderResource positionsAttachment = resourceManager->TransitionResource<NRenderResources::SGBufferPositions>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderResource normalsAttachment   = resourceManager->TransitionResource<NRenderResources::SGBufferNormals>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderResource albedoAttachment    = resourceManager->TransitionResource<NRenderResources::SGBufferAlbedo>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		SRenderResource depthAttachment     = resourceManager->TransitionResource<NRenderResources::SGBufferDepth>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
 		BeginRendering("Terrain", context, commandBuffer, { positionsAttachment, normalsAttachment, albedoAttachment, depthAttachment });
 

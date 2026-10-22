@@ -684,89 +684,21 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::CreateResources()
 	{
-		m_ResourceManager->AddRenderResource(
-			m_RuntimeContext,
-			"GBuffer - Positions",
-			EResourceIndices::Positions,
-			m_LinearClamp,
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_FORMAT_R16G16B16A16_SFLOAT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			m_Context->m_RenderResolution.width,
-			m_Context->m_RenderResolution.height);
+		using namespace NRenderResources;
 
-		m_ResourceManager->AddRenderResource(
-			m_RuntimeContext,
-			"GBuffer - Normals",
-			EResourceIndices::Normals,
-			m_LinearClamp,
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_FORMAT_R16G16B16A16_SFLOAT,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			m_Context->m_RenderResolution.width,
-			m_Context->m_RenderResolution.height);
+		const uint32_t screenWidth  = m_Context->m_RenderResolution.width;
+		const uint32_t screenHeight = m_Context->m_RenderResolution.height;
 
-		m_ResourceManager->AddRenderResource(
-			m_RuntimeContext,
-			"GBuffer - Albedo",
-			EResourceIndices::Albedo, 
-			m_LinearClamp,
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			m_Context->m_RenderResolution.width,
-			m_Context->m_RenderResolution.height);
+		constexpr uint32_t shadowMapRes = 4096;
+		const VkFormat shadowMapFormat = FindDepthFormat(m_Context->m_PhysicalDevice);
 
-		m_ResourceManager->AddRenderResource(
-			m_RuntimeContext,
-			"GBuffer - Depth",
-			EResourceIndices::Depth,
-			m_LinearClamp,
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			FindDepthFormat(m_Context->m_PhysicalDevice),
-			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-			m_Context->m_RenderResolution.width,
-			m_Context->m_RenderResolution.height);
-
-		m_ResourceManager->AddRenderResource(
-			m_RuntimeContext,
-			"Shadow Map",
-			EResourceIndices::ShadowMap,
-			m_LinearClamp,
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_FORMAT_D32_SFLOAT,
-			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			(uint32_t)4096,
-			(uint32_t)4096);
-
-		m_ResourceManager->AddRenderResource(
-			m_RuntimeContext,
-			"Atmospherics SkyBox",
-			EResourceIndices::AtmosphericsSkyBox,
-			m_LinearClamp,
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			m_Context->m_RenderResolution.width,
-			m_Context->m_RenderResolution.height);
-
-		m_ResourceManager->AddRenderResource(
-			m_RuntimeContext,
-			"Scene Color",
-			EResourceIndices::SceneColor,
-			m_LinearClamp,
-			VK_SHADER_STAGE_FRAGMENT_BIT,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, // Storage bit allows compute shaders to write
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			m_Context->m_RenderResolution.width,
-			m_Context->m_RenderResolution.height);
+		m_ResourceManager->Add<SGBufferPositions>  (m_RuntimeContext, m_LinearClamp, screenWidth, screenHeight);
+		m_ResourceManager->Add<SGBufferNormals>    (m_RuntimeContext, m_LinearClamp, screenWidth, screenHeight);
+		m_ResourceManager->Add<SGBufferAlbedo>     (m_RuntimeContext, m_LinearClamp, screenWidth, screenHeight);
+		m_ResourceManager->Add<SGBufferDepth>      (m_RuntimeContext, m_LinearClamp, screenWidth, screenHeight, shadowMapFormat);
+		m_ResourceManager->Add<SSunShadowMap>      (m_RuntimeContext, m_LinearClamp, shadowMapRes, shadowMapRes);
+		m_ResourceManager->Add<SAtmosphericsSkyBox>(m_RuntimeContext, m_LinearClamp, screenWidth, screenHeight);
+		m_ResourceManager->Add<SSceneColor>        (m_RuntimeContext, m_LinearClamp, screenWidth, screenHeight);
 	}
 
 	void CVulkanGraphicsEngine::InitImGui()
@@ -783,16 +715,16 @@ namespace NVulkanEngine
 
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = (uint32_t)EResourceIndices::Count * 2;
+		poolSizes[0].descriptorCount = CResourceManager::m_MaxRenderResources * 2;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = (uint32_t)EResourceIndices::Count * m_Swapchain->GetMinImageCount() + 1;
+		poolSizes[1].descriptorCount = CResourceManager::m_MaxRenderResources * m_Swapchain->GetMinImageCount() + 1;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 		poolInfo.poolSizeCount = (uint32_t)poolSizes.size();
 		poolInfo.pPoolSizes    = poolSizes.data();
-		poolInfo.maxSets       = (uint32_t)EResourceIndices::Count * 2;
+		poolInfo.maxSets       = CResourceManager::m_MaxRenderResources * 2;
 
 		if (vkCreateDescriptorPool(m_Context->m_VulkanDevice, &poolInfo, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
 		{
@@ -879,19 +811,41 @@ namespace NVulkanEngine
 
 	void CVulkanGraphicsEngine::ConfigureDrawOrder()
 	{
-		// Keep in mind there may be hidden dependencies between the nodes and since there is currently no way to visualize them I will write them here for future me
-		// * Lighting Node has a dependency on geometry, shadow and sky node.
-		// * Sky node      has a dependency on geometry node
-		// * PostProcess   has a dependency on lighting node
-		// * Debug node    has a dependency on post process node
+		using namespace NRenderResources;
 
-		m_DrawNodes[(uint32_t)EDrawNodes::Geometry]    = new CGeometryNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Terrain]     = new CTerrainNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Shadows]     = new CShadowNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Skybox]      = new CSkyNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Lighting]    = new CLightingNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::PostProcess] = new CPostProcessNode();
-		m_DrawNodes[(uint32_t)EDrawNodes::Debug]       = new CDebugNode();
+		CGeometryNode* geometryNode = new CGeometryNode();
+		geometryNode->Write<SGBufferPositions>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		geometryNode->Write<SGBufferNormals>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		geometryNode->Write<SGBufferAlbedo>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		geometryNode->Write<SGBufferDepth>(VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+
+		CTerrainNode* terrainNode = new CTerrainNode();
+		terrainNode->Write<SGBufferPositions>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		terrainNode->Write<SGBufferNormals>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		terrainNode->Write<SGBufferAlbedo>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		terrainNode->Write<SGBufferDepth>(VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+
+		CShadowNode* shadowNode = new CShadowNode();
+		shadowNode->Write<SSunShadowMap>(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+		CSkyNode* skyNode = new CSkyNode();
+		skyNode->Read<SGBufferDepth>(VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		skyNode->Write<SAtmosphericsSkyBox>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+		CLightingNode* lightingNode = new CLightingNode();
+		lightingNode->Read<SGBufferPositions>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		lightingNode->Read<SGBufferNormals>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		lightingNode->Read<SGBufferAlbedo>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		lightingNode->Read<SGBufferDepth>(VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		lightingNode->Read<SSunShadowMap>(VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		lightingNode->Read<SAtmosphericsSkyBox>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		lightingNode->Write<SSceneColor>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+		CPostProcessNode* postProcessNode = new CPostProcessNode();
+		postProcessNode->ReadWrite<SSceneColor>(VK_IMAGE_LAYOUT_GENERAL);
+
+		CDebugNode* debugNode = new CDebugNode();
+		debugNode->ReadWrite<SSceneColor>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 
 	void CVulkanGraphicsEngine::InitDrawNodes()
@@ -977,12 +931,12 @@ namespace NVulkanEngine
 		ImGui::TextColored(cameraColor, cameraDirectionStr.c_str());
 		ImGui::SetCursorPosX(currentCursorPos);
 		ImGui::EndMainMenuBar();
-		VkDescriptorSet sceneColorDescriptor = m_ResourceManager->TransitionResource(m_CommandBuffers[m_FrameIndex], EResourceIndices::SceneColor, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
+		VkDescriptorSet sceneColorDescriptor = m_ResourceManager->TransitionResource<NRenderResources::SSceneColor>(m_CommandBuffers[m_FrameIndex], VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).m_ImguiDescriptor;
 		ImGui::Image((ImTextureID)sceneColorDescriptor, ImGui::GetContentRegionAvail());
 		ImGui::End();
 		ImGui::Begin("Textures");
 
-		static bool selected[(uint32_t)EResourceIndices::Count] = {};
+		static bool selected[CResourceManager::m_MaxRenderResources] = {};
 		static int selectedId = -1;
 
 		if (ImGui::CollapsingHeader("List", ImGuiTreeNodeFlags_DefaultOpen))
@@ -991,7 +945,7 @@ namespace NVulkanEngine
 			ImGui::InputText("Filter", inputText, 64);
 			for (uint32_t i = 0; i < m_ResourceManager->GetRenderResources().size(); i++)
 			{
-				SRenderResource attachment = m_ResourceManager->GetRenderResource((EResourceIndices)i);
+				SRenderResource attachment = m_ResourceManager->GetRenderResource(i);
 
 				ImGui::Selectable(attachment.m_DebugName, &selected[i]);
 				if (selected[i])
@@ -1004,7 +958,7 @@ namespace NVulkanEngine
 				ImGui::Text("No Texture selected. Select one from the list above to inspect!");
 			else
 			{
-				SRenderResource attachment = m_ResourceManager->GetRenderResource((EResourceIndices)selectedId);
+				SRenderResource attachment = m_ResourceManager->GetRenderResource((uint32_t)selectedId);
 				ImGui::Text("Name: %s", attachment.m_DebugName);
 				static float brightness[3] = { 1.0f, 1.0f, 1.0f };
 				ImGui::SliderFloat3("Brightness", &brightness[0], 0.0f, 1.0f);
