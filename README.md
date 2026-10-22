@@ -9,7 +9,7 @@ There are helpers for handling keyboard/mouse inputs, resource state tracking, p
 You can have a look under [source/VulkanEngine/DrawNodes/](https://github.com/hjelmw/MyVulkanPlayground/tree/main/source/VulkanEngine/DrawNodes
 ) to see what rendering techniques have currently been implemented.
 
-![alt text](engine.png)
+![alt text](screenshots/dev/engine3.png)
 
 # Setup
 1. Install [VulkanSDK](https://vulkan.lunarg.com/) from Lunarg (Version 1.4)
