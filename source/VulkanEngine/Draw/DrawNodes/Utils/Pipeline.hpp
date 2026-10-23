@@ -1,14 +1,14 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <GraphicsContext.hpp>
+#include <Core/GraphicsContext.hpp>
 
 #include <array>
 #include <string>
 #include <vector>
 
 /*
-	Just a wrapper for simplifying creation of the VkPipeline
+	A wrapper for VKPipeline and layout. Set shaders and attachments. Pretty basic right now
 */
 
 enum class EPipelineType

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <DrawNodes/DrawNode.hpp>
+#include <Draw/DrawNodes/DrawNode.hpp>
 
 /*
-	Compute post processing on the scene color. Runs after lighting
+	Compute post processing on the scene color
 */
 
 namespace NVulkanEngine

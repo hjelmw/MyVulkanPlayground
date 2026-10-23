@@ -1,6 +1,6 @@
 #include "Pipeline.hpp"
 
-#include <GraphicsContext.hpp>
+#include <Core/GraphicsContext.hpp>
 #include <VulkanGraphicsEngineUtils.hpp>
 
 #include <array>

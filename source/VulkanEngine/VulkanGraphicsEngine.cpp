@@ -1,13 +1,13 @@
 #include "VulkanGraphicsEngine.hpp"
 #include "VulkanGraphicsEngineUtils.hpp"
 
-#include <DrawNodes/GeometryNode.hpp>
-#include <DrawNodes/LightingNode.hpp>
-#include <DrawNodes/TerrainNode.hpp>
-#include <DrawNodes/SkyNode.hpp>
-#include <DrawNodes/ShadowNode.hpp>
-#include <DrawNodes/PostProcessNode.hpp>
-#include <DrawNodes/DebugNode.hpp>
+#include <Draw/DrawNodes/GeometryNode.hpp>
+#include <Draw/DrawNodes/LightingNode.hpp>
+#include <Draw/DrawNodes/TerrainNode.hpp>
+#include <Draw/DrawNodes/SkyNode.hpp>
+#include <Draw/DrawNodes/ShadowNode.hpp>
+#include <Draw/DrawNodes/PostProcessNode.hpp>
+#include <Draw/DrawNodes/DebugNode.hpp>
 
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>
@@ -24,8 +24,8 @@
 #include <optional>
 #include <chrono>
 #include <thread>
-static float testvar = 0.0f;
 static float g_ImGuiGlobalFontSize = 1.0f;
+static const uint32_t g_MaxImGuiRenderResources = 32;
 
 static void check_vk_result(VkResult err)
 {
@@ -82,7 +82,6 @@ namespace NVulkanEngine
 		CreateCommandPool();
 		CreateCommandBuffers();
 		CreateSyncObjects();
-		CreateSamplers();
 	}
 
 	void CVulkanGraphicsEngine::CreateScene()
@@ -686,6 +685,8 @@ namespace NVulkanEngine
 	{
 		using namespace NRenderResources;
 
+		CreateSamplers();
+
 		const uint32_t screenWidth  = m_Context->m_RenderResolution.width;
 		const uint32_t screenHeight = m_Context->m_RenderResolution.height;
 
@@ -699,6 +700,70 @@ namespace NVulkanEngine
 		m_ResourceManager->Add<SSunShadowMap>      (m_RuntimeContext, m_LinearClamp, shadowMapRes, shadowMapRes);
 		m_ResourceManager->Add<SAtmosphericsSkyBox>(m_RuntimeContext, m_LinearClamp, screenWidth, screenHeight);
 		m_ResourceManager->Add<SSceneColor>        (m_RuntimeContext, m_LinearClamp, screenWidth, screenHeight);
+	}
+
+	void CVulkanGraphicsEngine::ConfigureDrawOrder()
+	{
+		using namespace NRenderResources;
+
+		CGeometryNode* geometryNode = new CGeometryNode();
+		geometryNode->Write<SGBufferPositions>();
+		geometryNode->Write<SGBufferNormals>();
+		geometryNode->Write<SGBufferAlbedo>();
+		geometryNode->Write<SGBufferDepth>();
+
+		CTerrainNode* terrainNode = new CTerrainNode();
+		terrainNode->Write<SGBufferPositions>();
+		terrainNode->Write<SGBufferNormals>();
+		terrainNode->Write<SGBufferAlbedo>();
+		terrainNode->Write<SGBufferDepth>();
+
+		CShadowNode* shadowNode = new CShadowNode();
+		shadowNode->Write<SSunShadowMap>();
+
+		CSkyNode* skyNode = new CSkyNode();
+		skyNode->Read<SGBufferDepth>();
+		skyNode->Write<SAtmosphericsSkyBox>();
+
+		CLightingNode* lightingNode = new CLightingNode();
+		lightingNode->Read<SGBufferPositions>();
+		lightingNode->Read<SGBufferNormals>();
+		lightingNode->Read<SGBufferAlbedo>();
+		lightingNode->Read<SGBufferDepth>();
+		lightingNode->Read<SSunShadowMap>();
+		lightingNode->Read<SAtmosphericsSkyBox>();
+		lightingNode->Write<SSceneColor>();
+
+		CPostProcessNode* postProcessNode = new CPostProcessNode();
+		postProcessNode->ReadWriteCompute<SSceneColor>();
+
+		CDebugNode* debugNode = new CDebugNode();
+		debugNode->ReadWrite<SSceneColor>();
+
+		//m_DrawGraph.addNode(geometryNode);
+		//m_DrawGraph.addNode(terrainNode);
+		//m_DrawGraph.addNode(shadowNode);
+		//m_DrawGraph.addNode(skyNode);
+		//m_DrawGraph.addNode(lightingNode);
+		//m_DrawGraph.addNode(postProcessNode);
+		//m_DrawGraph.addNode(debugNode);
+	}
+
+	void CVulkanGraphicsEngine::InitDrawNodes()
+	{
+		ConfigureDrawOrder();
+
+		SGraphicsManagers managers{};
+		managers.m_InputManager = m_InputManager;
+		managers.m_Modelmanager = m_ModelManager;
+		managers.m_ResourceManager = m_ResourceManager;
+
+		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
+		{
+			CDrawNode* drawNode = m_DrawNodes[i];
+			if (drawNode)
+				drawNode->Init(m_RuntimeContext, &managers);
+		}
 	}
 
 	void CVulkanGraphicsEngine::InitImGui()
@@ -715,16 +780,16 @@ namespace NVulkanEngine
 
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = CResourceManager::m_MaxRenderResources * 2;
+		poolSizes[0].descriptorCount = g_MaxImGuiRenderResources * 2;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = CResourceManager::m_MaxRenderResources * m_Swapchain->GetMinImageCount() + 1;
+		poolSizes[1].descriptorCount = g_MaxImGuiRenderResources * m_Swapchain->GetMinImageCount() + 1;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 		poolInfo.poolSizeCount = (uint32_t)poolSizes.size();
 		poolInfo.pPoolSizes    = poolSizes.data();
-		poolInfo.maxSets       = CResourceManager::m_MaxRenderResources * 2;
+		poolInfo.maxSets       = g_MaxImGuiRenderResources * 2;
 
 		if (vkCreateDescriptorPool(m_Context->m_VulkanDevice, &poolInfo, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
 		{
@@ -809,62 +874,6 @@ namespace NVulkanEngine
 		m_ModelManager->SetSceneBounds(sceneBounds);
 	}
 
-	void CVulkanGraphicsEngine::ConfigureDrawOrder()
-	{
-		using namespace NRenderResources;
-
-		CGeometryNode* geometryNode = new CGeometryNode();
-		geometryNode->Write<SGBufferPositions>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		geometryNode->Write<SGBufferNormals>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		geometryNode->Write<SGBufferAlbedo>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		geometryNode->Write<SGBufferDepth>(VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
-
-		CTerrainNode* terrainNode = new CTerrainNode();
-		terrainNode->Write<SGBufferPositions>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		terrainNode->Write<SGBufferNormals>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		terrainNode->Write<SGBufferAlbedo>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-		terrainNode->Write<SGBufferDepth>(VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
-
-		CShadowNode* shadowNode = new CShadowNode();
-		shadowNode->Write<SSunShadowMap>(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-		CSkyNode* skyNode = new CSkyNode();
-		skyNode->Read<SGBufferDepth>(VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		skyNode->Write<SAtmosphericsSkyBox>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-		CLightingNode* lightingNode = new CLightingNode();
-		lightingNode->Read<SGBufferPositions>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		lightingNode->Read<SGBufferNormals>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		lightingNode->Read<SGBufferAlbedo>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		lightingNode->Read<SGBufferDepth>(VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		lightingNode->Read<SSunShadowMap>(VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		lightingNode->Read<SAtmosphericsSkyBox>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		lightingNode->Write<SSceneColor>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-		CPostProcessNode* postProcessNode = new CPostProcessNode();
-		postProcessNode->ReadWrite<SSceneColor>(VK_IMAGE_LAYOUT_GENERAL);
-
-		CDebugNode* debugNode = new CDebugNode();
-		debugNode->ReadWrite<SSceneColor>(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-	}
-
-	void CVulkanGraphicsEngine::InitDrawNodes()
-	{
-		ConfigureDrawOrder();
-
-		SGraphicsManagers managers{};
-		managers.m_InputManager      = m_InputManager;
-		managers.m_Modelmanager      = m_ModelManager;
-		managers.m_ResourceManager   = m_ResourceManager;
-
-		for (uint32_t i = 0; i < m_DrawNodes.size(); i++)
-		{
-			CDrawNode* drawNode = m_DrawNodes[i];
-			if (drawNode)
-				drawNode->Init(m_RuntimeContext, &managers);
-		}
-	}
-
 	void CVulkanGraphicsEngine::RecordDrawNodes(VkCommandBuffer commandBuffer)
 	{
 		SGraphicsManagers managers{};
@@ -936,7 +945,7 @@ namespace NVulkanEngine
 		ImGui::End();
 		ImGui::Begin("Textures");
 
-		static bool selected[CResourceManager::m_MaxRenderResources] = {};
+		static bool selected[g_MaxImGuiRenderResources] = {};
 		static int selectedId = -1;
 
 		if (ImGui::CollapsingHeader("List", ImGuiTreeNodeFlags_DefaultOpen))

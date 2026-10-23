@@ -7,7 +7,7 @@
 #include <glm-aabb/AABB.hpp>
 
 #include "Utils/Model.hpp"
-#include "GraphicsContext.hpp"
+#include <Core/GraphicsContext.hpp>
 
 /*
 	Stores all the models so render nodes can easily access them (geometry & shadow currently)

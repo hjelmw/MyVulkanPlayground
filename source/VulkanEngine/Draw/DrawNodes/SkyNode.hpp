@@ -1,6 +1,6 @@
 #pragma once
 
-#include <DrawNodes/DrawNode.hpp>
+#include <Draw/DrawNodes/DrawNode.hpp>
 
 /* 
 	Draw stuff on the sky. Currently an atmospheric scattering raymarcher

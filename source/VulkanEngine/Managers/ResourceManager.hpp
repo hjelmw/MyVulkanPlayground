@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include <GraphicsContext.hpp>
+#include <Core/GraphicsContext.hpp>
 #include <VulkanGraphicsEngineUtils.hpp>
 
 #include "RenderResources.hpp"
@@ -31,11 +31,6 @@ namespace NVulkanEngine
 	class CResourceManager
 	{
 	public:
-		// Upper bound used to size ImGui descriptor pools and the texture list
-		static constexpr uint32_t m_MaxRenderResources = 32;
-
-		// Unique id per resource tag type, assigned the first time it is used.
-		// Only stable within a run, do not serialize it.
 		template<class TRenderResource>
 		static uint32_t GetResourceId()
 		{
@@ -104,7 +99,7 @@ namespace NVulkanEngine
 		// Shared by every GetResourceId<T>, a static inside the template would be one counter per type
 		static inline uint32_t m_NextRenderResourceId = 0;
 
-		std::vector<SRenderResource> m_RenderResources; // Indexed by GetResourceId<Tag>()
+		std::vector<SRenderResource> m_RenderResources;
 		std::array<SUniformBufferResource, (uint32_t)EBufferIndices::Count>   m_BufferResources = {};
 
 		// To mark attachments with debug names

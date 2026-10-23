@@ -13,7 +13,7 @@
 #include <optional>
 #include <unordered_map>
 
-#include "GraphicsContext.hpp"
+#include <Core/GraphicsContext.hpp>
 
 /*
 	Just a bunch of nice to have helper functions for rendering 

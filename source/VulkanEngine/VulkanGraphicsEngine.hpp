@@ -9,10 +9,10 @@
 
 #include <VulkanGraphicsEngineUtils.hpp>
 
-#include <DrawNodes/DrawNode.hpp>
+#include <Draw/DrawNodes/DrawNode.hpp>
 
-#include <GraphicsContext.hpp>
-#include <Swapchain.hpp>
+#include <Core/GraphicsContext.hpp>
+#include <Core/Swapchain.hpp>
 
 #include <Managers/LightManager.hpp> // Need ELightType in header
 
@@ -158,7 +158,5 @@ namespace NVulkanEngine
         GLFWwindow*					        m_Window                   = nullptr;
 
         VkDescriptorPool                    m_ImGuiDescriptorPool      = VK_NULL_HANDLE;
-
-
     };
 }

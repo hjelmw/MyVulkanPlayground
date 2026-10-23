@@ -1,6 +1,6 @@
 #pragma once
 
-#include <DrawNodes/DrawNode.hpp>
+#include <Draw/DrawNodes/DrawNode.hpp>
 
 /* 
 	Draw scene geometry into G-Buffers

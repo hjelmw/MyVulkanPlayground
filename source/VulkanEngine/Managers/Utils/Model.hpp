@@ -1,8 +1,8 @@
 #pragma once
 
 #include <VulkanGraphicsEngineUtils.hpp>
-#include <GraphicsContext.hpp>
-#include <Managers/Texture.hpp>
+#include <Core/GraphicsContext.hpp>
+#include <Managers/Utils/Texture.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
@@ -12,6 +12,7 @@
 
 /* 
 	A model is a collection of meshes with vertices to be rendered. One material per mesh
+	Right now either loaded from disk or created from heightmap data.
 */
 
 struct SModelVertex

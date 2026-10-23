@@ -24,8 +24,9 @@ project "VulkanEngine"
          "{COPYFILE} %[build/%{cfg.buildcfg}/VulkanEngine.exe] %[./VulkanEngine_%{cfg.buildcfg}.exe]"
     }
     
+    dependson { "Shaders" } -- Technically this is not needed but it makes it so pressing F5 in VS also builds the shaders
+
     files { "./source/**.cpp", "./source/**.hpp" }
-    files { "./shaders/*.vert", "shaders/*.frag", "shaders/*.comp" }
 
     files 
     { 
@@ -85,6 +86,13 @@ project "VulkanEngine"
         "$(SolutionDir)" .. find_dependency("vendor/glfw*") .. "/glfw/lib-vc2022/glfw3.lib",
     }
 
+
+project "Shaders"
+    kind "Utility" -- Only custom build steps
+    objdir "build/%{cfg.buildcfg}/obj"
+
+    files { "./shaders/*.vert", "./shaders/*.frag", "./shaders/*.comp" }
+
     filter "files:shaders/**.vert"
         buildmessage "Compiling vertex shader"
         buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
@@ -99,4 +107,6 @@ project "VulkanEngine"
         buildmessage "Compiling compute shader"
         buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
         buildoutputs "$(SolutionDir)\\%(Identity).spv"
+
+    filter {}
 

@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm-aabb/AABB.hpp>
-#include <GraphicsContext.hpp>
+#include <Core/GraphicsContext.hpp>
 
 /*
 	Immediate mode render debug lines.

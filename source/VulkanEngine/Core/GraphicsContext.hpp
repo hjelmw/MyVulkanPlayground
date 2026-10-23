@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include "GLFW/glfw3.h"
+
 /*
 	Stores a bunch of useful members for the draw nodes. Might need to prune this a bit later
 */

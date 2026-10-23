@@ -1,5 +1,5 @@
 #include "BindingTable.hpp"
-#include <GraphicsContext.hpp>
+#include <Core/GraphicsContext.hpp>
 
 #include <array>
 #include <map>

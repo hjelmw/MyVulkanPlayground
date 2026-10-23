@@ -1,5 +1,5 @@
 #include "Model.hpp"
-#include <DrawNodes/Utils/BindingTable.hpp>
+#include <Draw/DrawNodes/Utils/BindingTable.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tinyobjloader/tiny_obj_loader.h>

@@ -2,8 +2,8 @@
 
 #include <glm/glm.hpp>
 
-#include "Camera.hpp"
-#include "GraphicsContext.hpp"
+#include <Scene/Camera.hpp>
+#include <Core/GraphicsContext.hpp>
 
 /*
 	Input manager keeps track of the camera and updates based on keyboard/mouse input

@@ -1,6 +1,6 @@
 #include <vulkan/vulkan.h>
 
-#include "GraphicsContext.hpp"
+#include <Core/GraphicsContext.hpp>
 #include <stbi/stb_image.h>
 #include <string>
 

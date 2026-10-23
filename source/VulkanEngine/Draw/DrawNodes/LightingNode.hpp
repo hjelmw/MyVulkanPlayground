@@ -1,9 +1,9 @@
 #pragma once
 
-#include <DrawNodes/DrawNode.hpp>
+#include <Draw/DrawNodes/DrawNode.hpp>
 
 /*
-	Does deferred lighting
+	Reads G-buffers and does deferred lighting
 */
 
 namespace NVulkanEngine

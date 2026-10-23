@@ -1,9 +1,9 @@
 #pragma once
 
-#include <DrawNodes/DrawNode.hpp>
+#include <Draw/DrawNodes/DrawNode.hpp>
 
 /*
-	Draw heightmap terrain. Implementation TBD so currently does nothing hihi
+	Draw heightmap terrain into g-buffers
 */
 
 namespace NVulkanEngine

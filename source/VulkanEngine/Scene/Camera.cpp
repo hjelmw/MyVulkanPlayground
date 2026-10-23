@@ -1,4 +1,4 @@
-#include "Camera.hpp"
+#include <Scene/Camera.hpp>
 
 
 namespace NVulkanEngine

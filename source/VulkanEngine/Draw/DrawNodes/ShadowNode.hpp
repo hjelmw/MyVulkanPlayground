@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <DrawNodes/DrawNode.hpp>
+#include <Draw/DrawNodes/DrawNode.hpp>
 
 /* 
 	Draw geometry into shadow map depth buffer

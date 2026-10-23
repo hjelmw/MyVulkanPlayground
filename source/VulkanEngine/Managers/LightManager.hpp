@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <glm/glm.hpp>
-#include "GraphicsContext.hpp"
+#include <Core/GraphicsContext.hpp>
 
 /*
 	Stores the light sources of the scene

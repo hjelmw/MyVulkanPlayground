@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GraphicsContext.hpp>
+#include <Core/GraphicsContext.hpp>
 #include <VulkanGraphicsEngineUtils.hpp>
 
 #include <Managers/InputManager.hpp>
@@ -29,19 +29,21 @@ namespace NVulkanEngine
 		Count
 	};
 
+	// How a node uses a resource. I try to infer layout and LoadOp from this
 	enum class EResourceAccess : uint8_t
 	{
 		Read,
 		Write,
-		ReadWrite
+		WriteCompute,
+		ReadWrite,
+		ReadWriteCompute,
+		Invalid
 	};
 
-	// What a node declared about one resource. The tag type is erased, only its id is kept
-	struct SResourceUse
+	struct SRenderResourceUse
 	{
 		uint32_t        m_ResourceId = UINT32_MAX;
-		EResourceAccess m_Access     = EResourceAccess::Read;
-		VkImageLayout   m_Layout     = VK_IMAGE_LAYOUT_UNDEFINED;
+		EResourceAccess m_Access     = EResourceAccess::Invalid;
 	};
 
 	struct SGraphicsManagers
@@ -62,25 +64,51 @@ namespace NVulkanEngine
 		virtual void Cleanup(SRuntimeContext* context);
 
 		template<class TRenderResource>
-		void Read(VkImageLayout layout)
+		void Read()
 		{
-			m_ResourceUses.push_back({ CResourceManager::GetResourceId<TRenderResource>(), EResourceAccess::Read, layout });
+			SRenderResourceUse resourceUse;
+			resourceUse.m_ResourceId = CResourceManager::GetResourceId<TRenderResource>();
+			resourceUse.m_Access     = EResourceAccess::Read;
+			m_ResourceUses.push_back(resourceUse);
 		}
 
 		template<class TRenderResource>
-		void Write(VkImageLayout layout)
+		void Write()
 		{
-			m_ResourceUses.push_back({ CResourceManager::GetResourceId<TRenderResource>(), EResourceAccess::Write, layout });
+			SRenderResourceUse resourceUse;
+			resourceUse.m_ResourceId = CResourceManager::GetResourceId<TRenderResource>();
+			resourceUse.m_Access     = EResourceAccess::Write;
+			m_ResourceUses.push_back(resourceUse);
 		}
 
-		
 		template<class TRenderResource>
-		void ReadWrite(VkImageLayout layout)
+		void WriteCompute()
 		{
-			m_ResourceUses.push_back({ CResourceManager::GetResourceId<TRenderResource>(), EResourceAccess::ReadWrite, layout });
+			SRenderResourceUse resourceUse;
+			resourceUse.m_ResourceId = CResourceManager::GetResourceId<TRenderResource>();
+			resourceUse.m_Access     = EResourceAccess::WriteCompute;
+			m_ResourceUses.push_back(resourceUse);
 		}
 
-		const std::vector<SResourceUse>& GetResourceUses() const { return m_ResourceUses; }
+		template<class TRenderResource>
+		void ReadWrite()
+		{
+			SRenderResourceUse resourceUse;
+			resourceUse.m_ResourceId = CResourceManager::GetResourceId<TRenderResource>();
+			resourceUse.m_Access     = EResourceAccess::ReadWrite;
+			m_ResourceUses.push_back(resourceUse);
+		}
+
+		template<class TRenderResource>
+		void ReadWriteCompute()
+		{
+			SRenderResourceUse resourceUse;
+			resourceUse.m_ResourceId = CResourceManager::GetResourceId<TRenderResource>();
+			resourceUse.m_Access     = EResourceAccess::ReadWriteCompute;
+			m_ResourceUses.push_back(resourceUse);
+		}
+
+		const std::vector<SRenderResourceUse>& GetResourceUses() const { return m_ResourceUses; }
 
 	protected:
 		void GenerateMipmaps(
@@ -102,6 +130,6 @@ namespace NVulkanEngine
 		void EndRendering(SRuntimeContext* context, VkCommandBuffer commandBuffer);
 
 	private:
-		std::vector<SResourceUse> m_ResourceUses;
+		std::vector<SRenderResourceUse> m_ResourceUses;
 	};
 };
