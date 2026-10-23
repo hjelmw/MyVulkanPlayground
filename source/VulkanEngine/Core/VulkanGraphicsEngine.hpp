@@ -7,7 +7,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include <VulkanGraphicsEngineUtils.hpp>
+#include <Core/VulkanGraphicsEngineUtils.hpp>
 
 #include <Draw/DrawNodes/DrawNode.hpp>
 

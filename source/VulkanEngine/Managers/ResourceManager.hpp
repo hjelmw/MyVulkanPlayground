@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <Core/GraphicsContext.hpp>
-#include <VulkanGraphicsEngineUtils.hpp>
+#include <Core/VulkanGraphicsEngineUtils.hpp>
 
 #include "RenderResources.hpp"
 

@@ -1,4 +1,4 @@
-#include <VulkanGraphicsEngine.hpp>
+#include <Core/VulkanGraphicsEngine.hpp>
 #include "SceneSetup.hpp" // Has to be included last
 
 int main()

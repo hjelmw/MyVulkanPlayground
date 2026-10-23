@@ -1,6 +1,6 @@
 #include "ResourceManager.hpp"
 
-#include <VulkanGraphicsEngineUtils.hpp>
+#include <Core/VulkanGraphicsEngineUtils.hpp>
 #include <backends/imgui_impl_vulkan.h>
 
 namespace NVulkanEngine

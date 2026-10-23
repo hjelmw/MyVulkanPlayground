@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Core/GraphicsContext.hpp>
-#include <VulkanGraphicsEngineUtils.hpp>
+#include <Core/VulkanGraphicsEngineUtils.hpp>
 
 #include <Managers/InputManager.hpp>
 #include <Managers/ModelManager.hpp>

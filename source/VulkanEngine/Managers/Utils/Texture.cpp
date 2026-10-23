@@ -3,7 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stbi/stb_image.h>
 
-#include "VulkanGraphicsEngineUtils.hpp"
+#include "Core/VulkanGraphicsEngineUtils.hpp"
 
 namespace NVulkanEngine 
 {

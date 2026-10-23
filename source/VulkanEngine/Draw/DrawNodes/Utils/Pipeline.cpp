@@ -1,7 +1,7 @@
 #include "Pipeline.hpp"
 
 #include <Core/GraphicsContext.hpp>
-#include <VulkanGraphicsEngineUtils.hpp>
+#include <Core/VulkanGraphicsEngineUtils.hpp>
 
 #include <array>
 #include <string>

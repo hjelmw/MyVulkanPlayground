@@ -1,7 +1,7 @@
 #include <vulkan/vulkan.h>
 #include <glfw/glfw3.h>
 
-#include <VulkanGraphicsEngineUtils.hpp>
+#include <Core/VulkanGraphicsEngineUtils.hpp>
 #include <Core/Swapchain.hpp>
 
 namespace NVulkanEngine

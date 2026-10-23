@@ -1,6 +1,6 @@
 #pragma once
 
-#include <VulkanGraphicsEngineUtils.hpp>
+#include <Core/VulkanGraphicsEngineUtils.hpp>
 #include <Core/GraphicsContext.hpp>
 #include <Managers/Utils/Texture.hpp>
 

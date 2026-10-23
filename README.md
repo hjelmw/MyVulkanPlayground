@@ -6,7 +6,7 @@ In this project I have implemented several systems meant for simplifying interac
 
 There are helpers for handling keyboard/mouse inputs, resource state tracking, pipeline management & shader binding tables as well as a rudimentary model rendering system. The base class is overridable and has two functions: Init and Draw. Init is called once on startup while Draw runs once per frame. The entire viewport is additionally rendered through ImGui and you can inspect all textures in real time.
 
-You can have a look under [source/VulkanEngine/DrawNodes/](https://github.com/hjelmw/MyVulkanPlayground/tree/main/source/VulkanEngine/DrawNodes
+You can have a look under [source/VulkanEngine/Draw/DrawNodes/](https://github.com/hjelmw/MyVulkanPlayground/tree/main/source/VulkanEngine/Draw/DrawNodes
 ) to see what rendering techniques have currently been implemented.
 
 ![alt text](screenshots/dev/engine3.png)
