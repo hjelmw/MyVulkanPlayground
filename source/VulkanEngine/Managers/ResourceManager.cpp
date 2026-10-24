@@ -87,7 +87,7 @@ namespace NVulkanEngine
 
 	const SRenderResource& CResourceManager::GetRenderResource(const uint32_t resourceId) const
 	{
-		assert(resourceId < m_RenderResources.size() && "Resource was never added");
+		assert(resourceId < m_RenderResources.size() && "Resource was never added. Forgot to call Add()?");
 		return m_RenderResources[resourceId];
 	}
 

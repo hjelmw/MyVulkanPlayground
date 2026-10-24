@@ -1,7 +1,9 @@
 #include "LightingNode.hpp"
+#include "ShadowNode.hpp"
 #include "Utils/Pipeline.hpp"
 #include "Utils/BindingTable.hpp"
-#include "ShadowNode.hpp"
+#include "ShaderConstants.hpp"
+
 
 #include <imgui.h>
 
@@ -14,37 +16,16 @@ static float     g_AmbientIntensity = 0.15f;
 
 namespace NVulkanEngine
 {
-	struct SDeferredLightingUniformBuffer
-	{
-		struct Light
-		{
-			glm::mat4 m_LightMatrix;
-
-			glm::vec3 m_LightPosition;
-			float     m_LightRadius;
-
-			glm::vec3 m_LightColor;
-			float     m_LightIntensity;
-		};
-
-		Light     m_Lights[1];
-		glm::vec3 m_ViewPos;
-		float     m_ShadowDepthBias;
-
-		glm::vec3 m_SunDirection; // Towards the sun
-		float     m_SunIntensity;
-		glm::vec3 m_SunColor;
-		float     m_AmbientIntensity;
-	};
-
 	void CLightingNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
-		const SRenderResource positionsAttachment    = managers->m_ResourceManager->Get<NRenderResources::SGBufferPositions>();
-		const SRenderResource normalsAttachment      = managers->m_ResourceManager->Get<NRenderResources::SGBufferNormals>();
-		const SRenderResource albedoAttachment       = managers->m_ResourceManager->Get<NRenderResources::SGBufferAlbedo>();
-		const SRenderResource depthAttachment        = managers->m_ResourceManager->Get<NRenderResources::SGBufferDepth>();
-		const SRenderResource shadowMapAttachment    = managers->m_ResourceManager->Get<NRenderResources::SSunShadowMap>();
-		const SRenderResource atmosphericsAttachment = managers->m_ResourceManager->Get<NRenderResources::SAtmosphericsSkyBox>();
+		using namespace NRenderResources;
+
+		const SRenderResource positionsAttachment    = managers->m_ResourceManager->Get<SGBufferPositions>();
+		const SRenderResource normalsAttachment      = managers->m_ResourceManager->Get<SGBufferNormals>();
+		const SRenderResource albedoAttachment       = managers->m_ResourceManager->Get<SGBufferAlbedo>();
+		const SRenderResource depthAttachment        = managers->m_ResourceManager->Get<SGBufferDepth>();
+		const SRenderResource shadowMapAttachment    = managers->m_ResourceManager->Get<SSunShadowMap>();
+		const SRenderResource atmosphericsAttachment = managers->m_ResourceManager->Get<SAtmosphericsSkyBox>();
 
 		m_DeferredUniformBuffer = CreateUniformBuffer(context, m_DeferredLightBufferMemory, sizeof(SDeferredLightingUniformBuffer));
 
@@ -58,7 +39,7 @@ namespace NVulkanEngine
 		m_DeferredTable->AddUniformBufferBinding(6, VK_SHADER_STAGE_FRAGMENT_BIT, m_DeferredUniformBuffer, sizeof(SDeferredLightingUniformBuffer));
 		m_DeferredTable->CreateBindings(context);
 
-		const VkFormat sceneColorAttachmentFormat = managers->m_ResourceManager->Get<NRenderResources::SSceneColor>().m_Format;
+		const VkFormat sceneColorAttachmentFormat = managers->m_ResourceManager->Get<SSceneColor>().m_Format;
 		const VkFormat depthFormat = depthAttachment.m_Format;
 
 		m_DeferredPipeline = new CPipeline(EPipelineType::GRAPHICS);
@@ -99,15 +80,17 @@ namespace NVulkanEngine
 
 	void CLightingNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
 	{
-		CResourceManager* resourceManager = managers->m_ResourceManager;
-		resourceManager->TransitionResource<NRenderResources::SGBufferPositions>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		resourceManager->TransitionResource<NRenderResources::SGBufferNormals>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		resourceManager->TransitionResource<NRenderResources::SGBufferAlbedo>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		resourceManager->TransitionResource<NRenderResources::SGBufferDepth>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		resourceManager->TransitionResource<NRenderResources::SSunShadowMap>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
-		resourceManager->TransitionResource<NRenderResources::SAtmosphericsSkyBox>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		using namespace NRenderResources;
 
-		SRenderResource sceneColorAttachment = resourceManager->TransitionResource<NRenderResources::SSceneColor>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		CResourceManager* resourceManager = managers->m_ResourceManager;
+		resourceManager->TransitionResource<SGBufferPositions>(commandBuffer,   VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		resourceManager->TransitionResource<SGBufferNormals>(commandBuffer,     VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		resourceManager->TransitionResource<SGBufferAlbedo>(commandBuffer,      VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		resourceManager->TransitionResource<SGBufferDepth>(commandBuffer,       VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		resourceManager->TransitionResource<SSunShadowMap>(commandBuffer,       VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL);
+		resourceManager->TransitionResource<SAtmosphericsSkyBox>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		SRenderResource sceneColorAttachment = resourceManager->TransitionResource<SSceneColor>(commandBuffer, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		std::vector<SRenderResource> sceneColorAttachments = { sceneColorAttachment };
 		BeginRendering("Deferred Lighting", context, commandBuffer, sceneColorAttachments);

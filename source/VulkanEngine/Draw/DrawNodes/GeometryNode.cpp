@@ -1,18 +1,14 @@
 #include "GeometryNode.hpp"
 #include "Utils/Pipeline.hpp"
+#include "ShaderConstants.hpp"
 #include <imgui.h>
 
 namespace NVulkanEngine
 {
-	struct SGeometryUniformBuffer
-	{
-		glm::mat4 m_ModelMat      = glm::identity<glm::mat4>();
-		glm::mat4 m_ViewMat       = glm::identity<glm::mat4>();
-		glm::mat4 m_ProjectionMat = glm::identity<glm::mat4>();
-	};
-
 	void CGeometryNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
+		using namespace NRenderResources;
+
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
@@ -20,10 +16,10 @@ namespace NVulkanEngine
 			model->CreateGeometryBindingTable(context);
 		}
 
-		VkFormat positionsFormat = managers->m_ResourceManager->Get<NRenderResources::SGBufferPositions>().m_Format;
-		VkFormat normalsFormat   = managers->m_ResourceManager->Get<NRenderResources::SGBufferNormals>().m_Format;
-		VkFormat albedoFormat    = managers->m_ResourceManager->Get<NRenderResources::SGBufferAlbedo>().m_Format;
-		VkFormat depthFormat     = managers->m_ResourceManager->Get<NRenderResources::SGBufferDepth>().m_Format;
+		VkFormat positionsFormat = managers->m_ResourceManager->Get<SGBufferPositions>().m_Format;
+		VkFormat normalsFormat   = managers->m_ResourceManager->Get<SGBufferNormals>().m_Format;
+		VkFormat albedoFormat    = managers->m_ResourceManager->Get<SGBufferAlbedo>().m_Format;
+		VkFormat depthFormat     = managers->m_ResourceManager->Get<SGBufferDepth>().m_Format;
 
 		// Just get any descriptor set layout since they are the same for all the models atm
 		VkDescriptorSetLayout modelDescriptorSetLayout = managers->m_Modelmanager->GetModel(0)->GetModelDescriptorSetLayout();

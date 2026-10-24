@@ -31,8 +31,8 @@ project "VulkanEngine"
     files 
     { 
         "./vendor/imgui-docking/imgui/imgui*.h",
-        "./vendor/imgui-docking/imgui/backends/imgui_impl_glfw.hpp",
-        "./vendor/imgui-docking/imgui/backends/imgui_impl_vulkan.hpp",
+        "./vendor/imgui-docking/imgui/backends/imgui_impl_glfw.h",
+        "./vendor/imgui-docking/imgui/backends/imgui_impl_vulkan.h",
         "./vendor/imgui-docking/imgui/imgui*.cpp",
         "./vendor/imgui-docking/imgui/backends/imgui_impl_glfw.cpp",
         "./vendor/imgui-docking/imgui/backends/imgui_impl_vulkan.cpp",
@@ -45,7 +45,7 @@ project "VulkanEngine"
     {
         ["headers/*"] = { "./source/**.hpp" },
         ["source/*"] = { "./source/**.cpp" },
-        ["imgui/*"] = {"./vendor/imgui-docking/imgui/.**cpp" }
+        ["imgui/*"] = { "./vendor/imgui-docking/imgui/**.cpp", "./vendor/imgui-docking/imgui/**.h" }
     }
 
     defines 
@@ -57,27 +57,33 @@ project "VulkanEngine"
     }
 
     -- Returns complete name of dependency, i.e glm-3.2.1 etc  
-    function find_dependency(pattern)
-        local matches = os.matchdirs(pattern)
-        if #matches > 0 then
-            return matches[1]
-        else
-            return nil
+    function find_dependency(pattern, exclude)
+        for _, match in ipairs(os.matchdirs(pattern)) do
+            if not exclude or not match:find(exclude, 1, true) then
+                return match
+            end
         end
+        error("Missing dependency: " .. pattern)
     end
 
-
+    -- Debug gets symbols, Release gets optimizations
+    filter "configurations:Debug"
+        symbols "On"
+    filter "configurations:Release"
+        optimize "On"
+    filter {}
 
     includedirs
     {
         "$(SolutionDir)" .. find_dependency("vendor/glfw*") .. "/glfw/include",
-        "$(SolutionDir)" .. find_dependency("vendor/glm*"),
+        "$(SolutionDir)" .. find_dependency("vendor/glm-*", "glm-aabb"),
         "$(SolutionDir)" .. find_dependency("vendor/glm-aabb*"),
         "$(SolutionDir)" .. find_dependency("vendor/imgui*") .. "/imgui", -- This is needed because the backend does relative includes :(
         "$(SolutionDir)" .. find_dependency("vendor/stbi*"),
         "$(SolutionDir)" .. find_dependency("vendor/tinyobjloader*"),
         "$(VULKAN_SDK)/Include",
         "./source/VulkanEngine",
+        "./shaders", -- For the shared shader constants file
     }
 
     links 
@@ -91,22 +97,14 @@ project "Shaders"
     kind "Utility" -- Only custom build steps
     objdir "build/%{cfg.buildcfg}/obj"
 
-    files { "./shaders/*.vert", "./shaders/*.frag", "./shaders/*.comp" }
+    files { "./shaders/*.vert", "./shaders/*.frag", "./shaders/*.comp", "./shaders/**.hpp" }
 
-    filter "files:shaders/**.vert"
-        buildmessage "Compiling vertex shader"
-        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
-        buildoutputs "$(SolutionDir)\\%(Identity).spv"
+    local shaderCommand = "\"$(VULKAN_SDK)/Bin/glslc.exe\" --target-env=vulkan1.3 %{cfg.buildcfg == 'Release' and '-O' or '-g'} -o \"$(SolutionDir)%(Identity).spv\" \"%(Identity)\""
 
-    filter "files:shaders/**.frag"
-        buildmessage "Compiling fragment shader"
-        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
-        buildoutputs "$(SolutionDir)\\%(Identity).spv"
-
-    filter "files:shaders/**.comp"
-        buildmessage "Compiling compute shader"
-        buildcommands "$(VULKAN_SDK)\\Bin\\glslangValidator -g -V -o $(SolutionDir)\\%(Identity).spv %(Identity)"
-        buildoutputs "$(SolutionDir)\\%(Identity).spv"
+    filter "files:shaders/**.vert or shaders/**.frag or shaders/**.comp"
+        buildmessage "Compiling %(Identity)"
+        buildinputs { "$(SolutionDir)shaders/ShaderConstants.hpp" } -- Modifying the shared shader constants rebuilds all shaders
+        buildcommands { shaderCommand }
+        buildoutputs { "$(SolutionDir)%(Identity).spv" }
 
     filter {}
-

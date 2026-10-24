@@ -1,16 +1,12 @@
 #include "DebugNode.hpp"
 #include "Utils/Pipeline.hpp"
 #include "Utils/BindingTable.hpp"
-#include <Managers/DebugManager.hpp>
+#include "Managers/DebugManager.hpp"
+#include "ShaderConstants.hpp"
+
 
 namespace NVulkanEngine
 {
-
-	struct SDebugUniformUniformBuffer
-	{
-		glm::mat4 m_ViewProjectionMatrix = glm::identity<glm::mat4>();
-	};
-
 	void CDebugNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		VkFormat sceneColorFormat = managers->m_ResourceManager->Get<NRenderResources::SSceneColor>().m_Format;

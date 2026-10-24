@@ -5,6 +5,7 @@
 
 #include <array>
 #include <string>
+#include <cassert>
 
 namespace NVulkanEngine
 {
@@ -45,6 +46,9 @@ namespace NVulkanEngine
 
 	void CPipeline::AddPushConstantSlot(VkShaderStageFlags shaderStage, size_t constantsSize, size_t offset)
 	{
+		// This is max push constant size in Vulkan
+		assert(constantsSize > 0 && constantsSize <= 128); 
+
 		VkPushConstantRange pushConstant;
 		pushConstant.stageFlags = shaderStage;
 		pushConstant.offset     = static_cast<uint32_t>(offset);
@@ -108,8 +112,10 @@ namespace NVulkanEngine
 	{
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+		// A null layout means the pipeline has no descriptor sets
+		const bool hasDescriptorSet = descriptorSetLayout != VK_NULL_HANDLE;
+		pipelineLayoutInfo.setLayoutCount = hasDescriptorSet ? 1 : 0;
+		pipelineLayoutInfo.pSetLayouts = hasDescriptorSet ? &descriptorSetLayout : nullptr;
 		pipelineLayoutInfo.pushConstantRangeCount = m_PushConstantsRanges.size != 0 ? 1 : 0; // For now
 		pipelineLayoutInfo.pPushConstantRanges = &m_PushConstantsRanges;
 

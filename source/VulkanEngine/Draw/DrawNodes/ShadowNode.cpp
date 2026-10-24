@@ -1,6 +1,7 @@
 #include "ShadowNode.hpp"
 #include "TerrainNode.hpp"
 #include "Utils/Pipeline.hpp"
+#include "ShaderConstants.hpp"
 
 
 #include <imgui.h>
@@ -20,12 +21,6 @@ namespace NVulkanEngine
 	glm::mat4 CShadowNode::s_LightMatrix = glm::identity<glm::mat4>();
 	glm::vec3 CShadowNode::s_SunlightDirection = glm::vec3(0.0f, 0.0f, 0.0f);
 	float     CShadowNode::s_ShadowDepthBias = 0.0f;
-	struct SShadowUniformBuffer
-	{
-		glm::mat4 m_ModelMatrix;
-		glm::mat4 m_ViewMatrix;
-		glm::mat4 m_ProjectionMatrix;
-	};
 
 	struct STerrainShadowVertexPushConstants
 	{

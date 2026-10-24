@@ -9,7 +9,6 @@
 namespace NVulkanEngine
 {
 	class CPipeline;
-	class CBindingTable;
 
 	class CTerrainNode : public CDrawNode
 	{
@@ -26,9 +25,6 @@ namespace NVulkanEngine
 	private:
 		void CreateTerrainVertices(SRuntimeContext* context);
 
-		VkBuffer        m_TerrainUniformBuffer = VK_NULL_HANDLE;
-		VkDeviceMemory  m_TerrainUniformBufferMemory  = VK_NULL_HANDLE;
-
 		VkBuffer        m_TerrainVertexBuffer       = VK_NULL_HANDLE;
 		VkDeviceMemory  m_TerrainVertexBufferMemory = VK_NULL_HANDLE;
 
@@ -36,8 +32,7 @@ namespace NVulkanEngine
 		VkDeviceMemory  m_TerrainIndexBufferMemory  = VK_NULL_HANDLE;
 
 		// Pipeline & shader binding
-		CBindingTable* m_TerrainTable          = nullptr;
-		CPipeline*     m_TerrainPipeline       = nullptr;
+		CPipeline* m_TerrainPipeline = nullptr;
 
 		int m_TerrainTextureWidth       = -1;
 		int m_TerrainTextureHeight      = -1;

@@ -1,7 +1,8 @@
 #include "SkyNode.hpp"
+#include "ShadowNode.hpp"
 #include "Utils/Pipeline.hpp"
 #include "Utils/BindingTable.hpp"
-#include "ShadowNode.hpp"
+#include "ShaderConstants.hpp"
 
 #include <imgui.h>
 
@@ -36,35 +37,6 @@ namespace NVulkanEngine
 		glm::mat4 m_InvViewProjectionMatrix = glm::identity<glm::mat4>();
 		//
 		float m_CameraFar   = 0.0f;
-	};
-	struct SAtmosphericsFragmentConstants
-	{
-		glm::vec3    m_PlanetCameraPosition   = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_CameraNear             = 0.0f;
-		//
-		glm::vec3    m_PlanetCenter           = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_CameraFar              = 0.0f;
-		//
-		glm::vec3     m_PlanetToSunDir        = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::uint32_t m_NumInScatteringPoints = 0;
-		//
-		glm::uint32_t m_NumOpticalDepthPoints = 0;
-		glm::float32  m_PlanetRadius          = 0.0f;
-		glm::float32  m_AtmosphereRadius      = 0.0f;
-		glm::float32  m_AbsorptionFallof      = 0.0f;
-		//
-		glm::vec3    m_AbsorptionBeta         = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_AbsorptionHeight       = 0.0f;
-		//
-		glm::vec3    m_RayleighBetaScattering = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_RayleighHeight         = 0.0f;
-		//
-		glm::vec3    m_MieBetaScattering      = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::float32 m_MieHeight              = 0.0f;
-		//
-		glm::uint32_t m_AllowMieScattering    = 0;
-		glm::float32  m_ScatteringIntensity   = 0.0f;
-		glm::vec2     m_Pad0                  = glm::vec2(0xdeadbeef, 0xdeadbeef);
 	};
 
 	void CSkyNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)

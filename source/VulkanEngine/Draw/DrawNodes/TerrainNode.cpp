@@ -1,7 +1,6 @@
 #include "TerrainNode.hpp"
 #include "Utils/Pipeline.hpp"
-#include "Utils/BindingTable.hpp"
-#include <Core/VulkanGraphicsEngineUtils.hpp>
+#include "ShaderConstants.hpp"
 
 
 
@@ -16,17 +15,6 @@ namespace NVulkanEngine
 	{
 		glm::vec3 m_Position;
 		glm::vec3 m_Normal;
-	};
-
-	struct STerrainVertexPushConstants
-	{
-		glm::mat4 m_ViewProjectionMatrix = glm::identity<glm::mat4>();
-		glm::mat4 m_ModelMatrix          = glm::identity<glm::mat4>();
-	};
-
-	struct STerrainFragmentConstants
-	{
-		float m_TestConst = 0;
 	};
 
 	size_t CTerrainNode::GetVertexStride()
@@ -152,11 +140,6 @@ namespace NVulkanEngine
 			m_ModelManager->SetSceneBounds(sceneBounds);
 		}
 
-		m_TerrainUniformBuffer = CreateUniformBuffer(context, m_TerrainUniformBufferMemory, sizeof(STerrainFragmentConstants));
-
-		m_TerrainTable = new CBindingTable();
-		m_TerrainTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, m_TerrainUniformBuffer, sizeof(STerrainFragmentConstants));
-		m_TerrainTable->CreateBindings(context);
 
 		// Same render targets as the geometry node so the deferred lighting pass shades the terrain
 		const VkFormat positionsFormat = managers->m_ResourceManager->Get<NRenderResources::SGBufferPositions>().m_Format;
@@ -178,7 +161,7 @@ namespace NVulkanEngine
 		m_TerrainPipeline->AddColorAttachment(normalsFormat);
 		m_TerrainPipeline->AddColorAttachment(albedoFormat);
 		m_TerrainPipeline->AddDepthAttachment(depthFormat);
-		m_TerrainPipeline->CreatePipeline(context, m_TerrainTable->GetDescriptorSetLayout());
+		m_TerrainPipeline->CreatePipeline(context, VK_NULL_HANDLE); // No descriptor sets
 	}
 
 	void CTerrainNode::Draw(SRuntimeContext* context, SGraphicsManagers* managers, VkCommandBuffer commandBuffer)
@@ -205,7 +188,6 @@ namespace NVulkanEngine
 		BeginRendering("Terrain", context, commandBuffer, { positionsAttachment, normalsAttachment, albedoAttachment, depthAttachment });
 
 		m_TerrainPipeline->BindPipeline(commandBuffer);
-		m_TerrainTable->BindTable(context, commandBuffer, m_TerrainPipeline->GetPipelineLayout());
 		m_TerrainPipeline->PushConstants(commandBuffer, (void*)&terrainPushConstants);
 
 		VkBuffer vertexBuffer[] = { m_TerrainVertexBuffer };
@@ -239,13 +221,7 @@ namespace NVulkanEngine
 		vkDestroyBuffer(context->m_VulkanDevice, m_TerrainIndexBuffer, nullptr);
 		vkFreeMemory(context->m_VulkanDevice, m_TerrainIndexBufferMemory, nullptr);
 
-		vkDestroyBuffer(context->m_VulkanDevice, m_TerrainUniformBuffer, nullptr);
-		vkFreeMemory(context->m_VulkanDevice, m_TerrainUniformBufferMemory, nullptr);
-
-		m_TerrainTable->Cleanup(context);
 		m_TerrainPipeline->Cleanup(context);
-
-		delete m_TerrainTable;
 	}
 
 };

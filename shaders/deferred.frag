@@ -9,28 +9,7 @@ layout (binding = 3) uniform sampler2D GBufferDepth;
 layout (binding = 4) uniform sampler2D ShadowMapBuffer;
 layout (binding = 5) uniform sampler2D AtmosphericsBuffer;
 
-// Per Light data
-struct SLight
-{
-	mat4   m_LightMatrix;
-	vec3   m_Position;
-	float  m_Radius;
-	vec3   m_Color;
-	float  m_Intensity;
-};
 
-// Deferred lighting uniform buffer constants
-layout (binding = 6) uniform UBO
-{
-	SLight m_Lights[NUM_LIGHTS];
-	vec3   m_ViewPos;
-	float  m_ShadowDepthBias; // Normalized shadow map depth, see CShadowNode::GetShadowDepthBias()
-
-	vec3   m_SunDirection;    // Towards the sun
-	float  m_SunIntensity;
-	vec3   m_SunColor;
-	float  m_AmbientIntensity;
-} SDeferredLightingConstants;
 
 layout (location = 0) in  vec2 inUV;
 layout (location = 0) out vec4 outFragColor;

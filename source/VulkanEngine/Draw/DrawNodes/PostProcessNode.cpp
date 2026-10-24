@@ -1,6 +1,7 @@
 #include "PostProcessNode.hpp"
 #include "Utils/Pipeline.hpp"
 #include "Utils/BindingTable.hpp"
+#include "ShaderConstants.hpp"
 
 namespace NVulkanEngine
 {
