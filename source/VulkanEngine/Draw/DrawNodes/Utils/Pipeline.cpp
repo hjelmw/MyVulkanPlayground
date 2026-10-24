@@ -110,10 +110,10 @@ namespace NVulkanEngine
 
 	void CPipeline::CreatePipelineLayout(SRuntimeContext* context, VkDescriptorSetLayout descriptorSetLayout)
 	{
+		const bool hasDescriptorSet = descriptorSetLayout != VK_NULL_HANDLE;
+
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		// A null layout means the pipeline has no descriptor sets
-		const bool hasDescriptorSet = descriptorSetLayout != VK_NULL_HANDLE;
 		pipelineLayoutInfo.setLayoutCount = hasDescriptorSet ? 1 : 0;
 		pipelineLayoutInfo.pSetLayouts = hasDescriptorSet ? &descriptorSetLayout : nullptr;
 		pipelineLayoutInfo.pushConstantRangeCount = m_PushConstantsRanges.size != 0 ? 1 : 0; // For now
