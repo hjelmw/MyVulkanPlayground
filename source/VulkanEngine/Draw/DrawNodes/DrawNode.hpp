@@ -8,7 +8,7 @@
 #include <Managers/LightManager.hpp>
 #include <Managers/DebugManager.hpp>
 #include <Managers/ResourceManager.hpp>
-#include <Managers/RenderResources.hpp>
+#include <RenderResourcesShared.hpp>
 
 /*
 	Draw nodes. Used for drawing everything in this engine.

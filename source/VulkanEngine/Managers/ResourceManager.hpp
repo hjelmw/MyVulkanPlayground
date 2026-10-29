@@ -9,11 +9,11 @@
 #include <Core/GraphicsContext.hpp>
 #include <Core/VulkanGraphicsEngineUtils.hpp>
 
-#include "RenderResources.hpp"
+#include "../RenderResourcesShared.hpp"
 
 /*
 	resource manager holds all the possible render to textures and keeps track of their states for you.
-	Render resources are keyed by tag type, see RenderResources.hpp
+	Render resources are keyed by tag type, see RenderResourcesShared.hpp
 */
 
 enum class EBufferIndices : uint32_t
@@ -44,7 +44,7 @@ namespace NVulkanEngine
 		template<class TRenderResource>
 		SRenderResource Add(SRuntimeContext* context,VkSampler sampler,uint32_t width,uint32_t height,VkFormat formatOverride = VK_FORMAT_UNDEFINED)
 		{
-			static_assert(CRenderResourceTag<TRenderResource>, "Resource tag needs m_DebugName, m_Format, m_Usage and m_InitialState, see RenderResources.hpp");
+			static_assert(CRenderResourceTag<TRenderResource>, "Resource tag needs m_DebugName, m_Format, m_Usage and m_InitialState, see RenderResourcesShared.hpp");
 
 			const VkFormat format = formatOverride != VK_FORMAT_UNDEFINED ? formatOverride : TRenderResource::m_Format;
 			return AddRenderResource(context, GetResourceId<TRenderResource>(), TRenderResource::m_DebugName, sampler, VK_SHADER_STAGE_FRAGMENT_BIT, format, TRenderResource::m_Usage, TRenderResource::m_InitialState, width, height);
