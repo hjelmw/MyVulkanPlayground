@@ -1,35 +1,9 @@
 #version 450
 
+#include "ShaderConstants.hpp"
+
 layout (binding = 0) uniform sampler2D GBufferDepth;
-layout (binding = 1) uniform UBO
-{
-	vec3  m_PlanetCameraPosition;
-	float m_CameraNear;
-	// 
-	vec3  m_PlanetCenter;
-	float m_CameraFar;
-	//
-	vec3 m_PlanetToSunDir;
-	uint m_NumInScatteringPoints;
-	//
-	uint  m_NumOpticalDepthPoints;
-	float m_PlanetRadius;
-	float m_AtmosphereRadius;
-	float m_AbsorptionFallof;
-	//
-	vec3 m_AbsorptionBeta;
-	float m_AbsorptionHeight;
-	//
-	vec3 m_RayleighBetaScattering;
-	float m_RayleighHeight;
-	//
-	vec3 m_MieBetaScattering;
-	float m_MieHeight;
-	//
-	uint  m_AllowMieScattering;
-	float m_ScatteringIntensity;
-	vec2  m_Pad0;
-} SAtmosphericsConstants;
+layout (binding = 1) uniform AtmosphericsUniforms{ SAtmosphericsFragmentUniforms SAtmosphericsFragmentConstants; };
 
 layout (location = 0) in  vec2 inUV;
 layout (location = 1) in  vec3 inCameraRayDir;
@@ -77,11 +51,11 @@ vec2 CalculateRayleighMiePhase(vec3 rayDirection, vec3 sunDirection)
 
 vec3 CalculateDensityAtPoint(vec3 samplePoint)
 {
-	const vec2 scaleHeight = vec2(SAtmosphericsConstants.m_RayleighHeight, SAtmosphericsConstants.m_MieHeight);
-	const float heightAboveSurface = max(length(samplePoint) - SAtmosphericsConstants.m_PlanetRadius, 0.0f);
+	const vec2 scaleHeight = vec2(SAtmosphericsFragmentConstants.m_RayleighHeight, SAtmosphericsFragmentConstants.m_MieHeight);
+	const float heightAboveSurface = max(length(samplePoint) - SAtmosphericsFragmentConstants.m_PlanetRadius, 0.0f);
 	const vec2  particleDensity = vec2(exp(-heightAboveSurface / scaleHeight));
 
-	const float absorptionDenominator = (SAtmosphericsConstants.m_AbsorptionHeight - heightAboveSurface) / SAtmosphericsConstants.m_AbsorptionFallof;
+	const float absorptionDenominator = (SAtmosphericsFragmentConstants.m_AbsorptionHeight - heightAboveSurface) / SAtmosphericsFragmentConstants.m_AbsorptionFallof;
 	const float absorptionDensity = (1.0f / (absorptionDenominator * absorptionDenominator + 1.0f)) * particleDensity.x;
 
 	return vec3(particleDensity.xy, absorptionDensity);
@@ -90,10 +64,10 @@ vec3 CalculateDensityAtPoint(vec3 samplePoint)
 vec3 CalculateOpticalDepth(vec3 rayOrigin, vec3 rayDirection, float rayLength)
 {
 	vec3 densitySamplePoint = rayOrigin;
-	const float stepSize = rayLength / SAtmosphericsConstants.m_NumOpticalDepthPoints;
+	const float stepSize = rayLength / SAtmosphericsFragmentConstants.m_NumOpticalDepthPoints;
 
 	vec3 opticalDepth = vec3(0.0f, 0.0f, 0.0f);
-	for(uint i = 0; i < SAtmosphericsConstants.m_NumOpticalDepthPoints; i++)
+	for(uint i = 0; i < SAtmosphericsFragmentConstants.m_NumOpticalDepthPoints; i++)
 	{
 		vec3 density = CalculateDensityAtPoint(densitySamplePoint);
 
@@ -106,11 +80,11 @@ vec3 CalculateOpticalDepth(vec3 rayOrigin, vec3 rayDirection, float rayLength)
 
 vec4 CalculateScatteredLight(vec3 rayOrigin, vec3 rayDirection)
 {
-	vec3 inscatterStartPoint = rayOrigin - SAtmosphericsConstants.m_PlanetCenter;
+	vec3 inscatterStartPoint = rayOrigin - SAtmosphericsFragmentConstants.m_PlanetCenter;
 
 	// Shoot a ray to figure out if it collides or is inside of the atmosphere
-	const vec2 rayAtmosphereHit = RaySphereIntersect(inscatterStartPoint, rayDirection, SAtmosphericsConstants.m_PlanetCenter, SAtmosphericsConstants.m_AtmosphereRadius);
-	const vec2 rayPlanetHit     = RaySphereIntersect(inscatterStartPoint, rayDirection, SAtmosphericsConstants.m_PlanetCenter, SAtmosphericsConstants.m_PlanetRadius);
+	const vec2 rayAtmosphereHit = RaySphereIntersect(inscatterStartPoint, rayDirection, SAtmosphericsFragmentConstants.m_PlanetCenter, SAtmosphericsFragmentConstants.m_AtmosphereRadius);
+	const vec2 rayPlanetHit     = RaySphereIntersect(inscatterStartPoint, rayDirection, SAtmosphericsFragmentConstants.m_PlanetCenter, SAtmosphericsFragmentConstants.m_PlanetRadius);
 
 	const float distToAtmosphere = rayAtmosphereHit.x;
 	const float distThroughAtmosphere = min(rayAtmosphereHit.y, rayPlanetHit.x);
@@ -119,29 +93,29 @@ vec4 CalculateScatteredLight(vec3 rayOrigin, vec3 rayDirection)
 	if(distThroughAtmosphere == 0.0f || distToAtmosphere > distThroughAtmosphere)
 		return vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	const float stepSize = (distThroughAtmosphere - distToAtmosphere) / float(SAtmosphericsConstants.m_NumInScatteringPoints);
+	const float stepSize = (distThroughAtmosphere - distToAtmosphere) / float(SAtmosphericsFragmentConstants.m_NumInScatteringPoints);
 
 	// Raymarch start
 	const float rayStepDistance = distToAtmosphere + stepSize * 0.5;
 	vec3 inScatterPoint = inscatterStartPoint + rayDirection * rayStepDistance;
 
-	const vec3 rayleighBeta = SAtmosphericsConstants.m_RayleighBetaScattering;
-	const vec3 mieBeta = SAtmosphericsConstants.m_MieBetaScattering;
-	const vec3 absorptionBeta = SAtmosphericsConstants.m_AbsorptionBeta;
+	const vec3 rayleighBeta = SAtmosphericsFragmentConstants.m_RayleighBetaScattering;
+	const vec3 mieBeta = SAtmosphericsFragmentConstants.m_MieBetaScattering;
+	const vec3 absorptionBeta = SAtmosphericsFragmentConstants.m_AbsorptionBeta;
 
 	// These will contain the amount of scattered light and optical depth
 	vec3 rayleighDensity = vec3(0.0f, 0.0f, 0.0f);
 	vec3 mieDensity = vec3(0.0f, 0.0f, 0.0f);
 	vec3 totalOpticalDepth = vec3(0.0f, 0.0f, 0.0f);
-	for (int i = 0; i < SAtmosphericsConstants.m_NumInScatteringPoints; i++)
+	for (int i = 0; i < SAtmosphericsFragmentConstants.m_NumInScatteringPoints; i++)
 	{
 		vec3 density = CalculateDensityAtPoint(inScatterPoint);
 
 		// Now shoot a ray from current position toward sun. We will use this to compute the optical depth
-		vec2 raySunHit = RaySphereIntersect(inScatterPoint, SAtmosphericsConstants.m_PlanetToSunDir, SAtmosphericsConstants.m_PlanetCenter, SAtmosphericsConstants.m_AtmosphereRadius);
+		vec2 raySunHit = RaySphereIntersect(inScatterPoint, SAtmosphericsFragmentConstants.m_PlanetToSunDir, SAtmosphericsFragmentConstants.m_PlanetCenter, SAtmosphericsFragmentConstants.m_AtmosphereRadius);
 
 		// Now raymarch toward the sun and gather the optical depth
-		vec3 currentOpticalDepth = CalculateOpticalDepth(inScatterPoint, SAtmosphericsConstants.m_PlanetToSunDir, raySunHit.y);
+		vec3 currentOpticalDepth = CalculateOpticalDepth(inScatterPoint, SAtmosphericsFragmentConstants.m_PlanetToSunDir, raySunHit.y);
 
 		// The amount of light that reached the sample point
 		vec3 rayleighAttenuation   = -rayleighBeta   * (totalOpticalDepth.x + currentOpticalDepth.x);
@@ -162,14 +136,14 @@ vec4 CalculateScatteredLight(vec3 rayOrigin, vec3 rayDirection)
 	// calculate how much light can pass through the atmosphere
 	vec3 opacity = exp(-(mieBeta * totalOpticalDepth.y + rayleighBeta * totalOpticalDepth.x + absorptionBeta * totalOpticalDepth.z));
 
-	vec2 rayleighMiePhase = CalculateRayleighMiePhase(rayDirection, SAtmosphericsConstants.m_PlanetToSunDir);
+	vec2 rayleighMiePhase = CalculateRayleighMiePhase(rayDirection, SAtmosphericsFragmentConstants.m_PlanetToSunDir);
 	const float rayleighPhase = rayleighMiePhase.x;
 	const float miePhase = rayleighMiePhase.y;
 
 	vec3 rayleighTerm = rayleighPhase * rayleighBeta * rayleighDensity;
 	vec3 mieTerm = miePhase * mieBeta * mieDensity;
 
-	vec4 finalInscatteredLight = vec4((rayleighTerm + mieTerm) * SAtmosphericsConstants.m_ScatteringIntensity, opacity);
+	vec4 finalInscatteredLight = vec4((rayleighTerm + mieTerm) * SAtmosphericsFragmentConstants.m_ScatteringIntensity, opacity);
 
 	return 1.0f - exp(-finalInscatteredLight);
 }
@@ -184,7 +158,7 @@ void main()
 		return;
 	}
 
-	vec3  rayOrigin = SAtmosphericsConstants.m_PlanetCameraPosition;
+	vec3  rayOrigin = SAtmosphericsFragmentConstants.m_PlanetCameraPosition;
 	vec3  rayDirection = normalize(inCameraRayDir);
 	vec4 light = CalculateScatteredLight(rayOrigin, rayDirection);
 

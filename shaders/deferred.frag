@@ -1,6 +1,8 @@
 #version 450
 #define NUM_LIGHTS 1
 
+#include "ShaderConstants.hpp"
+
 // Texture sampler G-Buffer
 layout (binding = 0) uniform sampler2D GBufferPositions;
 layout (binding = 1) uniform sampler2D GBufferNormals;
@@ -9,7 +11,7 @@ layout (binding = 3) uniform sampler2D GBufferDepth;
 layout (binding = 4) uniform sampler2D ShadowMapBuffer;
 layout (binding = 5) uniform sampler2D AtmosphericsBuffer;
 
-
+layout (binding = 6) uniform Lighting{ SDeferredLightingFragmentUniforms SDeferredLightingConstants; };
 
 layout (location = 0) in  vec2 inUV;
 layout (location = 0) out vec4 outFragColor;
@@ -75,10 +77,10 @@ void main()
 
 	for(int i = 0; i < NUM_LIGHTS; i++)
 	{
-		vec3  lightPos       = SDeferredLightingConstants.m_Lights[i].m_Position;
-		vec3  lightColor     = SDeferredLightingConstants.m_Lights[i].m_Color; 
-		float lightRadius    = SDeferredLightingConstants.m_Lights[i].m_Radius;
-		float lightIntensity = SDeferredLightingConstants.m_Lights[i].m_Intensity;
+		vec3  lightPos       = SDeferredLightingConstants.m_Lights[i].m_LightPosition;
+		vec3  lightColor     = SDeferredLightingConstants.m_Lights[i].m_LightColor; 
+		float lightRadius    = SDeferredLightingConstants.m_Lights[i].m_LightRadius;
+		float lightIntensity = SDeferredLightingConstants.m_Lights[i].m_LightIntensity;
 
 		// Vector from fragment towards light
 		vec3 lightDir = lightPos - position;

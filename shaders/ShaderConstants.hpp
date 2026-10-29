@@ -27,11 +27,25 @@ using mat4    = glm::mat4;
 #define INIT_MAT4
 #endif
 
-struct SGeometryUniformBuffer
+struct SGeometryVertexUniforms
 {
 	mat4 m_ModelMatrix      INIT_MAT4;
 	mat4 m_ViewMatrix       INIT_MAT4;
 	mat4 m_ProjectionMatrix INIT_MAT4;
+};
+
+struct SMaterialFragmentPushConstants
+{
+	vec4  m_Diffuse           INIT_VEC4;
+	//
+	float m_Shininess         INIT_FLOAT;
+	float m_Metalness         INIT_FLOAT;
+	float m_Fresnel           INIT_FLOAT;
+	float m_Emission          INIT_FLOAT;
+	//
+	float m_Transparency      INIT_FLOAT;
+	float m_Reflectivity      INIT_FLOAT;
+	int   m_UseAlbedoTexture  INIT_INTEGER; // int and not bool, a C++ bool is 1 byte but a GLSL bool is 4
 };
 
 struct SLightData
@@ -45,7 +59,7 @@ struct SLightData
 	float m_LightIntensity INIT_FLOAT;
 };
 
-struct SDeferredLightingUniformBuffer
+struct SDeferredLightingFragmentUniforms
 {
 	SLightData m_Lights[1];
 	//
@@ -65,7 +79,14 @@ struct STerrainVertexPushConstants
 	mat4 m_ModelMatrix          INIT_MAT4;
 };
 
-struct SAtmosphericsFragmentConstants
+struct SAtmosphericsVertexPushConstants
+{
+	mat4  m_InvViewProjectionMatrix INIT_MAT4;
+	//
+	float m_CameraFar               INIT_FLOAT;
+};
+
+struct SAtmosphericsFragmentUniforms
 {
 	vec3  m_PlanetCameraPosition     INIT_VEC3;
 	float m_CameraNear               INIT_FLOAT;
@@ -95,7 +116,7 @@ struct SAtmosphericsFragmentConstants
 	vec2   m_Pad0                    INIT_VEC2;
 };
 
-struct SDebugUniformUniformBuffer
+struct SDebugVertexUniforms
 {
 	mat4 m_ViewProjectionMatrix INIT_MAT4;
 };

@@ -1,17 +1,14 @@
 #version 450
 
+#include "ShaderConstants.hpp"
+
 layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec3 inColor;
 layout (location = 2) in vec2 inTexCoord;
 layout (location = 3) in vec3 inNormal;
 layout (location = 4) in vec3 inTangent;
 
-layout (binding = 0) uniform UniformBufferObject 
-{
-    mat4 m_ModelMat;
-    mat4 m_ViewMat;
-    mat4 m_ProjectionMat;
-} SGeometryUBO;
+layout (binding = 0) uniform Geometry{ SGeometryVertexUniforms SGeometryConstants; };
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
@@ -21,15 +18,15 @@ layout (location = 4) out vec3 outTangent;
 
 void main()
 {
-    gl_Position  = SGeometryUBO.m_ProjectionMat * SGeometryUBO.m_ViewMat * SGeometryUBO.m_ModelMat * vec4(inPosition, 1.0);
+    gl_Position  = SGeometryConstants.m_ProjectionMatrix * SGeometryConstants.m_ViewMatrix * SGeometryConstants.m_ModelMatrix * vec4(inPosition, 1.0);
 	
 	outUV = inTexCoord;
 
 	// Vertex position in world space
-	outWorldPosition = (SGeometryUBO.m_ModelMat * vec4(inPosition, 1.0)).xyz;
+	outWorldPosition = (SGeometryConstants.m_ModelMatrix * vec4(inPosition, 1.0)).xyz;
 	
 	// Normal in world space
-	mat4 normalMatrix = transpose(inverse(SGeometryUBO.m_ModelMat));
+	mat4 normalMatrix = transpose(inverse(SGeometryConstants.m_ModelMatrix));
 	
 	outNormal = (normalMatrix * vec4(inNormal, 1.0f)).xyz;
 	
