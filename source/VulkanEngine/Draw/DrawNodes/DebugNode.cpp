@@ -11,10 +11,10 @@ namespace NVulkanEngine
 	{
 		VkFormat sceneColorFormat = managers->m_ResourceManager->Get<NRenderResources::SSceneColor>().m_Format;
 
-		SUniformBufferResource debugUniformBuffer = managers->m_ResourceManager->AddUniformBuffer(context, "DebugLines Uniforms", EBufferIndices::DebugLines, sizeof(SDebugUniformUniformBuffer));
+		SUniformBufferResource debugUniformBuffer = managers->m_ResourceManager->AddUniformBuffer(context, "DebugLines Uniforms", EBufferIndices::DebugLines, sizeof(SDebugVertexUniforms));
 
 		m_DebugTable = new CBindingTable();
-		m_DebugTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, debugUniformBuffer.m_Buffer, sizeof(SDebugUniformUniformBuffer));
+		m_DebugTable->AddUniformBufferBinding(0, VK_SHADER_STAGE_VERTEX_BIT, debugUniformBuffer.m_Buffer, sizeof(SDebugVertexUniforms));
 		m_DebugTable->CreateBindings(context);
 
 		m_DebugPipeline = new CPipeline(EPipelineType::GRAPHICS);
@@ -38,12 +38,12 @@ namespace NVulkanEngine
 		glm::mat4 cameraProj = managers->m_InputManager->GetCamera()->GetProjectionMatrix();
 		glm::mat4 cameraViewProj = cameraProj * cameraLookAt;
 
-		SDebugUniformUniformBuffer debugUniformConstants{};
+		SDebugVertexUniforms debugUniformConstants{};
 		debugUniformConstants.m_ViewProjectionMatrix = cameraViewProj;
 
 		void* data;
-		vkMapMemory(logicalDevice, bufferResource.m_Memory, 0, sizeof(SDebugUniformUniformBuffer), 0, &data);
-		memcpy(data, &debugUniformConstants, sizeof(SDebugUniformUniformBuffer));
+		vkMapMemory(logicalDevice, bufferResource.m_Memory, 0, sizeof(SDebugVertexUniforms), 0, &data);
+		memcpy(data, &debugUniformConstants, sizeof(SDebugVertexUniforms));
 		vkUnmapMemory(logicalDevice, bufferResource.m_Memory);
 	}
 

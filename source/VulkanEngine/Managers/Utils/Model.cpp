@@ -98,7 +98,7 @@ namespace NVulkanEngine
 
 		for (const auto& material: materials)
 		{
-			SModelMaterial newMaterial;
+			SMaterialFragmentPushConstants newMaterial;
 
 			tinyobj::real_t cr = material.diffuse[0];
 			tinyobj::real_t cg = material.diffuse[1];
@@ -106,7 +106,7 @@ namespace NVulkanEngine
 
 			newMaterial.m_Diffuse      = glm::vec4(cr, cg, cb, 0.0f);
 			newMaterial.m_Reflectivity = material.specular[0];
-			newMaterial.m_Metallness   = material.metallic;
+			newMaterial.m_Metalness   = material.metallic;
 			newMaterial.m_Fresnel      = material.sheen;
 			newMaterial.m_Shininess    = material.shininess;
 			newMaterial.m_Emission     = material.emission[0];
@@ -440,7 +440,7 @@ namespace NVulkanEngine
 		return m_GeometryTable->GetDescriptorSetLayout();
 	}
 	
-	SModelMaterial CModel::GetMaterial(uint32_t materialId)
+	SMaterialFragmentPushConstants CModel::GetMaterial(uint32_t materialId)
 	{
 		return m_Materials[materialId];
 	}

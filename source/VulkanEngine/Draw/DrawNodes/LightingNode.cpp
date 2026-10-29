@@ -27,7 +27,7 @@ namespace NVulkanEngine
 		const SRenderResource shadowMapAttachment    = managers->m_ResourceManager->Get<SSunShadowMap>();
 		const SRenderResource atmosphericsAttachment = managers->m_ResourceManager->Get<SAtmosphericsSkyBox>();
 
-		m_DeferredUniformBuffer = CreateUniformBuffer(context, m_DeferredLightBufferMemory, sizeof(SDeferredLightingUniformBuffer));
+		m_DeferredUniformBuffer = CreateUniformBuffer(context, m_DeferredLightBufferMemory, sizeof(SDeferredLightingFragmentUniforms));
 
 		m_DeferredTable = new CBindingTable();
 		m_DeferredTable->AddSampledImageBinding(0,  VK_SHADER_STAGE_FRAGMENT_BIT, positionsAttachment.m_ImageView,    positionsAttachment.m_Format,    context->m_LinearClampSampler);
@@ -36,7 +36,7 @@ namespace NVulkanEngine
 		m_DeferredTable->AddSampledImageBinding(3,  VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView,        depthAttachment.m_Format,        context->m_LinearClampSampler);
 		m_DeferredTable->AddSampledImageBinding(4,  VK_SHADER_STAGE_FRAGMENT_BIT, shadowMapAttachment.m_ImageView,    shadowMapAttachment.m_Format,    context->m_LinearClampSampler);
 		m_DeferredTable->AddSampledImageBinding(5,  VK_SHADER_STAGE_FRAGMENT_BIT, atmosphericsAttachment.m_ImageView, atmosphericsAttachment.m_Format, context->m_LinearClampSampler);
-		m_DeferredTable->AddUniformBufferBinding(6, VK_SHADER_STAGE_FRAGMENT_BIT, m_DeferredUniformBuffer, sizeof(SDeferredLightingUniformBuffer));
+		m_DeferredTable->AddUniformBufferBinding(6, VK_SHADER_STAGE_FRAGMENT_BIT, m_DeferredUniformBuffer, sizeof(SDeferredLightingFragmentUniforms));
 		m_DeferredTable->CreateBindings(context);
 
 		const VkFormat sceneColorAttachmentFormat = managers->m_ResourceManager->Get<SSceneColor>().m_Format;
@@ -59,7 +59,7 @@ namespace NVulkanEngine
 		ImGui::SliderFloat("Ambient", &g_AmbientIntensity, 0.0f, 1.0f);
 		ImGui::End();
 
-		SDeferredLightingUniformBuffer deferredLightingUbo{};
+		SDeferredLightingFragmentUniforms deferredLightingUbo{};
 		deferredLightingUbo.m_Lights[0].m_LightColor     = glm::vec3(1.0f, 1.0f, 1.0f);
 		deferredLightingUbo.m_Lights[0].m_LightPosition  = glm::vec3(0.0f, 1000.0f, 30.0f);
 		deferredLightingUbo.m_Lights[0].m_LightRadius    = g_LightRadius;
@@ -73,8 +73,8 @@ namespace NVulkanEngine
 		deferredLightingUbo.m_AmbientIntensity           = g_AmbientIntensity;
 
 		void* data;
-		vkMapMemory(logicalDevice, m_DeferredLightBufferMemory, 0, sizeof(SDeferredLightingUniformBuffer), 0, &data);
-		memcpy(data, &deferredLightingUbo, sizeof(SDeferredLightingUniformBuffer));
+		vkMapMemory(logicalDevice, m_DeferredLightBufferMemory, 0, sizeof(SDeferredLightingFragmentUniforms), 0, &data);
+		memcpy(data, &deferredLightingUbo, sizeof(SDeferredLightingFragmentUniforms));
 		vkUnmapMemory(logicalDevice, m_DeferredLightBufferMemory);
 	}
 

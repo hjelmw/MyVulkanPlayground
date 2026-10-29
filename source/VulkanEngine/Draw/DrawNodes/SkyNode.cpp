@@ -32,23 +32,16 @@ static int       g_NumOpticalDepthPoints = 8;
 
 namespace NVulkanEngine
 {
-	struct SAtmosphericsVertexPushConstants
-	{
-		glm::mat4 m_InvViewProjectionMatrix = glm::identity<glm::mat4>();
-		//
-		float m_CameraFar   = 0.0f;
-	};
-
 	void CSkyNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		const SRenderResource atmosphericsAttachment  = managers->m_ResourceManager->Get<NRenderResources::SAtmosphericsSkyBox>();
 		const SRenderResource depthAttachment         = managers->m_ResourceManager->Get<NRenderResources::SGBufferDepth>();
 
-		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentConstants));
+		m_AtmosphericsUniformBuffer = CreateUniformBuffer(context, m_AtmosphericsBufferMemory, sizeof(SAtmosphericsFragmentUniforms));
 
 		m_AtmosphericsTable = new CBindingTable();
 		m_AtmosphericsTable->AddSampledImageBinding(0, VK_SHADER_STAGE_FRAGMENT_BIT, depthAttachment.m_ImageView, depthAttachment.m_Format, context->m_LinearClampSampler);
-		m_AtmosphericsTable->AddUniformBufferBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_AtmosphericsUniformBuffer, sizeof(SAtmosphericsFragmentConstants));
+		m_AtmosphericsTable->AddUniformBufferBinding(1, VK_SHADER_STAGE_FRAGMENT_BIT, m_AtmosphericsUniformBuffer, sizeof(SAtmosphericsFragmentUniforms));
 		m_AtmosphericsTable->CreateBindings(context);
 
 		m_AtmosphericsPipeline = new CPipeline(EPipelineType::GRAPHICS);
@@ -73,7 +66,7 @@ namespace NVulkanEngine
 		glm::vec3 sunDirection    = CShadowNode::GetSunlightDirection();
 		glm::vec3 planetToSunDir  = sunDirection;
 
-		SAtmosphericsFragmentConstants atmosphericsUbo{};
+		SAtmosphericsFragmentUniforms atmosphericsUbo{};
 		atmosphericsUbo.m_PlanetToSunDir         = planetToSunDir;
 		atmosphericsUbo.m_PlanetCameraPosition   = planetCameraPos;
 		atmosphericsUbo.m_AtmosphereRadius		 = (1.0f + g_AtmosphereScale) * g_PlanetRadius;
@@ -94,8 +87,8 @@ namespace NVulkanEngine
 		atmosphericsUbo.m_ScatteringIntensity    = g_ScatteringIntensity;
 
 		void* data;
-		vkMapMemory(logicalDevice, m_AtmosphericsBufferMemory, 0, sizeof(SAtmosphericsFragmentConstants), 0, &data);
-		memcpy(data, &atmosphericsUbo, sizeof(SAtmosphericsFragmentConstants));
+		vkMapMemory(logicalDevice, m_AtmosphericsBufferMemory, 0, sizeof(SAtmosphericsFragmentUniforms), 0, &data);
+		memcpy(data, &atmosphericsUbo, sizeof(SAtmosphericsFragmentUniforms));
 		vkUnmapMemory(logicalDevice, m_AtmosphericsBufferMemory);
 	}
 

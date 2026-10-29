@@ -4,6 +4,11 @@
 
 #include <vulkan/vulkan.h>
 
+/*
+	The resources created by the engine.
+	Add the definition here and then create it in CVulkanGraphicsEngine::CreateResources()
+*/
+
 // Here I used a C++20 concept to ensure that you add these members!
 template<class TRenderResource>
 concept CRenderResourceTag = requires

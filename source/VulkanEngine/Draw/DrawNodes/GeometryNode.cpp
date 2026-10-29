@@ -12,7 +12,7 @@ namespace NVulkanEngine
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
-			model->CreateGeometryMemoryBuffer(context, (VkDeviceSize)sizeof(SGeometryUniformBuffer));
+			model->CreateGeometryMemoryBuffer(context, (VkDeviceSize)sizeof(SGeometryVertexUniforms));
 			model->CreateGeometryBindingTable(context);
 		}
 
@@ -38,7 +38,7 @@ namespace NVulkanEngine
 		m_GeometryPipeline->AddColorAttachment(normalsFormat);
 		m_GeometryPipeline->AddColorAttachment(albedoFormat);
 		m_GeometryPipeline->AddDepthAttachment(depthFormat);
-		m_GeometryPipeline->AddPushConstantSlot(VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(SModelMaterial), 0);
+		m_GeometryPipeline->AddPushConstantSlot(VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(SMaterialFragmentPushConstants), 0);
 		m_GeometryPipeline->CreatePipeline(context, modelDescriptorSetLayout); 
 	}
 
@@ -50,13 +50,13 @@ namespace NVulkanEngine
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 
-			SGeometryUniformBuffer uboModel{};
-			uboModel.m_ModelMat      = model->GetTransform();
-			uboModel.m_ViewMat       = camera->GetLookAtMatrix();
-			uboModel.m_ProjectionMat = camera->GetProjectionMatrix();
+			SGeometryVertexUniforms uboModel{};
+			uboModel.m_ModelMatrix      = model->GetTransform();
+			uboModel.m_ViewMatrix       = camera->GetLookAtMatrix();
+			uboModel.m_ProjectionMatrix = camera->GetProjectionMatrix();
 
 			void* data;
-			vkMapMemory(logicalDevice, model->GetGeometryMemoryBuffer().m_Memory, 0, sizeof(SGeometryUniformBuffer), 0, &data);
+			vkMapMemory(logicalDevice, model->GetGeometryMemoryBuffer().m_Memory, 0, sizeof(SGeometryVertexUniforms), 0, &data);
 			memcpy(data, &uboModel, sizeof(uboModel));
 			vkUnmapMemory(logicalDevice, model->GetGeometryMemoryBuffer().m_Memory);
 		}
@@ -88,7 +88,7 @@ namespace NVulkanEngine
 			for (uint32_t j = 0; j < model->GetNumMeshes(); j++)
 			{
 				SMaterialMesh modelMesh = model->GetMesh(j);
-				SModelMaterial material     = model->GetMaterial(modelMesh.m_MaterialId);
+				SMaterialFragmentPushConstants material     = model->GetMaterial(modelMesh.m_MaterialId);
 				material.m_UseAlbedoTexture = model->GetModelTexture() != nullptr;
 
 				m_GeometryPipeline->PushConstants(commandBuffer, (void*)&material);

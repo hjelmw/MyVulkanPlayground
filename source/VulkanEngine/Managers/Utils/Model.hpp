@@ -3,6 +3,7 @@
 #include <Core/VulkanGraphicsEngineUtils.hpp>
 #include <Core/GraphicsContext.hpp>
 #include <Managers/Utils/Texture.hpp>
+#include <ShaderConstants.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
@@ -62,20 +63,6 @@ struct SMaterialMesh
 	uint32_t m_NumVertices = 0;
 };
 
-struct SModelMaterial
-{
-	glm::vec4    m_Diffuse          = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-	//
-	glm::float32 m_Shininess        = glm::float32(0.0f);
-	glm::float32 m_Metallness       = glm::float32(0.0f);
-	glm::float32 m_Fresnel          = glm::float32(0.0f);
-	glm::float32 m_Emission         = glm::float32(0.0f);
-	//
-	glm::float32 m_Transparency     = glm::float32(0.0f);
-	glm::float32 m_Reflectivity     = glm::float32(0.0f);
-	glm::int32   m_UseAlbedoTexture = 0;
-};
-
 namespace NVulkanEngine
 {
 	class CBindingTable;
@@ -129,7 +116,7 @@ namespace NVulkanEngine
 		uint32_t           GetTotalNumIndices();
 
 		// Get number of indices of model
-		SModelMaterial     GetMaterial(uint32_t materialId);
+		SMaterialFragmentPushConstants     GetMaterial(uint32_t materialId);
 
 		// Bind vertex and index buffers for a mesh
 		void               BindVertexAndIndexBuffers(VkCommandBuffer commandBuffer);
@@ -144,7 +131,7 @@ namespace NVulkanEngine
 		std::string            m_ModelTexturePath   = "Uninitialized";
 
 		std::vector<SMaterialMesh>          m_Meshes        = {};
-		std::vector<SModelMaterial>         m_Materials     = {};
+		std::vector<SMaterialFragmentPushConstants>         m_Materials     = {};
 			
 		std::vector<SModelVertex>   m_Vertices      = {};
 		std::vector<uint32_t>       m_Indices       = {};

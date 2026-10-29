@@ -3,9 +3,7 @@
 #include "Utils/Pipeline.hpp"
 #include "ShaderConstants.hpp"
 
-
 #include <imgui.h>
-
 #include <glm-aabb/AABB.hpp>
 
 #define SHADOWMAP_RESOLUTION 4096
@@ -22,24 +20,19 @@ namespace NVulkanEngine
 	glm::vec3 CShadowNode::s_SunlightDirection = glm::vec3(0.0f, 0.0f, 0.0f);
 	float     CShadowNode::s_ShadowDepthBias = 0.0f;
 
-	struct STerrainShadowVertexPushConstants
-	{
-		glm::mat4 m_ViewProjectionMatrix = glm::identity<glm::mat4>();
-	};
-
 	void CShadowNode::Init(SRuntimeContext* context, SGraphicsManagers* managers)
 	{
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumModels(); i++)
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
-			model->CreateShadowMemoryBuffer(context, (VkDeviceSize)sizeof(SShadowUniformBuffer));
+			model->CreateShadowMemoryBuffer(context, (VkDeviceSize)sizeof(SGeometryVertexUniforms));
 			model->CreateShadowBindingTable(context);
 		}
 
 		for (uint32_t i = 0; i < managers->m_Modelmanager->GetNumTerrainModels(); i++)
 		{
 			CModel* terrainModel = managers->m_Modelmanager->GetTerrainModel(i);
-			terrainModel->CreateShadowMemoryBuffer(context, (VkDeviceSize)sizeof(SShadowUniformBuffer));
+			terrainModel->CreateShadowMemoryBuffer(context, (VkDeviceSize)sizeof(SGeometryVertexUniforms));
 			terrainModel->CreateShadowBindingTable(context);
 		}
 
@@ -57,7 +50,7 @@ namespace NVulkanEngine
 		m_ShadowPipeline->SetVertexInput(sizeof(SModelVertex), VK_VERTEX_INPUT_RATE_VERTEX);
 		m_ShadowPipeline->AddVertexAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(SModelVertex, m_Position));
 		m_ShadowPipeline->AddDepthAttachment(shadowMapFormat);
-		m_ShadowPipeline->AddPushConstantSlot(VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(SModelMaterial), 0);
+		m_ShadowPipeline->AddPushConstantSlot(VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(SMaterialFragmentPushConstants), 0);
 		m_ShadowPipeline->CreatePipeline(context, modelDescriptorSetLayout);
 
 		m_TerrainShadowPipeline = new CPipeline(EPipelineType::GRAPHICS);
@@ -155,13 +148,13 @@ namespace NVulkanEngine
 		{
 			CModel* model = managers->m_Modelmanager->GetModel(i);
 			
-			SShadowUniformBuffer uboShadow{};
+			SGeometryVertexUniforms uboShadow{};
 			uboShadow.m_ViewMatrix       = sunlightViewMatrix;
 			uboShadow.m_ProjectionMatrix = sunlightProjectionMatrix;
 			uboShadow.m_ModelMatrix      = model->GetTransform();
 			
 			void* data;
-			vkMapMemory(logicalDevice, model->GetShadowMemoryBuffer().m_Memory, 0, sizeof(SShadowUniformBuffer), 0, &data);
+			vkMapMemory(logicalDevice, model->GetShadowMemoryBuffer().m_Memory, 0, sizeof(SGeometryVertexUniforms), 0, &data);
 			memcpy(data, &uboShadow, sizeof(uboShadow));
 			vkUnmapMemory(logicalDevice, model->GetShadowMemoryBuffer().m_Memory);
 		}
@@ -170,13 +163,13 @@ namespace NVulkanEngine
 		{
 			CModel* terrainModel = managers->m_Modelmanager->GetTerrainModel(i);
 
-			SShadowUniformBuffer uboShadow{};
+			SGeometryVertexUniforms uboShadow{};
 			uboShadow.m_ViewMatrix       = sunlightViewMatrix;
 			uboShadow.m_ProjectionMatrix = sunlightProjectionMatrix;
 			uboShadow.m_ModelMatrix      = terrainModel->GetTransform();
 			
 			void* data;
-			vkMapMemory(logicalDevice, terrainModel->GetShadowMemoryBuffer().m_Memory, 0, sizeof(SShadowUniformBuffer), 0, &data);
+			vkMapMemory(logicalDevice, terrainModel->GetShadowMemoryBuffer().m_Memory, 0, sizeof(SGeometryVertexUniforms), 0, &data);
 			memcpy(data, &uboShadow, sizeof(uboShadow));
 			vkUnmapMemory(logicalDevice, terrainModel->GetShadowMemoryBuffer().m_Memory);
 		}
